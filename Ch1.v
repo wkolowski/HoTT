@@ -1,3 +1,5 @@
+Set Universe Polymorphism.
+
 (** * 1.3 Universes and families *)
 
 Notation "'U'" := Type.
@@ -20,12 +22,6 @@ Arguments refl {A} _.
 Notation "x = y" := (eq x y) (at level 70, no associativity).
 
 Ltac refl := apply refl.
-
-Definition indiscernability
-  {A : U} {C : A -> U} {x y : A} (p : x = y) (cx : C x) : C y :=
-match p with
-    | refl _ => cx
-end.
 
 (** * 1.5 Product types *)
 
@@ -263,7 +259,7 @@ Lemma double_rec :
 Proof.
   apply N_ind'; cbn.
     refl.
-    intros. rewrite H. refl.
+    intros n H. rewrite H. refl.
 Defined.
 
 Lemma add_rec :
@@ -276,9 +272,9 @@ Proof.
       (fun n : N => forall m : N,
         add n m =
         N_rec' (fun n : N => n) (fun _ f n => S (f n)) n m));
-  cbn; intros.
+  cbn.
     refl.
-    rewrite H. refl.
+    intros n H m. rewrite H. refl.
 Defined.
 
 Lemma assoc :
@@ -289,9 +285,9 @@ Proof.
     (N_ind'
       (fun i : N =>
         forall j k : N, add i (add j k) = add (add i j) k));
-  cbn; intros.
-    refl.
-    rewrite H. refl.
+  cbn.
+    intros. refl.
+    intros n H j k. rewrite H. refl.
 Defined.
 
 (** * 1.11 Propositions as types *)
@@ -314,3 +310,153 @@ Definition le (n m : N) : U :=
 
 Definition lt (n m : N) : U :=
   {k : N & add n (S k) = m}.
+
+(** * 1.12 Identity types *)
+
+Definition indiscernability
+  {A : U} {C : A -> U} {x y : A} (p : x = y) (cx : C x) : C y :=
+match p with
+    | refl _ => cx
+end.
+
+Definition path_ind
+  {A : U} {C : forall x y : A, x = y -> U}
+  (c : forall x : A, C x x (refl x)) (x y : A) (p : x = y) : C x y p :=
+match p with
+    | refl _ => c x
+end.
+
+Notation "'J'" := path_ind (only parsing).
+
+Definition based_path_ind
+  {A : U} {a : A} {C : forall x : A, a = x -> U}
+  (c : C a (refl a)) (x : A) (p : a = x) : C x p :=
+match p with
+    | refl _ => c
+end.
+
+Lemma mystery :
+  forall (A : U) (x y : A) (p : x = y),
+    @dpair _ (fun x : A => {y : A & x = y}) x (dpair y p) =
+    @dpair _ (fun x : A => {y : A & x = y}) x (dpair x (refl x)).
+Proof.
+  destruct p. refl.
+Defined.
+
+Notation "x <> y" := (~ x = y) (at level 50).
+
+(** Chapter 2 *)
+
+(** * 2.1 Types are higher groupoids *)
+
+Definition inv {A : U} {x y : A} (p : x = y) : y = x :=
+match p with
+    | refl _ => refl x
+end.
+
+Definition cat {A : U} {x y z : A} (p : x = y) (q : y = z) : x = z :=
+match p, q with
+    | refl _, refl _ => refl x
+end.
+
+(* Lemma 2.1.4 *)
+Lemma cat_refl_l :
+  forall (A : U) (x y : A) (p : x = y),
+    cat (refl x) p = p.
+Proof.
+  destruct p. refl.
+Defined.
+
+Lemma cat_refl_r :
+  forall (A : U) (x y : A) (p : x = y),
+    cat p (refl y) = p.
+Proof.
+  destruct p. refl.
+Defined.
+
+Lemma cat_inv_l :
+  forall (A : U) (x y : A) (p : x = y),
+    cat (inv p) p = refl y.
+Proof.
+  destruct p. refl.
+Defined.
+
+Lemma cat_inv_r :
+  forall (A : U) (x y : A) (p : x = y),
+    cat p (inv p) = refl x.
+Proof.
+  destruct p. refl.
+Defined.
+
+Lemma inv_inv :
+  forall (A : U) (x y : A) (p : x = y),
+    inv (inv p) = p.
+Proof.
+  destruct p. refl.
+Defined.
+
+Lemma cat_assoc :
+  forall (A : U) (x y z w : A) (p : x = y) (q : y = z) (r : z = w),
+    cat p (cat q r) = cat (cat p q) r.
+Proof.
+  destruct p, q, r. cbn. refl.
+Defined.
+
+(** Eckmann-Hilton omitted *)
+
+(*Record Pointed : U :=
+{
+    carrier : U;
+    point : carrier;
+}.
+
+Instance loopspace Pointed : d :=
+{
+    carrier := a = a;
+    point := refl a;
+}.*)
+
+Definition Pointed : U := {A : U & A}.
+
+Notation "U*" := Pointed.
+
+Definition loopspace (A : U*) : U* :=
+match A with
+    | (| _, a |) => (| a = a, refl a |)
+end.
+
+Fixpoint nfold_loopspace (n : N) (A : U*) : U* :=
+match n with
+    | 0 => A
+    | S n' => nfold_loopspace n' (loopspace A)
+end.
+
+(** * 2.2 Functions are functors *)
+
+Definition ap {A B : U} (f : A -> B) {x y : A} (p : x = y) : f x = f y :=
+match p with
+    | refl _ => refl (f x)
+end.
+
+(* Lemma 2.2.2 *)
+
+Lemma ap_cat :
+  forall (A B : U) (f : A -> B) (x y z : A) (p : x = y) (q : y = z),
+    ap f (cat p q) = cat (ap f p) (ap f q).
+Proof.
+  destruct p, q. cbn. refl.
+Defined.
+
+Lemma ap_inv :
+  forall (A B : U) (f : A -> B) (x y : A) (p : x = y),
+    ap f (inv p) = inv (ap f p).
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+Lemma ap_ap
+  forall (A B C : U) (f : A -> B) (x y : A) (p : x = y),
+    ap g (ap f p) = ap (comp g f) p.
+Proof.
+  destruct p, q. cbn. refl.
+Defined.
