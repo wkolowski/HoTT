@@ -9,6 +9,8 @@ Notation "'U'" := Type.
 Notation "A -> B" :=
   (forall _ : A, B) (at level 99, right associativity, B at level 200).
 
+Definition id {A : U} (x : A) : A := x.
+
 Definition swap {A B C : U} (f : A -> B -> C) : B -> A -> C :=
   fun (b : B) (a : A) => f a b.
 
@@ -21,7 +23,7 @@ Arguments refl {A} _.
 
 Notation "x = y" := (eq x y) (at level 70, no associativity).
 
-Ltac refl := apply refl.
+Ltac refl := intros; apply refl.
 
 (** * 1.5 Product types *)
 
@@ -345,6 +347,16 @@ Defined.
 
 Notation "x <> y" := (~ x = y) (at level 50).
 
+(** * Exercises *)
+
+Definition comp {A B C : U} (f : A -> B) (g : B -> C) : A -> C :=
+  fun x : A => g (f x).
+
+Lemma comp_assoc :
+  forall (A B C D : U) (f : A -> B) (g : B -> C) (h : C -> D),
+    comp (comp f g) h = comp f (comp g h).
+Proof. refl. Defined.
+
 (** Chapter 2 *)
 
 (** * 2.1 Types are higher groupoids *)
@@ -418,14 +430,12 @@ Instance loopspace Pointed : d :=
 
 Definition Pointed : U := {A : U & A}.
 
-Notation "U*" := Pointed.
-
-Definition loopspace (A : U*) : U* :=
+Definition loopspace (A : Pointed) : Pointed :=
 match A with
     | (| _, a |) => (| a = a, refl a |)
 end.
 
-Fixpoint nfold_loopspace (n : N) (A : U*) : U* :=
+Fixpoint nfold_loopspace (n : N) (A : Pointed) : Pointed :=
 match n with
     | 0 => A
     | S n' => nfold_loopspace n' (loopspace A)
@@ -454,9 +464,131 @@ Proof.
   destruct p. cbn. refl.
 Defined.
 
-Lemma ap_ap
-  forall (A B C : U) (f : A -> B) (x y : A) (p : x = y),
-    ap g (ap f p) = ap (comp g f) p.
+Lemma ap_ap :
+  forall (A B C : U) (f : A -> B) (g : B -> C) (x y : A) (p : x = y),
+    ap g (ap f p) = ap (comp f g) p.
+Proof.
+  destruct p. refl.
+Defined.
+
+Lemma ap_id :
+  forall (A : U) (x y : A) (p : x = y),
+    ap id p = p.
+Proof.
+  destruct p. refl.
+Defined.
+
+(** * 2.3 Type families are fibrations *)
+
+(* Lemma 2.3.1 *)
+Definition transport {A : U} {P : A -> U} {x y : A}
+  (p : x = y) (u : P x) : P y :=
+match p with
+    | refl _ => u
+end.
+
+Notation "p *" := (transport p) (at level 50, only parsing).
+
+(** Path lifting omitted. *)
+
+(* Lemma 2.3.4 *)
+Definition apd
+  {A : U} {P : A -> U} (f : forall x : A, P x) {x y : A} (p : x = y)
+  : transport p (f x) = (f y) :=
+match p with
+    | refl _ => refl (f x)
+end.
+
+(* Lemma 2.3.5 *)
+Lemma transportconst {A B : U} {x y : A} (p : x = y) (b : B) :
+  @transport A (fun _ => B) x y p b = b.
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+(* Lemma 2.3.8 *)
+Lemma apd_transportconst_ap :
+  forall (A B : U) (f : A -> B) (x y : A) (p : x = y),
+    apd f p = cat (transportconst p (f x)) (ap f p).
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+(* Lemma 2.3.9 *)
+Lemma transport_cat :
+  forall (A : U) (P : A -> U) (x y z : A) (p : x = y) (q : y = z) (u : P x),
+    transport q (transport p u) = transport (cat p q) u.
 Proof.
   destruct p, q. cbn. refl.
+Defined.
+
+(* Lemma 2.3.10 *)
+Lemma transport_ap :
+  forall (A B : U) (P : B -> U) (f : A -> B)
+    (x y : A) (p : x = y) (u : P (f x)),
+      @transport A (comp f P) x y p u = transport (ap f p) u.
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+(* Lemma 2.3.11 *)
+Lemma transport_family :
+  forall (A : U) (P Q : A -> U) (f : forall x : A, P x -> Q x)
+    (x y : A) (p : x = y) (u : P x),
+      transport p (f x u) = f y (transport p u).
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+(** * 2.4 Homotopies and equivalences *)
+
+Definition homotopy {A : U} {P : A -> U} (f g : forall x : A, P x) : U :=
+  forall x : A, f x = g x.
+
+(* Lemma 2.4.2 *)
+Lemma homotopy_refl :
+  forall (A : U) (P : A -> U) (f : forall x : A, P x),
+    homotopy f f.
+Proof.
+  unfold homotopy. refl.
+Defined.
+
+Lemma homotopy_sym :
+  forall (A : U) (P : A -> U) (f g : forall x : A, P x),
+    homotopy f g -> homotopy g f.
+Proof.
+  unfold homotopy. intros. rewrite X. refl.
+Defined.
+
+Lemma homotopy_trans :
+  forall (A : U) (P : A -> U) (f g h : forall x : A, P x),
+    homotopy f g -> homotopy g h -> homotopy f h.
+Proof.
+  unfold homotopy. intros. rewrite X, X0. refl.
+Defined.
+
+(* Lemma 2.4.3 *)
+Lemma homotopy_natural :
+  forall (A B : U) (f g : A -> B) (H : homotopy f g) (x y : A) (p : x = y),
+    cat (H x) (ap g p) = cat (ap f p) (H y).
+Proof.
+  unfold homotopy. destruct p. cbn. destruct (H x). cbn. refl.
+Defined.
+
+Lemma ap_refl :
+  forall (A B : U) (f : A -> B) (x : A),
+    ap f (refl x) = refl (f x).
+Proof. refl. Defined.
+
+(* Corollary 2.4.4 *)
+Lemma homotopy_id :
+  forall (A : U) (f : A -> A) (H : homotopy f id) (x : A),
+    H (f x) = ap f (H x).
+Proof.
+  intros.
+  assert (cat (cat (H (f x)) (H x)) (inv (H x)) =
+          cat (cat (ap f (H x)) (H x)) (inv (H x))).
+    pose (e := homotopy_natural A A f id H (f x) x (H x)).
+      rewrite ap_id in e. rewrite e. refl.
+    rewrite <- !cat_assoc, !cat_inv_r, !cat_refl_r in X. apply X.
 Defined.
