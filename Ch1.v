@@ -37,6 +37,12 @@ Notation "A * B" :=
 
 Notation "( x , y , .. , z )" := (pair .. (pair x y) .. z).
 
+Ltac split :=
+match goal with
+    | |- ?A * ?B =>
+        assert (a : A); [idtac |  assert (b : B); [idtac | apply (a, b)]]
+end.
+
 Definition pr1 {A B : U} (x : A * B) : A :=
 match x with
     | (a, _) => a
@@ -592,3 +598,131 @@ Proof.
       rewrite ap_id in e. rewrite e. refl.
     rewrite <- !cat_assoc, !cat_inv_r, !cat_refl_r in X. apply X.
 Defined.
+
+Definition qinv {A B : U} (f : A -> B) : U :=
+  {g : B -> A & homotopy (comp g f) id * homotopy (comp f g) id}.
+
+Lemma qinv_transport :
+  forall (A : U) (P : A -> U) (x y : A) (p : x = y),
+    qinv (@transport A P x y p).
+Proof.
+  intros. eapply (| @transport A P y x (inv p), _ |).
+Unshelve.
+  cbn. split.
+    destruct p. compute. refl.
+    destruct p. compute. refl.
+Defined.
+
+Definition isequiv {A B : U} (f : A -> B) : U :=
+  {g : B -> A & homotopy (comp g f) (@id B)} *
+  {h : B -> A & homotopy (comp f h) (@id A)}.
+
+Ltac ex :=
+match goal with
+    | |- {a : ?A & ?B} =>
+        let a := fresh "a" in
+        assert (a : A); [idtac | assert (b : B); [idtac | apply (| a, b |)]]
+end.
+
+Lemma qinv_isequiv :
+  forall (A B : U) (f : A -> B),
+    qinv f -> isequiv f.
+Proof.
+  destruct 1 as [g [α β]].
+  unfold isequiv. split.
+    apply (| g, α |).
+    apply (| g, β |).
+Defined.
+
+Lemma isequiv_qinv :
+  forall (A B : U) (f : A -> B),
+    isequiv f -> qinv f.
+Proof.
+  destruct 1 as [[g α] [h β]].
+  unfold qinv.
+  eapply (| comp g (comp f h), _ |).
+Unshelve.
+  cbn. split; compute in *; intros.
+    rewrite β, α. refl.
+    rewrite α, β. refl.
+Defined.
+
+Definition equiv (A B : U) : U :=
+  {f : A -> B & isequiv f}.
+
+Notation "A ~ B" := (equiv A B) (at level 50).
+
+(* Lemma 2.4.12 *)
+Lemma equiv_refl :
+  forall A : U, equiv A A.
+Proof.
+  unfold equiv. intros.
+  eapply (| id, _ |).
+Unshelve.
+  cbn. apply qinv_isequiv. compute. eapply (| id, _ |).
+Unshelve.
+  compute. split; refl.
+Defined.
+
+Lemma equiv_sym :
+  forall A B : U, equiv A B -> equiv B A.
+Proof.
+  unfold equiv. destruct 1 as [f H].
+  apply isequiv_qinv in H. destruct H as [g [α β]].
+  eapply (| g, _ |).
+Unshelve.
+  cbn. apply qinv_isequiv. eapply (| f, _ |).
+Unshelve.
+  compute in *. split; intros; rewrite ?α, ?β; refl.
+Defined.
+
+Lemma equiv_trans :
+  forall A B C : U, equiv A B -> equiv B C -> equiv A C.
+Proof.
+  unfold equiv. destruct 1 as [f Hf], 1 as [g Hg].
+  apply isequiv_qinv in Hf; apply isequiv_qinv in Hg.
+  destruct Hf as [f' [Hf1 Hf2]], Hg as [g' [Hg1 Hg2]].
+  eapply (| comp f g, _ |).
+Unshelve.
+  cbn. apply qinv_isequiv. eapply (| comp g' f', _ |).
+Unshelve.
+  compute in *. split; intros.
+    rewrite Hf1, Hg1. refl.
+    rewrite Hg2, Hf2. refl.
+Defined.
+
+Definition prod_eq_elim
+  {A B : U} {x y : A * B} (p : x = y) : (pr1 x = pr1 y) * (pr2 x = pr2 y) :=
+    (ap pr1 p, ap pr2 p).
+
+Definition prod_eq_intro
+  {A B : U} {x y : A * B} (p : pr1 x = pr1 y) (q : pr2 x = pr2 y) : x = y.
+Proof.
+  destruct x, y; cbn in *. destruct p, q. refl.
+Defined.
+
+Lemma prod_eq_comp :
+  forall (A B : U) (x y : A * B) (p : pr1 x = pr1 y) (q : pr2 x = pr2 y),
+    prod_eq_elim (prod_eq_intro p q) = (p, q).
+Proof.
+  destruct x, y. cbn. destruct p, q. compute. refl.
+Defined.
+
+Lemma prod_eq_uniq :
+  forall (A B : U) (x y : A * B) (p : x = y),
+    prod_eq_intro (pr1 (prod_eq_elim p)) (pr2 (prod_eq_elim p)) = p.
+Proof.
+  destruct p, x. cbn. refl.
+Defined.
+
+Notation "pair= p q" := (prod_eq_intro p q) (at level 50).
+
+Lemma prod_eq_elim_isequiv :
+  forall (A B : U) (x y : A * B),
+    isequiv (@prod_eq_elim A B x y).
+Proof.
+  intros. apply qinv_isequiv. unfold qinv.
+  eapply (| fun '(p, q) => prod_eq_intro p q, _ |).
+Unshelve.
+  cbn. split.
+    unfold homotopy. intros. rewrite 
