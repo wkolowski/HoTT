@@ -691,38 +691,112 @@ Unshelve.
     rewrite Hg2, Hf2. refl.
 Defined.
 
+Definition prod_eq_intro
+  {A B : U} {x y : A * B} (pq : (pr1 x = pr1 y) * (pr2 x = pr2 y)) : x = y.
+Proof.
+  destruct x, y; cbn in *. destruct pq as [[] []]. refl.
+Defined.
+
+Notation "'pair=' p q" := (prod_eq_intro p q) (at level 50).
+
+(*
 Definition prod_eq_elim
   {A B : U} {x y : A * B} (p : x = y) : (pr1 x = pr1 y) * (pr2 x = pr2 y) :=
     (ap pr1 p, ap pr2 p).
+*)
 
-Definition prod_eq_intro
-  {A B : U} {x y : A * B} (p : pr1 x = pr1 y) (q : pr2 x = pr2 y) : x = y.
-Proof.
-  destruct x, y; cbn in *. destruct p, q. refl.
-Defined.
-
-Lemma prod_eq_comp :
+(*Lemma prod_eq_comp :
   forall (A B : U) (x y : A * B) (p : pr1 x = pr1 y) (q : pr2 x = pr2 y),
     prod_eq_elim (prod_eq_intro p q) = (p, q).
+Proof.
+  destruct x, y. cbn. destruct p, q. compute. refl.
+Defined.*)
+
+Lemma prod_eq_comp_1 :
+  forall (A B : U) (x y : A * B) (p : pr1 x = pr1 y) (q : pr2 x = pr2 y),
+    ap pr1 (prod_eq_intro (p, q)) = p.
+Proof.
+  destruct x, y. cbn. destruct p, q. compute. refl.
+Defined.
+
+Lemma prod_eq_comp_2 :
+  forall (A B : U) (x y : A * B) (p : pr1 x = pr1 y) (q : pr2 x = pr2 y),
+    ap pr2 (prod_eq_intro (p, q)) = q.
 Proof.
   destruct x, y. cbn. destruct p, q. compute. refl.
 Defined.
 
 Lemma prod_eq_uniq :
   forall (A B : U) (x y : A * B) (p : x = y),
-    prod_eq_intro (pr1 (prod_eq_elim p)) (pr2 (prod_eq_elim p)) = p.
+    p = prod_eq_intro (ap pr1 p, ap pr2 p).
 Proof.
   destruct p, x. cbn. refl.
 Defined.
 
-Notation "pair= p q" := (prod_eq_intro p q) (at level 50).
-
-Lemma prod_eq_elim_isequiv :
+(* Theorem 2.6.2 *)
+Lemma prod_eq_intro_isequiv :
   forall (A B : U) (x y : A * B),
-    isequiv (@prod_eq_elim A B x y).
+    isequiv (@prod_eq_intro A B x y).
 Proof.
   intros. apply qinv_isequiv. unfold qinv.
-  eapply (| fun '(p, q) => prod_eq_intro p q, _ |).
+  eapply (| fun p => (ap pr1 p, ap pr2 p), _ |).
 Unshelve.
   cbn. split.
-    unfold homotopy. intros. rewrite 
+    unfold homotopy. intros H. destruct H, x. cbn. refl.
+    unfold homotopy. intros H. destruct x, y. cbn in *.
+      destruct H as [[] []]. compute. refl.
+Defined.
+
+(* Characterization of paths between pairs. *)
+Lemma refl_prod_eq :
+  forall (A B : U) (x : A * B),
+    refl x = prod_eq_intro (refl (pr1 x), refl (pr2 x)).
+Proof.
+  destruct x. cbn. refl.
+Defined.
+
+Lemma inv_prod_eq :
+  forall (A B : U) (x y : A * B) (p : x = y),
+    inv p = prod_eq_intro (inv (ap pr1 p), inv (ap pr2 p)).
+Proof.
+  destruct p, x. cbn. refl.
+Defined.
+
+Lemma cat_prod_eq :
+  forall (A B : U) (x y z : A * B) (p : x = y) (q : y = z),
+    cat p q =
+    prod_eq_intro (cat (ap pr1 p) (ap pr1 q), cat (ap pr2 p) (ap pr2 q)).
+Proof.
+  destruct p, q, x. cbn. refl.
+Defined.
+
+(* Theorem 2.6.4 *)
+Theorem transport_prod :
+  forall (Z : U) (A B : Z -> U) (z z' : Z) (p : z = z') (x : A z * B z),
+    @transport _ (fun z : Z => A z * B z) _ _ p x =
+    (transport p (pr1 x), transport p (pr2 x)).
+Proof.
+  destruct p, x. cbn. refl.
+Defined.
+
+Definition fpair {A A' B B'} (f : A -> A') (g : B -> B')
+  : A * B -> A' * B' :=
+    fun x => (f (pr1 x), g (pr2 x)).
+
+(* Theorem 2.6.5 *)
+Theorem ap_prod_eq_intro :
+  forall (A A' B B' : U) (x y : A * B)
+  (p : pr1 x = pr1 y) (q : pr2 x = pr2 y)
+  (f : A -> A') (g : B -> B'), 0 = 0.
+intros.
+Check    @eq (fpair f g x = fpair f g y).
+Check    (ap (fpair f g) (prod_eq_intro (p, q))).
+Check    (@prod_eq_intro _ _ _ _ (ap f p, ap g q)).
+Proof.
+  intros.
+  Check prod_eq_intro.
+  Check ap f p.
+  Check ap g q.
+  Check 
+  Check ap (fun x0 : A * B => (f (pr1 x0), g (pr2 x0))) (prod_eq_intro (p, q)).
+  destruct x, y, p, q.
