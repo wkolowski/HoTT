@@ -787,16 +787,75 @@ Definition fpair {A A' B B'} (f : A -> A') (g : B -> B')
 Theorem ap_prod_eq_intro :
   forall (A A' B B' : U) (x y : A * B)
   (p : pr1 x = pr1 y) (q : pr2 x = pr2 y)
-  (f : A -> A') (g : B -> B'), 0 = 0.
-intros.
-Check    @eq (fpair f g x = fpair f g y).
-Check    (ap (fpair f g) (prod_eq_intro (p, q))).
-Check    (@prod_eq_intro _ _ _ _ (ap f p, ap g q)).
+  (f : A -> A') (g : B -> B'),
+    ap (fpair f g) (prod_eq_intro (p, q)) =
+    @prod_eq_intro _ _ (fpair f g x) (fpair f g y) (ap f p, ap g q).
 Proof.
-  intros.
-  Check prod_eq_intro.
-  Check ap f p.
-  Check ap g q.
-  Check 
-  Check ap (fun x0 : A * B => (f (pr1 x0), g (pr2 x0))) (prod_eq_intro (p, q)).
-  destruct x, y, p, q.
+  destruct x, y. cbn. destruct p, q. compute. refl.
+Defined.
+
+(** * 2.7 Σ-types *)
+
+Definition sigma_eq_intro
+  {A : U} {B : A -> U} {x y : {x : A & B x}}
+  (p : {p : pr1' x = pr1' y & transport p (pr2' x) = pr2' y}) : x = y.
+Proof.
+  destruct x as [x b1], y as [y b2]. cbn in p.
+  destruct p as [p q]. destruct p, q. cbn. refl.
+Defined.
+
+Definition sigma_eq_elim
+  {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y)
+  : {p : pr1' x = pr1' y & transport p (pr2' x) = pr2' y}.
+Proof.
+  destruct p, x. cbn. eapply (| refl _, _ |).
+Unshelve.
+  cbn. refl.
+Defined.
+
+Definition sigma_eq_elim_1
+  {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y)
+  : pr1' x = pr1' y := pr1' (sigma_eq_elim p).
+
+(*Definition sigma_eq_elim_2
+  {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y)
+  : transport (ap pr1' p) (pr2' x) = pr2' y.
+Proof.
+  pose (sigma_eq_elim p).
+  destruct s. compute in *.
+  destruct p. cbn. apply *)
+
+(*Lemma sigma_eq_comp_1 :
+  forall (A : U) (B : A -> U) (x y : {a : A & B a})
+  (p : pr1' x = pr1' y) (q : transport p (pr2' x) = pr2' y),
+    ap pr1' (sigma_eq_intro (| p, q |)) = p.
+Proof.
+  destruct x, y. cbn. destruct p, q. compute. refl.
+Defined.
+
+Lemma sigma_eq_comp_2 :
+  forall (A : U) (B : A -> U) (x y : {a : A & B a})
+  (p : pr1' x = pr1' y) (q : transport p (pr2' x) = pr2' y), U.
+intros.
+Check @apd {a : A & B a}. B.
+Check    @apd {a : A & B a} (fun x : {a : A & B a} => B (pr1' x)) pr2' _ _
+          (ap pr1' (sigma_eq_intro (| p, q |))).
+Check @ap {a : A & B a} (B (pr1' x)).
+Check @apd {a : A & B a} (fun x : {a : A & B a} => B (pr1' x)) pr2'.
+Check pr2'.
+*)
+
+Lemma sigma_eq_comp :
+  forall (A : U) (B : A -> U) (x y : {a : A & B a})
+  (p : pr1' x = pr1' y) (q : transport p (pr2' x) = pr2' y),
+    sigma_eq_elim (sigma_eq_intro (| p, q |)) = (| p, q |).
+Proof.
+  destruct x, y. cbn. destruct p, q. compute. refl.
+Defined.
+
+Lemma sigma_eq_uniq :
+  forall (A : U) (B : A -> U) (x y : {a : A & B a}) (p : x = y),
+    sigma_eq_intro (sigma_eq_elim p) = p.
+Proof.
+  destruct p, x. cbn. refl.
+Defined.
