@@ -859,3 +859,38 @@ Lemma sigma_eq_uniq :
 Proof.
   destruct p, x. cbn. refl.
 Defined.
+
+(* Theorem 2.7.2 *)
+Theorem sigma_eq_elim_equiv :
+  forall (A : U) (B : A -> U) (x y : {a : A & B a}),
+    isequiv (@sigma_eq_elim A B x y).
+Proof.
+  intros. apply qinv_isequiv. unfold qinv.
+  eapply (| sigma_eq_intro, _ |).
+Unshelve.
+  cbn. split.
+    unfold homotopy. destruct x, y. destruct x1. cbn in *.
+      destruct x1, e. cbn. refl.
+    unfold homotopy. destruct x, y. destruct x1. cbn in *. refl.
+Defined.
+
+Lemma sigma_uniq :
+  forall (A : U) (B : A -> U) (z : {a : A & B a}),
+    z = (| pr1' z, pr2' z |).
+Proof.
+  intros. apply sigma_eq_intro. cbn. eapply (| refl _, _ |).
+Unshelve.
+  cbn. refl.
+Defined.
+
+(* Theorem 2.7.4 *)
+Theorem transport_sigma :
+  forall (A : U) (B : A -> U) (P : forall x : {a : A & B a}, U)
+  (x y : A) (p : x = y) (u : B x) (z : P (| x,  u |)), U.
+Proof.
+  intros.
+
+  Check @transport _ (fun x : A => {u : B x & P (| x, u |)}) _ _ p (| u, z |).
+  Check @sigma_eq_intro _ _ (| x, u |) (| y, u |).
+  Check @dpair (x = y) (fun p => transport p u = u) p (refl (transport p u)).
+
