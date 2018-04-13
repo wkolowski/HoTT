@@ -808,7 +808,7 @@ Definition sigma_eq_elim
   {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y)
   : {p : pr1' x = pr1' y & transport p (pr2' x) = pr2' y}.
 Proof.
-  destruct p, x. cbn. eapply (| refl _, _ |).
+  destruct p. cbn. eapply (| refl _, _ |).
 Unshelve.
   cbn. refl.
 Defined.
@@ -886,11 +886,48 @@ Defined.
 (* Theorem 2.7.4 *)
 Theorem transport_sigma :
   forall (A : U) (B : A -> U) (P : forall x : {a : A & B a}, U)
-  (x y : A) (p : x = y) (u : B x) (z : P (| x,  u |)), U.
+  (x y : A) (p : x = y) (u : B x) (z : P (| x,  u |)),
+    @transport A (fun x : A => {u : B x & P (| x, u |)}) x y p (| u, z |) =
+    @dpair (B y) (fun u => P (| y, u |))
+      (transport p u)
+      (transport
+        (@sigma_eq_intro A B (| x, u |) (| y, transport p u |)
+          (| p, refl (transport p u) |))
+        z).
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+(* TODO: generalize theorem 2.6.5 *)
+
+(* Characterization of paths between dependent pairs. *)
+Lemma refl_sigma :
+  forall (A : U) (B : A -> U) (x : {a : A & B a}),
+    refl x = sigma_eq_intro (| refl (pr1' x), refl (pr2' x) |).
+Proof.
+  destruct x. cbn. refl.
+Defined.
+
+Lemma inv_sigma :
+  forall (A : U) (B : A -> U) (x y : {a : A & B a}) (p : x = y), U.
 Proof.
   intros.
+Check inv (ap pr1' p).
+Check inv (@apd {a : A & B a} (fun x => B (pr1' x)) pr2' _ _ (inv p)).
+Check sigma_eq_intro (| inv (ap pr1' p), inv _ |).
+Check transport (inv (ap pr1' p)) (pr2' y).
+assert (pr2' x = transport (inv (ap pr1' p)) (pr2' y)).
+  apply inv. apply (apd pr2').
 
-  Check @transport _ (fun x : A => {u : B x & P (| x, u |)}) _ _ p (| u, z |).
-  Check @sigma_eq_intro _ _ (| x, u |) (| y, u |).
-  Check @dpair (x = y) (fun p => transport p u = u) p (refl (transport p u)).
+    inv p = sigma_eq_intro (| inv (ap pr1' p), inv (ap pr2' p) |).
+Proof.
+  destruct p, x. cbn. refl.
+Defined.
 
+Lemma cat_prod_eq :
+  forall (A B : U) (x y z : A * B) (p : x = y) (q : y = z),
+    cat p q =
+    prod_eq_intro (cat (ap pr1 p) (ap pr1 q), cat (ap pr2 p) (ap pr2 q)).
+Proof.
+  destruct p, q, x. cbn. refl.
+Defined.
