@@ -699,18 +699,10 @@ Defined.
 
 Notation "'pair=' p q" := (prod_eq_intro p q) (at level 50).
 
-(*
+(* In the book, elimination rules for products are [ap pr1] and [ap pr2]. *)
 Definition prod_eq_elim
   {A B : U} {x y : A * B} (p : x = y) : (pr1 x = pr1 y) * (pr2 x = pr2 y) :=
     (ap pr1 p, ap pr2 p).
-*)
-
-(*Lemma prod_eq_comp :
-  forall (A B : U) (x y : A * B) (p : pr1 x = pr1 y) (q : pr2 x = pr2 y),
-    prod_eq_elim (prod_eq_intro p q) = (p, q).
-Proof.
-  destruct x, y. cbn. destruct p, q. compute. refl.
-Defined.*)
 
 Lemma prod_eq_comp_1 :
   forall (A B : U) (x y : A * B) (p : pr1 x = pr1 y) (q : pr2 x = pr2 y),
@@ -817,34 +809,6 @@ Definition sigma_eq_elim_1
   {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y)
   : pr1' x = pr1' y := pr1' (sigma_eq_elim p).
 
-(*Definition sigma_eq_elim_2
-  {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y)
-  : transport (ap pr1' p) (pr2' x) = pr2' y.
-Proof.
-  pose (sigma_eq_elim p).
-  destruct s. compute in *.
-  destruct p. cbn. apply *)
-
-(*Lemma sigma_eq_comp_1 :
-  forall (A : U) (B : A -> U) (x y : {a : A & B a})
-  (p : pr1' x = pr1' y) (q : transport p (pr2' x) = pr2' y),
-    ap pr1' (sigma_eq_intro (| p, q |)) = p.
-Proof.
-  destruct x, y. cbn. destruct p, q. compute. refl.
-Defined.
-
-Lemma sigma_eq_comp_2 :
-  forall (A : U) (B : A -> U) (x y : {a : A & B a})
-  (p : pr1' x = pr1' y) (q : transport p (pr2' x) = pr2' y), U.
-intros.
-Check @apd {a : A & B a}. B.
-Check    @apd {a : A & B a} (fun x : {a : A & B a} => B (pr1' x)) pr2' _ _
-          (ap pr1' (sigma_eq_intro (| p, q |))).
-Check @ap {a : A & B a} (B (pr1' x)).
-Check @apd {a : A & B a} (fun x : {a : A & B a} => B (pr1' x)) pr2'.
-Check pr2'.
-*)
-
 Lemma sigma_eq_comp :
   forall (A : U) (B : A -> U) (x y : {a : A & B a})
   (p : pr1' x = pr1' y) (q : transport p (pr2' x) = pr2' y),
@@ -916,18 +880,54 @@ Check inv (ap pr1' p).
 Check inv (@apd {a : A & B a} (fun x => B (pr1' x)) pr2' _ _ (inv p)).
 Check sigma_eq_intro (| inv (ap pr1' p), inv _ |).
 Check transport (inv (ap pr1' p)) (pr2' y).
+Check @sigma_eq_elim _ _ y x (inv p).
 assert (pr2' x = transport (inv (ap pr1' p)) (pr2' y)).
-  apply inv. apply (apd pr2').
+  apply inv. rewrite <- ap_inv.
+Abort.
 
-    inv p = sigma_eq_intro (| inv (ap pr1' p), inv (ap pr2' p) |).
+Lemma cat_sigma :
+  forall (A : U) (B : A -> U) (x y z : {a : A & B a})
+  (p : x = y) (q : y = z), U.
+Proof.
+
+(*    cat p q =
+  sigma_eq_intro (cat (ap pr1 p) (ap pr1 q), cat (ap pr2 p) (ap pr2 q)).
+*)
+Abort.
+
+(** * 2.8 The unit type *)
+
+Definition unit_eq_intro
+  (x y : unit) (u : unit) : x = y :=
+match x, y with
+    | tt, tt => refl tt
+end.
+
+Definition unit_eq_elim
+  {x y : unit} (p : x = y) : unit := tt.
+
+Lemma unit_eq_comp :
+  forall x y : unit,
+    unit_eq_elim (unit_eq_intro x y tt) = tt.
+Proof.
+  destruct x, y. cbn. refl.
+Defined.
+
+Lemma unit_eq_uniq :
+  forall (x y : unit) (p : x = y),
+    unit_eq_intro x y (unit_eq_elim p) = p.
 Proof.
   destruct p, x. cbn. refl.
 Defined.
 
-Lemma cat_prod_eq :
-  forall (A B : U) (x y z : A * B) (p : x = y) (q : y = z),
-    cat p q =
-    prod_eq_intro (cat (ap pr1 p) (ap pr1 q), cat (ap pr2 p) (ap pr2 q)).
+Theorem unit_eq_equiv :
+  forall x y : unit,
+    isequiv (unit_eq_intro x y).
 Proof.
-  destruct p, q, x. cbn. refl.
+  intros. apply qinv_isequiv.
+  unfold qinv. eapply (| @unit_eq_elim x y, _ |).
+Unshelve.
+  cbn. split; compute.
+    destruct x0, x. refl.
+    destruct x0. refl.
 Defined.
