@@ -931,3 +931,89 @@ Unshelve.
     destruct x0, x. refl.
     destruct x0. refl.
 Defined.
+
+(** * Π-types and the function extensionality axiom *)
+
+Definition happly {A : U} {B : A -> U}
+  {f g : forall x : A, B x} (p : f = g) : forall x : A, f x = g x :=
+  fun x : A =>
+match p with
+    | refl _ => refl _
+end.
+
+(*Axiom happly_isequiv :
+  forall (A : U) (B : A -> U) (f g : forall x : A, B x),
+    isequiv (@happly A B f g).
+
+Definition funext {A : U} {B : A -> U} {f g : forall x : A, B x}
+  (h : forall x : A, f x = g x) : f = g.
+Proof.
+  pose (happly_isequiv A B f g). apply isequiv_qinv in i.
+  destruct i. apply x, h.
+Defined.
+
+Lemma happly_funext :
+  forall (A : U) (B : A -> U) (f g : forall x : A, B x)
+  (h : forall x : A, f x = g x) (x : A),
+    happly (funext h) x = h x.
+Proof.
+  intros. 
+  pose (happly_isequiv A B f g). apply isequiv_qinv in i.
+  destruct i. unfold homotopy in p. destruct p. unfold funext. cbn.
+Defined.*)
+
+Axiom funext :
+  forall {A : U} {B : A -> U} {f g : forall x : A, B x}
+  (h : forall x : A, f x = g x), f = g.
+
+Polymorphic Axiom happly_funext :
+  forall (A : U) (B : A -> U) (f g : forall x : A, B x)
+  (h : forall x : A, f x = g x),
+    happly (funext h) = h.
+
+Axiom funext_happly :
+  forall (A : U) (B : A -> U) (f g : forall x : A, B x) (p : f = g),
+    p = funext (fun x : A => happly p x).
+
+Theorem funext_isequiv :
+  forall (A : U) (B : A -> U) (f g : forall x : A, B x),
+    isequiv (@funext A B f g).
+Proof.
+  intros. apply qinv_isequiv. unfold qinv.
+  eapply (| happly, _ |).
+Unshelve.
+  cbn. unfold homotopy, comp. split; intros.
+    rewrite <- funext_happly. refl.
+    rewrite happly_funext. refl.
+Defined.
+
+Lemma refl_pi :
+  forall (A : U) (B : A -> U) (f : forall x : A, B x),
+    refl f = funext (fun x : A => refl (f x)).
+Proof.
+  intros. rewrite (@funext_happly _ _ f f (refl f)). cbn. refl.
+Defined.
+
+Lemma inv_pi :
+  forall (A : U) (B : A -> U) (f g : forall x : A, B x) (p : f = g),
+    inv p = funext (fun x : A => happly (inv p) x).
+Proof.
+  destruct p. cbn. apply refl_pi.
+Defined.
+
+Lemma cat_pi :
+  forall (A : U) (B : A -> U) (f g h : forall x : A, B x)
+  (p : f = g) (q : g = h),
+    cat p q = funext (fun x : A => cat (happly p x) (happly q x)).
+Proof.
+  destruct p, q. cbn. apply refl_pi.
+Defined.
+
+Lemma transport_fun :
+  forall (Z : U) (A B : Z -> U) (x y : Z)
+  (f : A x -> B x) (p : x = y),
+    @transport Z (fun x : Z => A x -> B x) x y p f =
+    fun x : A y => transport p (f (transport (inv p) x)).
+Proof.
+  destruct p. cbn. refl.
+Defined.
