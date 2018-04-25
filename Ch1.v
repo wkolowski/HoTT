@@ -1017,3 +1017,69 @@ Lemma transport_fun :
 Proof.
   destruct p. cbn. refl.
 Defined.
+
+Lemma transport_pi :
+  forall
+    (X : U) (A : X -> U) (B : forall x : X, A x -> U)
+    (x1 x2 : X) (p : x1 = x2) (f : forall a : A  x1, B x1 a),
+      @transport X (fun x : X => forall a : A x, B x a) x1 x2 p f =
+      fun a : A x2 =>
+        @transport {x : X & A x} (fun w => B (pr1' w) (pr2' w))
+          (| x1, transport (inv p) a |) (| x2, a |)
+          (inv (@sigma_eq_intro X A
+            (| x2, a |) (| x1, transport (inv p) a |)
+            (| inv p, refl (transport (inv p) a) |)))
+          (f (transport (inv p) a)).
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+Ltac esplit := eapply (| _, _ |).
+
+(* Lemma 2.9.6 *)
+Lemma lemma_2_9_6 :
+  forall
+    (Z : U) (A B : Z -> U) (x y : Z) (p : x = y)
+    (f : A x -> B x) (g : A y -> B y),
+      (@transport Z (fun z : Z => A z -> B z) _ _ p f = g) ~
+      (forall a : A x, transport p (f a) = g (transport p a)).
+Proof.
+  destruct p. cbn. intros.
+  unfold equiv. eapply (| happly, _ |).
+Unshelve.
+  cbn. apply qinv_isequiv. unfold qinv. eapply (| funext, _ |).
+Unshelve.
+  cbn. unfold homotopy, comp. split; intros.
+    apply happly_funext.
+    destruct x0. compute. rewrite funext_happly. cbn. refl.
+Restart.
+  destruct p. cbn. intros.
+  apply equiv_sym. unfold equiv. eapply (| funext, _ |).
+Unshelve.
+  cbn. apply funext_isequiv.
+Defined.
+
+Check lemma_2_9_6.
+
+Lemma lemma_2_9_7 :
+  forall
+    (Z : U) (A : Z -> U) (B : forall z : Z, A z -> U)
+    (x y : Z) (p : x = y)
+    (f : forall a : A x, B x a) (g : forall a : A y, B y a),
+      (@transport Z (fun z : Z => forall a : A z, B z a) x y p f = g) ~
+      (forall a : A x,
+        @transport {x : Z & A x} (fun w => B (pr1' w) (pr2' w))
+          (| x, a |) (| y, transport p a |)
+          (@sigma_eq_intro Z A
+            (| x, a |) (| y, transport p a |)
+            (| p, refl (transport p a) |)) (f a)
+        = g (transport p a)).
+Proof.
+  destruct p. cbn. intros.
+  apply equiv_sym. unfold equiv. eapply (| funext, _ |).
+Unshelve.
+  cbn. apply funext_isequiv.
+Defined.
+
+(** ** 2.10 Universes and the univalence axiom *)
+
