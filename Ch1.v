@@ -1083,3 +1083,73 @@ Defined.
 
 (** ** 2.10 Universes and the univalence axiom *)
 
+(** ** 2.11 Identity types *)
+
+Theorem ap_isequiv :
+  forall (A B : U) (f : A -> B) (x y : A),
+    isequiv f -> isequiv (@ap A B f x y).
+Proof.
+  intros. apply qinv_isequiv. apply isequiv_qinv in X.
+  unfold qinv in *. destruct X as [g [H1 H2]].
+  eapply (| _, _ |).
+Unshelve.
+  intros. apply (cat (inv (H2 x)) (cat (ap g X) (H2 y))).
+  cbn. unfold homotopy, comp, id in *. split; intros.
+    rewrite !ap_cat. rewrite !ap_inv. rewrite !ap_ap.
+      Check homotopy_natural.
+    Focus 2. destruct x0. rewrite ap_refl, cat_refl_l, cat_inv_l. refl.
+Admitted.
+
+(* Lemma 2.11.2 *)
+Lemma transport_eq_l :
+  forall (A : U) (a x y : A) (p : x = y) (q : a = x),
+    @transport _ (fun x : A => a = x) _ _ p q = cat q p.
+Proof.
+  destruct p, q. cbn. refl.
+Defined.
+
+Lemma transport_eq_r :
+  forall (A : U) (a x y : A) (p : x = y) (q : x = a),
+    @transport _ (fun x : A => x = a) _ _ p q = cat (inv p) q.
+Proof.
+  destruct p, q. cbn. refl.
+Defined.
+
+Lemma transport_eq :
+  forall (A : U) (a x y : A) (p : x = y) (q : x = x),
+    @transport _ (fun x : A => x = x) _ _ p q = cat (inv p) (cat q p).
+Proof.
+  destruct p. intros. rewrite cat_refl_r.
+  change (inv (refl x)) with (refl x). rewrite cat_refl_l. cbn. refl.
+Defined.
+
+(* Theorem 2.11.3 *)
+Theorem transport_eq_fun :
+  forall (A B : U) (f g : A -> B) (x y : A) (p : x = y) (q : f x = g x),
+    @transport _ (fun x => f x = g x) _ _ p q =
+    cat (inv (ap f p)) (cat q (ap g p)).
+Proof.
+  destruct p. intros. rewrite cat_refl_r.
+  change (inv (refl x)) with (refl x). rewrite cat_refl_l. cbn. refl.
+Defined.
+
+(* Theorem 2.11.4 *)
+Theorem transport_eq_fun_dep :
+  forall
+    (A : U) (B : A -> U) (f g : forall x : A, B x)
+    (x y : A) (p : x = y) (q : f x = g x),
+      @transport _ (fun x => f x = g x) _ _ p q =
+      cat (inv (apd f p)) (cat (ap (transport p) q) (apd g p)).
+Proof.
+  destruct p. intros. rewrite cat_refl_r, cat_refl_l. cbn.
+  rewrite ap_id. refl.
+Defined.
+
+(* Theorem 2.11.5 *)
+Theorem transport_eq_isequiv :
+  forall (A : U) (a x y : A) (p : x = y) (q : x = x) (r : y = y),
+    equiv (@transport _ (fun x => x = x) _ _ p q = r) (cat q p = cat p r).
+Proof.
+  destruct p. intros. rewrite cat_refl_l, cat_refl_r. cbn. apply equiv_refl.
+Defined.
+
