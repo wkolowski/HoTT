@@ -1153,3 +1153,64 @@ Proof.
   destruct p. intros. rewrite cat_refl_l, cat_refl_r. cbn. apply equiv_refl.
 Defined.
 
+(* TODO: 2.11, examples: products and functions *)
+
+(** * 2.12 Coproducts *)
+
+Definition code {A B : U} (a : A) (x : A + B) : U :=
+match x with
+    | inl a' => a = a'
+    | inr b => empty
+end.
+
+Lemma code_char :
+  forall (A B : U) (a : A) (x : A + B),
+    equiv (inl a = x) (code a x).
+Proof.
+  intros. red. eapply (| _, _ |).
+Unshelve.
+  destruct x.
+    destruct 1. unfold code. refl.
+    intros. rewrite <- X. unfold code. refl.
+  cbn. red. eapply (_, _).
+Unshelve.
+  all: eapply (| _, _ |).
+Unshelve.
+  unfold code. destruct x, 1. refl.
+  cbn. compute. destruct x.
+    destruct x. refl.
+    destruct x.
+  unfold code. destruct x, 1. refl.
+  cbn. compute. destruct x0. refl.
+Defined.
+
+Definition encode
+  {A B : U} (a : A) (x : A + B) (p : inl a = x) : code a x :=
+    transport p (refl a).
+
+Definition decode :
+  forall (A B : U) (x : A + B) (a : A) (c : code a x),
+    inl a = x.
+Proof.
+  destruct x; unfold code.
+    intros. apply (ap inl c).
+    destruct 1.
+Defined.
+
+(* TODO: encode-decode *)
+
+Lemma transport_inl :
+  forall (Z : U) (A B : Z -> U) (x y : Z) (p : x = y) (a : A x),
+    @transport _ (fun x : Z => A x + B x) _ _ p (inl a) =
+    inl (transport p a).
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+Lemma transport_inr :
+  forall (Z : U) (A B : Z -> U) (x y : Z) (p : x = y) (b : B x),
+    @transport _ (fun x : Z => A x + B x) _ _ p (inr b) =
+    inr (transport p b).
+Proof.
+  destruct p. cbn. refl.
+Defined.
