@@ -370,6 +370,110 @@ Lemma comp_assoc :
     comp (comp f g) h = comp f (comp g h).
 Proof. refl. Defined.
 
+(** **** Ex. 1.4 *)
+Fixpoint iter (C : Type) (c0 : C) (cs : C -> C) (n : N) : C :=
+match n with
+    | 0 => c0
+    | S n' => cs (iter C c0 cs n')
+end.
+
+Definition pred (n : N) : N :=
+match n with
+    | 0 => 0
+    | S n' => n'
+end.
+
+Definition rec (C : Type) (c0 : C) (cs : N -> C -> C) (n : N) : C :=
+  iter
+    (N -> C -> C)
+    (fun _ _ => c0)
+    (fun f k c => cs (pred k) (f (pred k) c))
+    n
+    n
+    c0.
+
+Lemma rec_spec_0 :
+  forall (C : Type) (c0 : C) (cs : N -> C -> C),
+    rec C c0 cs 0 = c0.
+Proof.
+  reflexivity.
+Defined.
+
+Lemma rec_spec_1 :
+  forall (C : Type) (c0 : C) (cs : N -> C -> C) (n : N),
+    rec C c0 cs (S n) = cs n (rec C c0 cs n).
+Proof.
+  intros. unfold rec. cbn.
+  reflexivity.
+Defined.
+
+(* Ex. 1.9 *)
+Inductive Fin : N -> Type :=
+    | Fin_1 : Fin (S 0)
+    | Fin_SS : forall n : N, Fin (S n) -> Fin (S (S n)).
+
+Fixpoint fmax (n : N) : Fin (S n) :=
+match n with
+    | 0 => Fin_1
+    | S n' => Fin_SS n' (fmax n')
+end.
+
+Notation "1" := (S 0).
+
+(* Ex. 1.10 *)
+Definition ack : N -> N -> N :=
+  rec
+    (N -> N)
+    S
+    (fun (m : N) (f : N -> N) =>
+      rec
+        N
+        (f 1)
+        (fun n r : N => f r)).
+
+Fixpoint ack' (m : N) : N -> N :=
+match m with
+    | 0 => S
+    | S m' => fix f (n : N) : N :=
+        match n with
+            | 0 => ack' m' 1
+            | S n' => ack' m' (f n')
+        end
+end.
+
+Goal forall m n : N, ack m n = ack' m n.
+Proof.
+  induction m as [| m']; cbn.
+    refl.
+    induction n as [| n']; cbn.
+      rewrite <- IHm'. refl.
+      rewrite <- IHm', <- IHn'. refl.
+Defined.
+
+(* Ex. 1.11 *)
+Goal forall A : Prop, ~ ~ ~ A -> ~ A.
+Proof.
+  intros. intro. apply X. intro. apply X0. assumption.
+Defined.
+
+Definition sum' A B := {b : bool & if b then A else B}.
+
+Check sigma.
+
+Definition inl' {A B : Type} (a : A) : sum' A B := (| true, a |).
+Definition inr' {A B : Type} (b : B) : sum' A B := (| false, b |).
+
+Definition sum'_ind :
+  forall (A B : Type) (P : sum' A B -> Prop),
+    (forall a : A, P (inl' a)) ->
+    (forall b : B, P (inr' b)) ->
+      forall p : sum' A B, P p.
+Proof.
+  destruct p. destruct x.
+    apply H.
+    apply H0.
+Defined.
+
 (** Chapter 2 *)
 
 (** * 2.1 Types are higher groupoids *)
@@ -1146,7 +1250,7 @@ Lemma ua_id :
   forall A : U, ua (equiv_id A) = refl A.
 Proof.
   intro. rewrite ua_idtoeqv. apply ap. compute. refl.
-Qed.
+Defined.
 
 Lemma cat_ua :
   forall (A B C : U) (f : equiv A B) (g : equiv B C),
@@ -2219,9 +2323,86 @@ Proof.
       compute. intro. apply H3.
 Defined.
 
-(** **** Ex. 3.23 *)
+(** **** Ex. 3.9 *)
 
-Search isSet.
+Lemma not_A_equiv_empty :
+  forall A : U,
+    ~ A -> A = empty.
+Proof.
+  intros A H. apply ua. unfold equiv.
+  exists H.
+  apply qinv_isequiv. unfold qinv.
+  exists (fun e : empty => match e with end).
+  split; compute.
+    destruct x.
+    intro. destruct (H x).
+Defined.
+
+Lemma ex_3_9 :
+  LEM -> sigma isProp ~ bool.
+Proof.
+  unfold LEM. intro LEM.
+  unfold equiv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [P H]. exact (if LEM P H then true else false).
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. destruct 1.
+    exists unit. apply isProp_unit.
+    exists empty. apply isProp_empty.
+  split.
+    compute. destruct x.
+      destruct (LEM unit).
+        refl.
+        cut empty.
+          destruct 1.
+          apply n. exact tt.
+      destruct (LEM empty).
+        destruct e.
+        refl.
+    compute. destruct x, (LEM x e).
+      apply sigma_eq_intro. cbn. esplit. Unshelve.
+        Focus 3. symmetry. apply ua. apply inhabited_isProp_unit.
+          unfold isProp. apply e.
+          exact x0.
+        do 2 (apply funext; intro). assert (isProp x).
+          unfold isProp. apply e.
+          rewrite lemma_3_11_10 in X. destruct (X x1 x2).
+            rewrite <- e0. symmetry. apply e0.
+      apply sigma_eq_intro. cbn. exists (inv (not_A_equiv_empty _ n)).
+        do 2 (apply funext; intro). assert (isProp x).
+          unfold isProp. apply e.
+          rewrite lemma_3_11_10 in X. destruct (X x0 x1).
+            rewrite <- e0. symmetry. apply e0.
+Defined.
+
+(** **** Ex. 3.10 *)
+
+(** **** Ex. 3.11 *)
+
+Lemma ex_3_11 :
+  ~ forall A : U, trunc A -> A.
+Proof.
+  apply not_Prop_making_functor.
+    intros. apply path.
+    apply trunc'. exact true.
+Defined.
+
+(** **** Ex. 3.12 *)
+
+Lemma ex_3_12 :
+  LEM -> forall A : U, trunc (trunc A -> A).
+Proof.
+  unfold LEM. intros LEM A.
+  destruct (LEM (trunc A)).
+    apply isProp_trunc.
+    revert t. apply trunc_rec.
+      apply isProp_trunc.
+      intro. apply trunc'. intro. exact X.
+    apply trunc'. intro. destruct (n X).
+Defined.
+
+(** **** Ex. 3.23 *)
 
 (*Inductive le (n : N) : N -> U :=
     | le_refl : le n n
@@ -2407,7 +2588,7 @@ Proof.
         admit.
         admit.
       apply IHn'; try assumption. admit.
-
+Admitted.
 
 Lemma ex_3_23 :
   forall P : N -> U,
@@ -2421,28 +2602,6 @@ Proof.
         apply search'_aux_1. assumption.
         clear Pn. generalize n at 2. induction n as [| n']; cbn; intros.
           destruct (dec 0). constructor.
-          destruct (dec n').
-            apply IHn'; assumption.
-            apply IHn'.
-        generalize n at 2. induction n as [| n']; cbn. (* intros m*)
-        destruct (dec 0).
-          exact p.
-          contradiction.
-        destruct (dec n').
-          apply IHn'. assumption.
-          apply 
-          
-            
-      assert (forall n' : N, n' <= n ->
-                {m : N & trunc (P m * forall m' : N, P m' -> m <= m')}).
-        clear Px. induction 1. Focus 2.
-        fix IH 1. intro. 
-fix IH 1.
-      destruct n as [| n']; intro.
-        exists 0. apply trunc'. split.
-          assumption.
-          intros. constructor.
-        
 Abort.
 
 (** * 4 Equivalences *)
