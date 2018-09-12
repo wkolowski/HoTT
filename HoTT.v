@@ -232,7 +232,7 @@ Defined.
     - A * B := forall x : bool, bool_rec' A B x
 *)
 
-(** * 1.9 The Nural numbers *)
+(** * 1.9 The natural numbers *)
 
 Inductive N : U :=
     | O : N
@@ -685,7 +685,7 @@ Proof.
 Defined.
 
 (* Lemma 2.4.3 *)
-Lemma homotopy_Nural :
+Lemma homotopy_natural :
   forall (A B : U) (f g : A -> B) (H : homotopy f g) (x y : A) (p : x = y),
     cat (H x) (ap g p) = cat (ap f p) (H y).
 Proof.
@@ -705,7 +705,7 @@ Proof.
   intros.
   assert (cat (cat (H (f x)) (H x)) (inv (H x)) =
           cat (cat (ap f (H x)) (H x)) (inv (H x))).
-    pose (e := homotopy_Nural A A f id H (f x) x (H x)).
+    pose (e := homotopy_natural A A f id H (f x) x (H x)).
       rewrite ap_id in e. rewrite e. refl.
     rewrite <- !cat_assoc, !cat_inv_r, !cat_refl_r in X. apply X.
 Defined.
@@ -821,7 +821,7 @@ Defined.
 
 Notation "'pair=' p q" := (prod_eq_intro p q) (at level 50).
 
-(* In the book, elimiNion rules for products are [ap pr1] and [ap pr2]. *)
+(* In the book, elimination rules for products are [ap pr1] and [ap pr2]. *)
 Definition prod_eq_elim
   {A B : U} {x y : A * B} (p : x = y) : (pr1 x = pr1 y) * (pr2 x = pr2 y) :=
     (ap pr1 p, ap pr2 p).
@@ -1280,7 +1280,7 @@ Unshelve.
   intros. apply (cat (inv (H2 x)) (cat (ap g X) (H2 y))).
   cbn. unfold homotopy, comp, id in *. hsplit; intros.
     rewrite !ap_cat. rewrite !ap_inv. rewrite !ap_ap.
-      Check homotopy_Nural.
+      Check homotopy_natural.
     Focus 2. destruct x0. rewrite ap_refl, cat_refl_l, cat_inv_l. refl.
 Admitted.
 
@@ -1897,7 +1897,8 @@ Axiom trunc_rec :
   forall {A B : U},
     isProp B -> (A -> B) -> trunc A -> B.
 
-(*Axiom trunc_ind :
+(*
+Axiom trunc_ind :
   forall {A : U} {B : A -> U},
     (forall x : A, isProp (B x)) -> (forall x : A, B x) -> forall x : trunc A, B x.
 *)
@@ -2401,6 +2402,134 @@ Proof.
       intro. apply trunc'. intro. exact X.
     apply trunc'. intro. destruct (n X).
 Defined.
+
+(** **** Ex. 3.13 *)
+
+Lemma ex_3_13_aux :
+  (forall A : U, A + ~ A) -> PNE.
+Proof.
+  unfold PNE. intros LEM X Y SX SY f.
+  apply trunc'. intro.
+  destruct (LEM (Y x)).
+    exact y.
+    cut empty.
+      destruct 1.
+      specialize (f x). revert f. apply trunc_rec.
+        apply isProp_empty.
+        intro. apply n. assumption.
+Defined.
+
+Lemma ex_3_13 :
+  (forall A : U, A + ~ A) -> AC.
+Proof.
+  intros. rewrite AC_PNE. apply ex_3_13_aux. assumption.
+Defined.
+
+(** **** Ex. 3.14 *)
+
+Definition DN_rec : U :=
+  forall A B : U, isProp B -> (A -> B) -> ~ ~ A -> B.
+
+Search trunc.
+
+Lemma ex_3_14 :
+  LEM -> {R : DN_rec &
+            forall (A B : U) (H : isProp B) (f : A -> B) (x : A),
+              R A B H f (fun g => g x) = f x}.
+Proof.
+  unfold LEM, DN_rec. intro LEM. esplit.
+Unshelve.
+  Focus 2. intros A B PB f H.
+    destruct (LEM B).
+      assumption.
+      exact b.
+      cut empty.
+        destruct 1.
+        apply H. intro. apply n, f. assumption.
+  intros A B PB f x. cbn. destruct (LEM B PB).
+    apply PB.
+    destruct (n (f x)).
+Defined.
+
+Lemma ex_3_14' :
+  LEM -> forall A : U, (~ ~ A) = trunc A.
+Proof.
+  unfold LEM. intros LEM A.
+  apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. intro. destruct (LEM (trunc A)).
+    apply isProp_trunc.
+    assumption.
+    cut empty.
+      destruct 1.
+      apply X. intro. apply n, trunc', X0.
+  cbn. apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. do 2 intro. revert X. apply trunc_rec.
+    apply isProp_empty.
+    intro. apply X0. assumption.
+  split.
+    compute. intro. destruct (LEM (trunc A)).
+      apply path.
+      apply path.
+    compute. intro. apply funext. intro. destruct (x x0).
+Defined.
+
+(** **** Ex. 3.15 TODO *)
+
+(** **** Ex. 3.16 *)
+
+Lemma LEM_DNE :
+  LEM -> DNE.
+Proof.
+  unfold LEM, DNE. intros LEM P PP H.
+  destruct (LEM P).
+    apply PP.
+    assumption.
+    cut empty.
+      destruct 1.
+      apply H. assumption.
+Defined.
+
+Lemma ex_3_16 :
+  LEM ->
+    forall (X : U) (Y : X -> U),
+      isSet X -> (forall x : X, isProp (Y x)) ->
+        (forall x : X, ~ ~ Y x) = ~ ~ forall x : X, Y x.
+Proof.
+  unfold LEM. intros LEM X Y SX PY.
+  apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. intros f H. apply H. intro. apply (LEM_DNE LEM).
+    apply PY.
+    apply f.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. intros H x HY. apply HY. apply (LEM_DNE LEM) in H.
+    apply H.
+    apply isProp_pi. assumption.
+  split.
+    compute. intro. apply funext. intro. destruct (x x0).
+    compute. intro. apply funext. intro. apply funext. intro.
+      destruct (x x0 x1).
+Defined.
+
+Definition AC_neg : U :=
+  forall (X : U) (Y : X -> U),
+    isSet X -> (forall x : X, isSet (Y x)) ->
+      (forall x : X, ~ ~ Y x) = ~ ~ forall x : X, Y x.
+
+Lemma ex_3_16'' :
+  LEM -> AC_neg -> AC.
+Proof.
+  rewrite AC_PNE.
+  unfold LEM, AC_neg, PNE.
+  intros LEM AC_neg X Y SX SY f.
+  rewrite <- (ex_3_14' LEM). rewrite <- AC_neg; try assumption.
+  intro. rewrite (ex_3_14' LEM). apply f.
+Defined.
+
+
 
 (** **** Ex. 3.23 *)
 
