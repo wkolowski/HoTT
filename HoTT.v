@@ -1677,6 +1677,12 @@ Proof.
     compute. apply H.
 Defined.
 
+Lemma inhabited_isProp_unit' :
+  forall P : U, isProp P -> P -> P = unit.
+Proof.
+  intros. apply ua. apply inhabited_isProp_unit; assumption.
+Defined.
+
 Lemma isProp_both_impls_equiv :
   forall P Q : U,
     isProp P -> isProp Q -> (P -> Q) -> (Q -> P) -> P ~ Q.
@@ -2527,6 +2533,135 @@ Proof.
   intros LEM AC_neg X Y SX SY f.
   rewrite <- (ex_3_14' LEM). rewrite <- AC_neg; try assumption.
   intro. rewrite (ex_3_14' LEM). apply f.
+Defined.
+
+(** **** Ex. 3.17 *)
+
+Lemma ex_3_17 :
+  forall {A : U} {B : trunc A -> U},
+    (forall x : trunc A, isProp (B x)) ->
+    (forall x : A, B (trunc' x)) ->
+      forall x : trunc A, B x.
+Proof.
+  intros A B PB H.
+  intro. Check @trunc_rec. eapply trunc_rec.
+    apply PB.
+    intro. specialize (H X). assert (p : trunc' X = x).
+      apply path.
+      rewrite <- p. assumption.
+    assumption.
+Defined.
+
+(** **** Ex. 3.18 *)
+
+Lemma DNE_LEM :
+  DNE -> LEM.
+Proof.
+  unfold DNE, LEM. intros DNE P PP.
+  apply DNE.
+    apply ex_3_6. assumption.
+    intro. assert ((~ P) * ~ ~ P).
+      split; intro.
+        apply X. left. assumption.
+        apply X. right. assumption.
+      destruct X0. apply n0. assumption.
+Defined.
+
+Lemma isProp_DNE : isProp DNE.
+Proof.
+  unfold isProp, DNE. intros.
+  apply funext. intro P. apply funext. intro PP. apply funext. intro H.
+  apply PP.
+Defined.
+
+Lemma isProp_LEM : isProp LEM.
+Proof.
+  unfold isProp, LEM. intros.
+  apply funext. intro P. apply funext. intro PP.
+  apply ex_3_6. assumption.
+Defined.
+
+Lemma LEM_is_DNE : LEM = DNE.
+Proof.
+  apply ua. unfold equiv.
+  exists (LEM_DNE).
+  apply qinv_isequiv. unfold qinv.
+  exists (DNE_LEM).
+  split.
+    unfold homotopy. intro. apply isProp_DNE.
+    unfold homotopy. intro. apply isProp_LEM.
+Defined.
+
+(** **** Ex. 3.20 *)
+
+(** See lemma_3_11_9 *)
+
+(** **** Ex. 3.21 *)
+
+Lemma iff_equiv :
+  forall P Q : U,
+    isProp P -> isProp Q -> (P -> Q) -> (Q -> P) -> P ~ Q.
+Proof.
+  intros P Q HP HQ PQ QP.
+  unfold equiv.
+  exists PQ. apply qinv_isequiv. unfold qinv. exists QP.
+  split.
+    unfold homotopy. intro. apply HQ.
+    unfold homotopy. intro. apply HP.
+Defined.
+
+Lemma isProp_eq_aux :
+  forall P : U,
+    isProp P -> forall (x y : P) (p : x = y), p = transport _ p (refl x).
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+Lemma isProp_eq :
+  forall P : U,
+    isProp P -> forall x y : P, isProp (x = y).
+Proof.
+  intros. pose isProp_isSet. unfold isProp, isSet in *.
+  apply i. assumption.
+Defined.
+
+Lemma ex_3_21_aux :
+  forall P : U, isProp (P ~ trunc P).
+Proof.
+  unfold isProp. intros P x y.
+  assert (P = trunc P).
+    apply ua. assumption.
+  assert (PP : isProp P).
+    rewrite X. apply isProp_trunc.
+  destruct x as [x [[x1 Hx1] [x2 Hx2]]].
+  destruct y as [y [[y1 Hy1] [y2 Hy2]]].
+  destruct X.
+  apply sigma_eq_intro. cbn. esplit.
+Unshelve.
+  Focus 2. apply funext. intro. apply PP.
+  compute. destruct _. apply prod_eq_intro. cbn. split.
+    destruct s as [s1 Hs1]. apply sigma_eq_intro. cbn. esplit. Unshelve.
+      Focus 3. apply funext. intro. apply PP.
+      apply funext. intro. apply (isProp_eq _ PP).
+    destruct s0 as [s1 Hs1]. apply sigma_eq_intro. cbn. esplit. Unshelve.
+      Focus 2. apply funext. intro. apply PP.
+      apply funext. intro. apply (isProp_eq _ PP).
+Defined.
+
+Lemma ex_3_21 :
+  forall P : U, isProp P ~ (P ~ trunc P).
+Proof.
+  intro. apply iff_equiv.
+    apply isProp_isProp.
+    apply ex_3_21_aux.
+    intro. apply iff_equiv.
+      assumption.
+      apply isProp_trunc.
+      apply trunc'.
+      apply trunc_rec.
+        assumption.
+        intro. assumption.
+    intro. apply ua in X. rewrite X. apply isProp_trunc.
 Defined.
 
 
