@@ -2664,6 +2664,78 @@ Proof.
     intro. apply ua in X. rewrite X. apply isProp_trunc.
 Defined.
 
+(** **** Ex. 3.22 *)
+
+Fixpoint Fin' (n : N) : U :=
+match n with
+    | 0 => empty
+    | S n' => unit + Fin' n'
+end.
+
+Definition AC_Fin' : U :=
+  forall (n : N) (A : Fin' n -> U) (P : forall x : Fin' n, A x -> U),
+    (forall x : Fin' n, isSet (A x)) ->
+    (forall (x : Fin' n) (a : A x), isProp (P x a)) ->
+    (forall x : Fin' n, trunc {a : A x & P x a}) ->
+      trunc {f : forall x : Fin' n, A x & forall x : Fin' n, P x (f x)}.
+
+Lemma fun_sum :
+  forall A B C : U,
+    (A + B -> C) = (A -> C) * (B -> C).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists (fun f => (fun a => f (inl a), fun b => f (inr b))).
+  apply qinv_isequiv. unfold qinv.
+  exists (fun '(f, g) x =>
+          match x with
+              | inl a => f a
+              | inr b => g b
+          end).
+  split.
+    compute. destruct x as [f g]. refl.
+    compute. intro. apply funext. destruct x0; refl.
+Defined.
+
+Lemma pi_sum :
+  forall (A B : U) (C : A + B -> U),
+    (forall x : A + B, C x) =
+    (forall a : A, C (inl a)) * (forall b : B, C (inr b)).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists (fun f => (fun a => f (inl a), fun b => f (inr b))).
+  apply qinv_isequiv. unfold qinv.
+  esplit. Unshelve.
+    Focus 2. destruct 1 as [f g]. destruct x as [a | b]; [apply f | apply g].
+    split.
+      compute. destruct x as [f g]. refl.
+      compute. intro. apply funext. destruct x0 as [a | b]; refl.
+Defined.
+
+Lemma ex_3_22 : AC_Fin'.
+Proof.
+  unfold AC_Fin'.
+  induction n as [| n']; cbn; intros A P SA PP f.
+    apply trunc'. esplit. Unshelve. 1,3: destruct x.
+    rewrite pi_sum in *.
+      destruct SA as [SA1 SA2], PP as [PP1 PP2], f as [f1 f2].
+      pose (B := fun x => A (inr x)).
+      pose (P' := fun x => P (inr x)).
+      specialize (IHn' B P' SA2 PP2 f2). revert IHn'.
+      apply trunc_rec.
+        apply isProp_trunc.
+        destruct 1 as [g H]. specialize (f1 tt). revert f1. apply trunc_rec.
+          apply isProp_trunc.
+          destruct 1 as [a1 a2]. apply trunc'. esplit.
+Unshelve.
+  Focus 2.
+    destruct x as [[] | x].
+      exact a1.
+      apply g.
+    destruct x as [[] | x].
+      exact a2.
+      apply H.
+Defined.
+
 
 
 (** **** Ex. 3.23 *)
