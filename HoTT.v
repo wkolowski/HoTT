@@ -40,7 +40,7 @@ Inductive prod (A B : U) : U :=
 Arguments pair {A B} _ _.
 
 Notation "A * B" :=
-  (prod A B) (at level 40, left associativity).
+  (prod A B) (at level 40, right associativity).
 
 Notation "( x , y , .. , z )" := (pair .. (pair x y) .. z).
 
@@ -1234,6 +1234,10 @@ Axiom idtoeqv_ua :
   forall {A B : U} (e : A ~ B) (x : A),
     idtoeqv (ua e) x = e x.
 
+Axiom idtoeqv_ua' :
+  forall {A B : U} (e : A ~ B),
+    idtoeqv (ua e) = e.
+
 Axiom transport_ua :
   forall {A B : U} (e : A ~ B) (x : A),
     transport _ (ua e) x = e x.
@@ -1397,6 +1401,26 @@ Lemma transport_inr :
     inr (transport B p b).
 Proof.
   destruct p. cbn. refl.
+Defined.
+
+(** **** Ex. 2.10 *)
+
+Lemma sigma_assoc :
+  forall (A : U) (P : A -> U) (C : sigma P -> U),
+    {x : A & {y : P x & C (| x, y |)}} =
+    {p : {x : A & P x} & C p}.
+Proof.
+  intros. apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as (x & y & c).
+    exists (| x, y |). assumption.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [[x y] c].
+    exists x. exists y. assumption.
+  split.
+    compute. destruct x as [[x y] c]. refl.
+    compute. destruct x as [x [y c]]. refl.
 Defined.
 
 (** Chapter 3 *)
@@ -2736,14 +2760,7 @@ Unshelve.
       apply H.
 Defined.
 
-
-
 (** **** Ex. 3.23 *)
-
-(*Inductive le (n : N) : N -> U :=
-    | le_refl : le n n
-    | le_S_r : forall m : N, le n m -> le n (S m).
-*)
 
 Inductive le : N -> N -> U :=
     | le_0 : forall n : N, le 0 n
@@ -2765,26 +2782,6 @@ Proof.
     exact tt.
     assumption.
 Defined.
-
-
-(*
-match n, m with
-    | 0, _ => tt
-    | S _, 0 => match p with end
-    | S n', S m' => encode_le n' m'
-end.
-*)
-(*
-Lemma decode_le :
-  forall {n m : N} (c : code_le n m), n <= m.
-Proof.
-  induction n as [| n']; cbn; intros.
-    constructor.
-    destruct m as [| m'].
-      destruct c.
-      constructor. apply IHn'. assumption.
-Defined. Print decode_le.
-*)
 
 Fixpoint decode_le {n m : N} : code_le n m -> n <= m :=
 match n, m with
@@ -2821,6 +2818,14 @@ Proof.
   refl.
 Defined.
 
+Lemma le_refl :
+  forall n : N, n <= n.
+Proof.
+  induction n as [| n'].
+    constructor.
+    apply le_S_S. assumption.
+Defined.
+
 Lemma le_wasym :
   forall n m : N, n <= m -> m <= n -> n = m.
 Proof.
@@ -2830,6 +2835,75 @@ Proof.
       destruct H.
     apply encode_le in H0. cbn in H0. apply decode_le in H0.
       apply ap. apply IHle. assumption.
+Defined.
+
+Lemma le_trans :
+  forall a b c : N, a <= b -> b <= c -> a <= c.
+Proof.
+  intros a b c H. revert c. induction H; intros.
+    constructor.
+    apply encode_le in H0. cbn in H0. destruct c as [| c'].
+      destruct H0.
+      apply le_S_S, IHle. apply decode_le in H0. assumption.
+Defined.
+
+Lemma le_S :
+  forall n m : N, n <= m -> n <= S m.
+Proof.
+  induction 1; constructor; assumption.
+Defined.
+
+Lemma le_not_lt :
+  forall n m : N,
+    n <= m = ~ S m <= n.
+Proof.
+  intros. apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. induction 1; intro.
+    apply encode_le in H. cbn in H. assumption.
+    apply encode_le in H0. cbn in H0. destruct n; cbn in H0.
+      assumption.
+      apply IHle. apply le_S_S. apply decode_le. assumption.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. revert m. induction n as [| n']; intros.
+    apply le_0.
+    destruct m as [| m'].
+      cut empty.
+        destruct 1.
+        apply H. apply decode_le. cbn. exact tt.
+      apply le_S_S. apply IHn'. intro. apply H.
+        apply le_S_S. assumption.
+  split.
+    compute. intro. apply funext. intro. destruct (x x0).
+    compute. intro. apply isProp_le.
+Defined.
+
+Lemma search :
+  forall (P : N -> U) (dec : forall n : N, P n + ~ P n) (n : N),
+    (forall m : N, S m <= n -> ~ P m) +
+    {m : N & P m * (S m <= n) * forall m' : N, P m' -> m <= m'}.
+Proof.
+  induction n as [| n'].
+    left. do 3 intro. apply encode_le in H. cbn in H. assumption.
+    destruct IHn' as [H | (m & Pm & H1 & H2)].
+      destruct (dec n').
+        right. exists n'. repeat split.
+          assumption.
+          apply le_refl.
+          intros. rewrite le_not_lt. intro. specialize (H _ H0).
+            contradiction.
+        left. do 3 intro. eapply H.
+          2: eassumption.
+          rewrite le_not_lt. intro.
+            apply encode_le in H0. apply encode_le in H1. cbn in *.
+            apply decode_le in H0. apply decode_le in H1. assert (p : n' = m).
+              apply le_wasym; assumption.
+              apply n. rewrite p. assumption.
+      right. exists m. repeat split.
+        assumption.
+        apply le_S. assumption.
+        assumption.
 Defined.
 
 Definition goal (P : N -> U) : U :=
@@ -2850,95 +2924,81 @@ Proof.
   exists p. destruct p. cbn. apply isProp_trunc.
 Defined.
 
-Fixpoint search
-  (P : N -> U) (dec : forall n : N, P n + ~ P n)
-  (n : N) (acc : N) (Hacc : P acc) : sigma P :=
-match n with
-    | 0 =>
-        match dec 0 with
-            | inl H => (| 0, H |)
-            | _ => (| acc, Hacc |)
-        end
-    | S n' =>
-        match dec n with
-            | inl H => search P dec n' n H
-            | _ => search P dec n' acc Hacc
-        end
-end.
-
-Fixpoint search'
-  (P : N -> U) (dec : forall n : N, P n + ~ P n)
-  (n : N) (acc : N) : N :=
-match n with
-    | 0 =>
-        match dec 0 with
-            | inl H => 0
-            | _ => acc
-        end
-    | S n' =>
-        match dec n' with
-            | inl H => search' P dec n' n'
-            | _ => search' P dec n' acc
-        end
-end.
-
-Fixpoint search2 :
-  (P : N -> U) (dec : forall n : N, P n + ~ P n)
-  (n : N) (acc : N) : unit + N :=
-match n with
-    | 0 =>
-        match dec 0 with
-            | inl H => inr 0
-            | _ => inl tt
-        end
-    | S n' =>
-        match dec n' with
-            | inl H => search' P dec n' n'
-            | _ => search' P dec n' acc
-        end
-end.
-
-Lemma search'_aux_1 :
-  forall (P : N -> U) (dec : forall n : N, P n + ~ P n) (n m : N),
-    P m -> P (search' P dec n m).
-Proof.
-  induction n as [| n']; cbn; intros.
-    destruct (dec 0).
-      assumption.
-      assumption.
-    destruct (dec n').
-      apply IHn'. assumption.
-      apply IHn'. assumption.
-Defined.
-
-Lemma search'_aux_2 :
-  forall (P : N -> U) (dec : forall n : N, P n + ~ P n) (n acc m : N),
-    n <= acc -> acc <= m -> P acc -> P m -> search' P dec n acc <= m.
-Proof.
-  induction n as [| n']; cbn; intros.
-    destruct (dec 0).
-      constructor.
-      assumption.
-    destruct (dec n').
-      apply IHn'; try assumption.
-        admit.
-        admit.
-      apply IHn'; try assumption. admit.
-Admitted.
-
-Lemma ex_3_23 :
+Lemma ex_3_23_aux :
   forall P : N -> U,
     (forall n : N, P n + ~ P n) ->
-      trunc (sigma P) -> goal P.
+      trunc {n : N & P n} -> goal P.
 Proof.
   intros P dec. apply trunc_rec.
     apply isProp_goal.
     intros [n Pn]. unfold goal.
-      exists (search' P dec n n). apply trunc'. split.
-        apply search'_aux_1. assumption.
-        clear Pn. generalize n at 2. induction n as [| n']; cbn; intros.
-          destruct (dec 0). constructor.
-Abort.
+      destruct (search P dec n) as [H | (m & H1 & H2 & H3)].
+        exists n. apply trunc'. split.
+          assumption.
+          intros. rewrite le_not_lt. intro. apply (H _ H0). assumption.
+        exists m. apply trunc'. split.
+          assumption.
+          assumption.
+Defined.
+
+Lemma ex_3_23 :
+  forall P : N -> U,
+    (forall n : N, P n + ~ P n) ->
+      trunc {n : N & P n} -> {n : N & P n}.
+Proof.
+  intros P dec H. destruct (ex_3_23_aux P dec H) as [n Hn].
+  exists n. destruct (dec n).
+    assumption.
+    cut empty.
+      destruct 1.
+      revert Hn. apply trunc_rec.
+        apply isProp_empty.
+        destruct 1. contradiction.
+Defined.
 
 (** * 4 Equivalences *)
 
+Lemma sigma_prod :
+  forall A B : U,
+    {x : A & B} = A * B.
+Proof.
+  intros. apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [a b]. split; assumption.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [a b]. exists a. assumption.
+  split; compute; destruct x; refl.
+Defined.
+
+Lemma sigma_prod_assoc :
+  forall (A : U) (B C : A -> U),
+    {x : A & B x * C x} =
+    {p : {x : A & B x} & C (pr1' p)}.
+Proof.
+  intros. apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [x [b c]]. exists (| x, b |). cbn. assumption.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [[x b] c]. exists x. split; assumption.
+  split; compute.
+    destruct x as [[x b] c]. refl.
+    destruct x as [x [b c]]. refl.
+Defined.
+
+Lemma lemma_4_1_1 :
+  forall (A B : U) (f : A -> B) (g : qinv f),
+    qinv f = forall x : A, x = x.
+Proof.
+  intros. assert (e : isequiv f).
+    apply qinv_isequiv. assumption.
+  pose (p := (| f, e |) : A ~ B).
+  Search ua.
+  assert (idtoeqv (ua p) = p).
+    apply idtoeqv_ua'.
+  destruct (ua p). compute in X. clear p.
+  apply sigma_eq_elim in X. cbn in X.
+  destruct X as [p q]. rewrite <- p. unfold qinv.
+  rewrite sigma_prod_assoc.
+  
