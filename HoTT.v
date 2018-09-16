@@ -362,6 +362,8 @@ Notation "x <> y" := (~ x = y) (at level 50).
 
 (** * Exercises *)
 
+(** **** Ex. 1.1 *)
+
 Definition comp {A B C : U} (f : A -> B) (g : B -> C) : A -> C :=
   fun x : A => g (f x).
 
@@ -369,6 +371,65 @@ Lemma comp_assoc :
   forall (A B C D : U) (f : A -> B) (g : B -> C) (h : C -> D),
     comp (comp f g) h = comp f (comp g h).
 Proof. refl. Defined.
+
+(** **** Ex. 1.2 *)
+
+Definition prod_rec''
+  (A B P : U) (f : A -> B -> P) (p : A * B) : P := f (pr1 p) (pr2 p).
+
+Lemma prod_rec''_computation :
+  forall (A B P : U) (f : A -> B -> P) (a : A) (b : B),
+    prod_rec'' A B P f (a, b) = f a b.
+Proof. refl. Defined.
+
+Definition sigma_rec''
+  (A : U) (B : A -> U) (P : U) (f : forall a : A, B a -> P)
+  (p : {a : A & B a}) : P := f (pr1' p) (pr2' p).
+
+Lemma sigma_rec''_computation :
+  forall
+    (A : U) (B : A -> U) (P : U)
+    (f : forall a : A, B a -> P) (a : A) (b : B a),
+      sigma_rec'' A B P f (| a, b |) = f a b.
+Proof. refl. Defined.
+
+(** **** Ex. 1.3 *)
+
+Definition prod_ind''
+  (A B : U) (P : A * B -> U) (f : forall (a : A) (b : B), P (a, b))
+  (p : A * B) : P p.
+Proof.
+  rewrite <- prod_uniq. apply f.
+Defined.
+
+Lemma prod_ind''_computation :
+  forall (A B : U) (P : A * B -> U) (f : forall (a : A) (b : B), P (a, b))
+    (a : A) (b : B), prod_ind'' A B P f (a, b) = f a b.
+Proof. refl. Defined.
+
+Lemma sigma_uniq' :
+  forall (A : U) (B : A -> U) (p : {a : A & B a}),
+    p = (| pr1' p, pr2' p |).
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+Lemma sigma_ind''
+  (A : U) (B : A -> U) (P : {a : A & B a} -> U)
+  (f : forall (a : A) (b : B a), P (| a, b |)) (p : {a : A & B a}) : P p.
+Proof.
+  rewrite sigma_uniq'. apply f.
+Defined.
+
+Lemma sigma_ind''_computation :
+  forall
+    (A : U) (B : A -> U) (P : sigma B -> U)
+    (f : forall (a : A) (b : B a), P (| a, b |))
+    (a : A) (b : B a),
+      sigma_ind'' A B P f (| a, b |) = f a b.
+Proof. refl. Defined.
+
+(** Looks like concepts from chapter 2 are NOT needed. *)
 
 (** **** Ex. 1.4 *)
 Fixpoint iter (C : Type) (c0 : C) (cs : C -> C) (n : N) : C :=
@@ -407,7 +468,39 @@ Proof.
   reflexivity.
 Defined.
 
-(* Ex. 1.9 *)
+(** **** Ex. 1.5 *)
+
+Definition coprod' (A B : U) := {b : bool & if b then A else B}.
+Definition inl' {A B : U} (a : A) : coprod' A B := (| true, a |).
+Definition inr' {A B : U} (b : B) : coprod' A B := (| false, b |).
+
+Definition coprod'_ind
+  {A B : U} {P : coprod' A B -> U}
+  (f : forall a : A, P (| true, a |)) (g : forall b : B, P (| false, b |))
+  (p : coprod' A B) : P p.
+Proof.
+  destruct p as [[]]; [apply f | apply g].
+Defined.
+
+Lemma coprod'_ind_inl' :
+  forall
+    (A B : U) (P : coprod' A B -> U)
+    (f : forall a : A, P (| true, a |)) (g : forall b : B, P (| false, b |))
+    (a : A),
+      coprod'_ind f g (inl' a) = f a.
+Proof. refl. Defined.
+
+Lemma coprod'_ind_inr' :
+  forall
+    (A B : U) (P : coprod' A B -> U)
+    (f : forall a : A, P (| true, a |)) (g : forall b : B, P (| false, b |))
+    (b : B),
+      coprod'_ind f g (inr' b) = g b.
+Proof. refl. Defined.
+
+
+
+(** **** Ex. 1.9 *)
 Inductive Fin : N -> Type :=
     | Fin_1 : Fin (S 0)
     | Fin_SS : forall n : N, Fin (S n) -> Fin (S (S n)).
@@ -420,7 +513,7 @@ end.
 
 Notation "1" := (S 0).
 
-(* Ex. 1.10 *)
+(** **** Ex. 1.10 *)
 Definition ack : N -> N -> N :=
   rec
     (N -> N)
@@ -441,7 +534,8 @@ match m with
         end
 end.
 
-Goal forall m n : N, ack m n = ack' m n.
+Lemma ex_1_10 :
+  forall m n : N, ack m n = ack' m n.
 Proof.
   induction m as [| m']; cbn.
     refl.
@@ -450,28 +544,53 @@ Proof.
       rewrite <- IHm', <- IHn'. refl.
 Defined.
 
-(* Ex. 1.11 *)
-Goal forall A : Prop, ~ ~ ~ A -> ~ A.
+(** **** Ex. 1.11 *)
+Lemma ex_1_11 :
+  forall A : Prop, ~ ~ ~ A -> ~ A.
 Proof.
   intros. intro. apply X. intro. apply X0. assumption.
 Defined.
 
-Definition sum' A B := {b : bool & if b then A else B}.
+(** **** Ex. 1.12 *)
 
-Check sigma.
-
-Definition inl' {A B : Type} (a : A) : sum' A B := (| true, a |).
-Definition inr' {A B : Type} (b : B) : sum' A B := (| false, b |).
-
-Definition sum'_ind :
-  forall (A B : Type) (P : sum' A B -> Prop),
-    (forall a : A, P (inl' a)) ->
-    (forall b : B, P (inr' b)) ->
-      forall p : sum' A B, P p.
+Lemma ex_1_12_1 :
+  forall A B : U, A -> B -> A.
 Proof.
-  destruct p. destruct x.
-    apply H.
-    apply H0.
+  intros A B a b. assumption.
+Defined.
+
+Lemma ex_1_12_2 :
+  forall A B : U, A -> ~ ~ A.
+Proof.
+  intros A B a f. apply f. assumption.
+Defined.
+
+Lemma ex_1_12_3 :
+  forall A B : U, ((~ A) + ~ B) ->  ~ (A * B).
+Proof.
+  intros A B [f | f] [a b]; contradiction.
+Defined.
+
+(** **** Ex. 1.13 *)
+
+Lemma ex_1_13 :
+  forall P : U, ~ ~ (P + ~ P).
+Proof.
+  intros P f. apply f. right. intro p. apply f. left. assumption.
+Defined.
+
+(** **** Ex. 1.16 *)
+
+Lemma add_comm :
+  forall n m : N, add n m = add m n.
+Proof.
+  induction n as [| n']; cbn; intros.
+    induction m as [| m']; cbn.
+      refl.
+      rewrite <- IHm'. refl.
+    rewrite IHn'. induction m as [| m']; cbn.
+      refl.
+      rewrite <- IHm'. refl.
 Defined.
 
 (** Chapter 2 *)
@@ -2104,7 +2223,7 @@ Defined.
 
 (* TODO: lemma 3.11.7 *)
 
-Lemma isContr_single_ended_path :
+Lemma lemma_3_11_8 :
   forall (A : U) (c : A),
     isContr (sigma (fun x : A => c = x)).
 Proof.
@@ -2113,6 +2232,8 @@ Proof.
   apply sigma_eq_intro. exists p.
   destruct p. cbn. refl.
 Defined.
+
+Definition isContr_single_ended_path := lemma_3_11_8.
 
 Lemma lemma_3_11_9_1 :
   forall (A : U) (P : A -> U),
@@ -2987,18 +3108,71 @@ Unshelve.
     destruct x as [x [b c]]. refl.
 Defined.
 
+Definition qinv' {A B : U} (f : A -> B) : U :=
+  {g : B -> A & (comp g f = id) * (comp f g = id)}.
+
+Lemma qinv_qinv' : @qinv = @qinv'.
+Proof.
+  apply funext. intro A. apply funext. intro B. apply funext. intro f.
+  apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [g [H1 H2]]. unfold qinv'. exists g. split.
+    apply funext. assumption.
+    apply funext. assumption.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [g [p q]]. exists g. split; intro.
+    apply happly with x in p. assumption.
+    apply happly with x in q. assumption.
+  split; unfold homotopy.
+    destruct x as [g [p q]]. cbn. apply sigma_eq_intro. cbn.
+      exists (refl g). cbn. rewrite <- 2!funext_happly. refl.
+    destruct x as [g [H1 H2]]. cbn. apply sigma_eq_intro. cbn.
+      exists (refl g). cbn. rewrite 2!happly_funext. refl.
+Defined.
+
 Lemma lemma_4_1_1 :
   forall (A B : U) (f : A -> B) (g : qinv f),
     qinv f = forall x : A, x = x.
 Proof.
   intros. assert (e : isequiv f).
     apply qinv_isequiv. assumption.
+  rewrite qinv_qinv' in *.
   pose (p := (| f, e |) : A ~ B).
-  Search ua.
   assert (idtoeqv (ua p) = p).
     apply idtoeqv_ua'.
   destruct (ua p). compute in X. clear p.
   apply sigma_eq_elim in X. cbn in X.
-  destruct X as [p q]. rewrite <- p. unfold qinv.
+  destruct X as [p q]. rewrite <- p. unfold qinv'.
   rewrite sigma_prod_assoc.
-  
+  assert ((forall x : A, x = x) = (@id A = @id A)).
+    apply ua. unfold equiv. esplit.
+Abort.
+
+Lemma lemma_4_1_1 :
+  forall (A B : U) (f : A -> B) (X : qinv f),
+    qinv f = forall x : A, x = x.
+Proof.
+  intros. apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [g [H1 H2]]. intro.
+    unfold homotopy, comp, id in *.
+    pose (p1 := H2 x).
+    pose (p2 := ap f p1).
+    pose (p3 := cat (inv (H1 (f x))) p2).
+    pose (p4 := ap g p3).
+    pose (p5 := cat (inv (H2 x)) (cat p4 (H2 x))).
+    exact p5.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. intro H. destruct X as [g [p q]]. exists g.
+    unfold homotopy, comp, id in *. split; intro.
+      apply p.
+      apply q.
+  split.
+    unfold homotopy. intro. apply funext. intro. unfold comp.
+      destruct X as [g [H1 H2]]. unfold homotopy in *.
+      rewrite ap_cat. rewrite ap_inv. rewrite ap_ap.
+        assert (comp f g = id).
+          apply funext. assumption.
+Abort.
