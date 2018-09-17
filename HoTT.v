@@ -498,7 +498,35 @@ Lemma coprod'_ind_inr' :
       coprod'_ind f g (inr' b) = g b.
 Proof. refl. Defined.
 
+(** **** Ex. 1.6 MOVED *)
 
+(** **** Ex. 1.7 *)
+
+Check eq_ind.
+
+Definition eq_ind1_type : U :=
+  forall (A : U) (C : forall x y : A, x = y -> U),
+    (forall x : A, C x x (refl x)) ->
+      forall (x y : A) (p : x = y), C x y p.
+
+Definition eq_ind2_type : U :=
+  forall (A : U) (a : A) (C : forall x : A, a = x -> U),
+    C a (refl a) -> forall (x : A) (p : a = x), C x p.
+
+Lemma to_1_2 :
+  eq_ind1_type -> eq_ind2_type.
+Proof.
+  unfold eq_ind1_type, eq_ind2_type. intros path_ind **.
+  apply (path_ind A (fun _ _ _ => C x p)
+                  (fun _ => match p with refl _ => X end) a x p).
+Defined.
+
+Lemma to_2_1 :
+  eq_ind2_type -> eq_ind1_type.
+Proof.
+  unfold eq_ind1_type, eq_ind2_type. intros based_path_ind **.
+  apply (based_path_ind A x (fun y p => C x y p) (X x) y p).
+Defined.
 
 (** **** Ex. 1.9 *)
 Inductive Fin : N -> Type :=
@@ -578,6 +606,11 @@ Lemma ex_1_13 :
 Proof.
   intros P f. apply f. right. intro p. apply f. left. assumption.
 Defined.
+
+(** **** Ex. 1.14 *)
+
+(** Because both endpoints of the path are fixed. For a counterexample,
+    see *)
 
 (** **** Ex. 1.16 *)
 
@@ -1520,6 +1553,45 @@ Lemma transport_inr :
     inr (transport B p b).
 Proof.
   destruct p. cbn. refl.
+Defined.
+
+(** Exercises *)
+
+(** **** Ex. 1.6 *)
+
+Definition prod' (A B : U) : U :=
+  forall b : bool, if b then A else B.
+
+Definition pair' {A B : U} (a : A) (b : B) : prod' A B :=
+  fun x : bool =>
+match x with
+    | true => a
+    | false => b
+end.
+Definition p1 {A B : U} (p : prod' A B) : A := p true.
+Definition p2 {A B : U} (p : prod' A B) : B := p false.
+
+Lemma prod'_uniq
+  {A B : U} (p : prod' A B) : p = pair' (p1 p) (p2 p).
+Proof.
+  unfold pair', p1, p2. apply funext. destruct x; refl.
+Defined.
+
+Lemma prod'_ind
+  {A B : U} {P : prod' A B -> U} (f : forall (a : A) (b : B), P (pair' a b))
+  (p : prod' A B) : P p.
+Proof.
+  apply (transport _ (inv (prod'_uniq p))). apply f.
+Defined.
+
+Lemma prod'_computation
+  {A B : U} {P : prod' A B -> U} (f : forall (a : A) (b : B), P (pair' a b))
+  (a : A) (b : B) :
+    prod'_ind f (pair' a b) = f a b.
+Proof.
+  unfold prod'_ind. cbn. assert (prod'_uniq (pair' a b) = refl _).
+    compute. rewrite refl_pi. apply ap. apply funext. destruct x; refl.
+  rewrite X. cbn. refl.
 Defined.
 
 (** **** Ex. 2.10 *)
@@ -3075,6 +3147,16 @@ Proof.
       revert Hn. apply trunc_rec.
         apply isProp_empty.
         destruct 1. contradiction.
+Defined.
+
+(** ** My own stuff *)
+
+Lemma negb_not_refl :
+  ua negb_equiv <> refl bool.
+Proof.
+  intro. assert (transport (fun A => A) (refl bool) true = false).
+    destruct X. rewrite transport_ua. cbn. refl.
+  cbn in X0. apply neq_false_true. apply inv. assumption.
 Defined.
 
 (** * 4 Equivalences *)
