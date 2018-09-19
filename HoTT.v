@@ -1432,14 +1432,29 @@ Lemma cat_ua :
     cat (ua f) (ua g) = ua (equiv_trans _ _ _ f g).
 Proof.
   intros.
-  rewrite (ua_idtoeqv (ua f)).
-  rewrite (ua_idtoeqv (ua g)). Search transport.
+  rewrite (ua_idtoeqv (ua f)), (ua_idtoeqv (ua g)).
   assert (forall (u : A),
     idtoeqv (cat (ua (idtoeqv (ua f))) (ua (idtoeqv (ua g)))) u =
     idtoeqv (ua (equiv_trans A B C f g)) u).
       intro. rewrite ?idtoeqv_ua. cbn.
-        rewrite <- transport_cat, ?transport_ua, ?idtoeqv_ua.
-          compute.
+      rewrite <- transport_cat, ?transport_ua, ?idtoeqv_ua.
+      destruct f as [f [[f1 Hf1] [f2 Hf2]]], g as [g [[g1 Hg1] [g2 Hg2]]].
+      compute. refl.
+  assert (
+    idtoeqv (cat (ua (idtoeqv (ua f))) (ua (idtoeqv (ua g)))) =
+    idtoeqv (ua (equiv_trans A B C f g))).
+      apply sigma_eq_intro. esplit. Unshelve.
+        Focus 3. destruct (idtoeqv _), (idtoeqv _). cbn.
+          apply funext. intro. cbn in X. apply X.
+        destruct _. cbn. destruct (ua _). cbn in *. unfold transport.
+          assert (p : id = x).
+            apply funext. symmetry. apply X.
+          destruct p.
+          assert (funext (fun x => X x) =  refl id).
+            rewrite refl_pi. apply ap. apply funext. intro. admit.
+          rewrite X0. admit.
+  apply (ap ua) in X0. rewrite <- !ua_idtoeqv in *.
+    rewrite <- !ua_idtoeqv in X0. assumption.
 Admitted.
 
 (** ** 2.11 Identity types *)
@@ -1450,13 +1465,20 @@ Theorem ap_isequiv :
 Proof.
   intros. apply qinv_isequiv. apply isequiv_qinv in X.
   unfold qinv in *. destruct X as [g [H1 H2]].
-  eapply (| _, _ |).
+  esplit.
 Unshelve.
-  intros. apply (cat (inv (H2 x)) (cat (ap g X) (H2 y))).
-  cbn. unfold homotopy, comp, id in *. hsplit; intros.
-    rewrite !ap_cat. rewrite !ap_inv. rewrite !ap_ap.
-      Check homotopy_natural.
+  Focus 2. intros. compute in *.
+    apply (cat (inv (H2 x)) (cat (ap g X) (H2 y))).
+  unfold homotopy, comp, id in *. hsplit; intros.
     Focus 2. destruct x0. rewrite ap_refl, cat_refl_l, cat_inv_l. refl.
+    rewrite !ap_cat. rewrite !ap_inv. rewrite !ap_ap.
+Restart.
+  destruct 1 as [[g1 H1] [g2 H2]].
+  unfold isequiv, homotopy, comp, id in *.
+  split; esplit. Unshelve.
+    Focus 3. intro p. exact (cat (inv (H2 x)) (cat (ap g2 p) (H2 y))).
+      intros. cbn. rewrite !ap_cat, !ap_inv, !ap_ap. admit.
+    Focus 2. intro p. exact (cat (inv (H2 x)) (cat (ap g2 p) (H2 y))).
 Admitted.
 
 (* Lemma 2.11.2 *)
@@ -1818,6 +1840,127 @@ Defined.
 
 (** **** Ex. 2.13 *)
 
+(** Let's try to solve an easier problem. *)
+
+Definition code_unit (x y : unit) : U := unit.
+
+Definition encode_unit {x y : unit} (p : x = y) : code_unit x y := tt.
+
+Definition decode_unit {x y : unit} (c : code_unit x y) : x = y :=
+match x, y with
+    | tt, tt => refl tt
+end.
+
+Lemma decode_encode_unit :
+  forall {x y : unit} (p : x = y),
+    decode_unit (encode_unit p) = p.
+Proof.
+  destruct p, x. cbn. refl.
+Defined.
+
+Lemma encode_decode_unit :
+  forall {x y : unit} (c : code_unit x y),
+    encode_unit (decode_unit c) = c.
+Proof.
+  destruct c. compute. refl.
+Defined.
+
+Lemma unit_eq_char :
+  forall x y : unit,
+    (x = y) = code_unit x y.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists encode_unit.
+  apply qinv_isequiv. unfold qinv.
+  exists decode_unit.
+  split; compute.
+    destruct x0. refl.
+    destruct x0, x. refl.
+Defined.
+
+Lemma ex_2_13_aux :
+  forall p : unit = unit, p = refl unit.
+Proof.
+  intro. rewrite (ua_idtoeqv p).
+  assert (idtoeqv p = idtoeqv (refl unit)).
+    apply sigma_eq_intro. esplit. Unshelve.
+      Focus 3. destruct (idtoeqv p). compute. apply funext.
+        destruct x0. destruct (x tt). refl.
+      apply prod_eq_intro. split; apply sigma_eq_intro; cbn; esplit. Unshelve.
+        Focus 4. destruct (transport isequiv _). cbn.
+          destruct s. cbn. apply funext. destruct x0, (x tt). refl.
+        Focus 4. destruct (transport isequiv _). cbn. destruct s0. cbn.
+          apply funext. destruct x0, (x tt). refl.
+        apply funext. destruct x.
+          rewrite <- (decode_encode_unit (_ tt)).
+          destruct (encode_unit _). cbn. refl.
+        apply funext. destruct x.
+          rewrite <- (decode_encode_unit (_ tt)).
+          destruct (encode_unit _). cbn. refl.
+    rewrite X. rewrite ua_id. refl.
+Defined.
+
+Lemma ex_2_13_aux' :
+  (unit = unit) = unit.
+Proof.
+  apply ua. unfold equiv.
+  exists (fun _ => tt).
+  apply qinv_isequiv. unfold qinv.
+  exists (fun _ => refl unit).
+  split; compute.
+    destruct x. refl.
+    symmetry. apply ex_2_13_aux.
+Defined.
+
+Definition code_bool (b1 b2 : bool) : U :=
+match b1, b2 with
+    | false, false => unit
+    | false, true => empty
+    | true, false => empty
+    | true, true => unit
+end.
+
+Definition encode_bool_aux (b : bool) : code_bool b b :=
+match b with
+    | true => tt
+    | false => tt
+end.
+
+Definition encode_bool {b1 b2 : bool} (p : b1 = b2) : code_bool b1 b2 :=
+  transport _ p (encode_bool_aux b1).
+
+Definition decode_bool {b1 b2 : bool} (c : code_bool b1 b2) : b1 = b2.
+Proof.
+  destruct b1, b2; destruct c; refl.
+Defined.
+
+Lemma decode_encode_bool :
+  forall {b1 b2 : bool} (p : b1 = b2),
+    decode_bool (encode_bool p) = p.
+Proof.
+  destruct p, b1; cbn; refl.
+Defined.
+
+Lemma encode_decode_bool :
+  forall {b1 b2 : bool} (c : code_bool b1 b2),
+    encode_bool (decode_bool c) = c.
+Proof.
+  destruct b1, b2, c; refl.
+Defined.
+
+Lemma bool_eq_char :
+  forall x y : bool,
+    (x = y) = code_bool x y.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists encode_bool.
+  apply qinv_isequiv. unfold qinv.
+  exists decode_bool.
+  split; unfold comp, id; intro.
+    apply encode_decode_bool.
+    apply decode_encode_bool.
+Defined.
+
 Definition negb (b : bool : U) : bool : U :=
 match b with
     | false => true
@@ -1877,8 +2020,8 @@ Proof.
               rewrite e0, <- e. refl.
 Defined.
 
-Lemma isProp_isequiv :
-  forall (A B : U) (f : A -> B) (e1 e2 : isequiv f),
+Lemma isProp_isequiv_bool :
+  forall (f : bool -> bool) (e1 e2 : isequiv f),
     e1 = e2.
 Proof.
   intros. destruct e1 as [[g1 Hg1] [h1 Hh1]], e2 as [[g2 Hg2] [h2 Hh2]].
@@ -1888,12 +2031,22 @@ Unshelve.
   Focus 3. apply funext. intro.
     rewrite <- (Hh1 (g1 x)), <- (Hh1 (g2 x)). rewrite Hg1, Hg2. refl.
   compute. apply funext. intro b. destruct (funext _).
-    admit.
+    rewrite <- (decode_encode_bool (Hg1 b)),
+            <- (decode_encode_bool (Hg2 b)).
+    generalize (Hg1 b), (Hg2 b). generalize (f (g1 b)).
+      unfold encode_bool. destruct b0; cbn; intro.
+        destruct e0, (transport _), (transport _). refl.
+        destruct e0, (transport _), (transport _). refl.
   Focus 2. apply funext. intro.
     rewrite <- (Hg1 x), Hh1, Hh2. refl.
-  compute. apply funext. intro a. destruct (funext _).
-    admit.
-Admitted.
+  compute. apply funext. intro b. destruct (funext _).
+    rewrite <- (decode_encode_bool (Hh1 b)),
+            <- (decode_encode_bool (Hh2 b)).
+    generalize (Hh1 b), (Hh2 b). generalize (h1 (f b)).
+      unfold encode_bool. destruct b0; cbn; intro.
+        destruct e0, (transport _), (transport _). refl.
+        destruct e0, (transport _), (transport _). refl.
+Defined.
 
 Lemma equiv_bool_bool_char :
   forall e : bool ~ bool,
@@ -1901,8 +2054,8 @@ Lemma equiv_bool_bool_char :
 Proof.
   destruct e as [f e].
     destruct (isequiv_bool_char f e).
-      left. apply sigma_eq_intro. exists e0. apply isProp_isequiv.
-      right. apply sigma_eq_intro. exists e0. apply isProp_isequiv.
+      left. apply sigma_eq_intro. exists e0. apply isProp_isequiv_bool.
+      right. apply sigma_eq_intro. exists e0. apply isProp_isequiv_bool.
 Defined.
 
 Lemma path_bool_bool_char :
@@ -1914,44 +2067,6 @@ Proof.
       rewrite e. Search ua. rewrite ua_id. refl.
     right. rewrite <- ua_idtoeqv in e. rewrite e. refl.
 Defined.
-(*
-    (idtoeqv (ua (idtoeqv p)) = idtoeqv (refl bool)) +
-    (idtoeqv (ua (idtoeqv p)) = idtoeqv (ua negb_equiv))).
-    rewrite idtoeqv_ua'. destruct (idtoeqv p) as [f e].
-      pose (b := f true). assert (b = f true) by refl.
-      assert ((f true = true) + (f true = false)).
-        admit.
-      destruct X0; [left | right].
-        compute. apply sigma_eq_intro. cbn. esplit. Unshelve. Focus 4.
-          apply funext. destruct x.
-            assumption.
-            
-  
-  intro. rewrite (ua_idtoeqv p). destruct (idtoeqv p) as [f e].
-  assert (
-    idtoeqv (ua (| f
-    right. assert (p <> refl bool).
-      admit.
-      
-Admitted.
-*)
-
-Lemma wut :
-  forall p : bool = bool,
-    if transport (fun x : U => x) p true
-    then p = refl bool
-    else p = ua negb_equiv.
-Proof.
-  intro. rewrite (ua_idtoeqv p).
-  destruct (isequiv_bool_char (idtoeqv p)).
-    destruct (idtoeqv p). cbn. assumption.
-    assert (idtoeqv p = equiv_id bool).
-      destruct (idtoeqv p). cbn in e. symmetry in e. destruct e.
-        apply sigma_eq_intro. cbn. exists (refl _). cbn. compute.
-        apply prod_eq_intro. split; apply sigma_eq_intro; cbn.
-        destruct i as [[] []]. compute in *. assert (x = id).
-          admit.
-Abort.
 
 Lemma ex_2_13 : (bool = bool) = bool.
 Proof.
@@ -1963,33 +2078,18 @@ Unshelve.
       intro. destruct x.
         cbn. refl.
         unfold comp, id. rewrite transport_ua. cbn. refl.
-      intro p. unfold comp, id.
-      assert ((transport id p true = true) + (transport id p true = false)).
-        admit.
-      destruct X.
-        assert (transport id p = transport id (refl bool)).
-          apply funext. destruct x.
-            cbn. assumption.
-            cbn. destruct (transport id p false).
-              2: refl.
-              (* TODO: transport is an equivalence ! *)
-(* destruct (path_bool_bool_char p).
-        rewrite e. cbn. refl.
-        rewrite e. rewrite transport_ua. cbn. refl.
-*)
-Restart.
-  apply ua. unfold equiv. esplit.
-Unshelve.
-  Focus 2. intro p. exact (transport id p true).
-  apply qinv_isequiv. unfold qinv.
-    exists (fun b : bool => if b then refl bool else ua negb_equiv). split.
-      intro. destruct x.
-        cbn. refl.
-        unfold comp, id. rewrite transport_ua. cbn. refl.
-      intro p. unfold comp, id.
-      assert ((transport id p true = true) + (transport id p true = false)).
-        admit.
-Admitted.
+      intro p. destruct (path_bool_bool_char p).
+        rewrite e; compute. refl.
+        unfold comp, id. rewrite e. rewrite transport_ua. cbn. refl.
+Defined.
+
+(** **** Ex. 2.14 *)
+
+(** If we assume p : x = y gives x ≡ y, then refl x : x = y and by
+    path induction we have p = refl x. *)
+
+Search transport ap.
+Check transport_ap.
 
 (** Chapter 3 *)
 
@@ -2008,61 +2108,13 @@ Proof.
   compute. destruct x, y. refl.
 Defined.
 
-Definition code_bool (b1 b2 : bool) : U :=
-match b1, b2 with
-    | false, false => unit
-    | false, true => empty
-    | true, false => empty
-    | true, true => unit
-end.
-
-Definition encode_bool_aux (b : bool) : code_bool b b :=
-match b with
-    | true => tt
-    | false => tt
-end.
-
-Definition encode_bool {b1 b2 : bool} (p : b1 = b2) : code_bool b1 b2 :=
-  transport _ p (encode_bool_aux b1).
-
-Definition decode_bool {b1 b2 : bool} (c : code_bool b1 b2) : b1 = b2.
-Proof.
-  destruct b1, b2; destruct c; refl.
-Defined.
-
-Lemma decode_encode_bool :
-  forall {b1 b2 : bool} (p : b1 = b2),
-    decode_bool (encode_bool p) = p.
-Proof.
-  destruct p, b1; cbn; refl.
-Defined.
-
-Lemma encode_decode_bool :
-  forall {b1 b2 : bool} (c : code_bool b1 b2),
-    encode_bool (decode_bool c) = c.
-Proof.
-  destruct b1, b2, c; refl.
-Defined.
-
-Lemma bool_eq_char :
-  forall x y : bool,
-    (x = y) = code_bool x y.
-Proof.
-  intros. apply ua. unfold equiv.
-  exists encode_bool.
-  apply qinv_isequiv. unfold qinv.
-  exists decode_bool.
-  split; unfold comp, id; intro.
-    apply encode_decode_bool.
-    apply decode_encode_bool.
-Defined.
-
 Lemma isSet_bool : isSet bool.
 Proof.
   unfold isSet. intros.
   rewrite <- (decode_encode_bool p), <- (decode_encode_bool q).
   destruct p, x; cbn.
-    1-2: refl.
+    destruct (encode_bool q). refl.
+    destruct (encode_bool q). refl.
 Defined.
 
 (* encode-decode for N *)
@@ -2421,6 +2473,22 @@ Definition PNE : U :=
     isSet X -> (forall x : X, isSet (Y x)) ->
       (forall x : X, trunc (Y x)) -> trunc (forall x : X, Y x).
 
+(** **** Ex. 3.3 *)
+
+Lemma isSet_sigma :
+  forall (A : U) (B : A -> U),
+    isSet A -> (forall x : A, isSet (B x)) ->
+      isSet (sigma B).
+Proof.
+  unfold isSet. intros A B SA SB x y p q.
+  assert (P : isProp {p : pr1' x = pr1' y & transport B p (pr2' x) = pr2' y}).
+    unfold isProp. intros. apply sigma_eq_intro.
+      exists (SA _ _ (pr1' x0) (pr1' y0)). apply SB.
+  rewrite <- (sigma_eq_uniq _ _ _ _ p), <- (sigma_eq_uniq _ _ _ _ q).
+  unfold isProp in P.
+  rewrite (P _ (sigma_eq_elim q)). refl.
+Defined.
+
 Lemma AC_PNE : AC = PNE.
 Proof.
   apply ua. unfold equiv. esplit. apply qinv_isequiv. esplit.
@@ -2442,16 +2510,18 @@ Unshelve.
     unfold PNE, AC. intros PNS X A P HX HA HP f.
     specialize (PNS X (fun x : X => sigma (P x)) HX).
     assert (forall x : X, isSet ((fun x0 : X => {x : A x0 & P x0 x}) x)).
-      admit. (* TODO: isSet_sigma *)
+      intro. apply isSet_sigma.
+        apply HA.
+        intro. apply isProp_isSet. apply HP.
     specialize (PNS X0 f). revert PNS. apply trunc_rec.
       apply isProp_trunc.
       intro. apply trunc'. exists (fun x : X => pr1' (X1 x)). intro.
         destruct (X1 x). cbn. assumption.
   }
   split.
-    compute. intros. repeat (apply funext; intro). apply path.
-    compute. intros. repeat (apply funext; intro). apply path.
-Admitted.
+    unfold homotopy, comp, id. intros. repeat (apply funext; intro). apply path.
+    unfold homotopy, comp, id. intros. repeat (apply funext; intro). apply path.
+Defined.
 
 Definition PNE' : U :=
   forall (X : U) (Y : X -> U),
@@ -2710,22 +2780,6 @@ Proof.
       apply SB.
   rewrite <- (decode_encode_sum p), <- (decode_encode_sum q).
   unfold isProp in P. rewrite (P _ (encode_sum q)). refl.
-Defined.
-
-(** **** Ex. 3.3 *)
-
-Lemma isSet_sigma :
-  forall (A : U) (B : A -> U),
-    isSet A -> (forall x : A, isSet (B x)) ->
-      isSet (sigma B).
-Proof.
-  unfold isSet. intros A B SA SB x y p q.
-  assert (P : isProp {p : pr1' x = pr1' y & transport B p (pr2' x) = pr2' y}).
-    unfold isProp. intros. apply sigma_eq_intro.
-      exists (SA _ _ (pr1' x0) (pr1' y0)). apply SB.
-  rewrite <- (sigma_eq_uniq _ _ _ _ p), <- (sigma_eq_uniq _ _ _ _ q).
-  unfold isProp in P.
-  rewrite (P _ (sigma_eq_elim q)). refl.
 Defined.
 
 (** **** Ex. 3.4 *)
