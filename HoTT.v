@@ -2088,8 +2088,159 @@ Defined.
 (** If we assume p : x = y gives x ≡ y, then refl x : x = y and by
     path induction we have p = refl x. *)
 
-Search transport ap.
-Check transport_ap.
+(** **** Ex. 2.15 *)
+
+Lemma ex_2_15 :
+  forall (A : U) (B : A -> U) (x y : A) (p : x = y),
+    transport B p = idtoeqv (ap B p).
+Proof.
+  intros. destruct p. cbn. refl.
+Defined.
+
+(** **** Ex. 2.16 *)
+
+(** **** Ex. 2.17 *)
+
+Lemma ex_2_17_1_1 :
+  forall {A A' B B' : U} (ea : A ~ A') (eb : B ~ B'),
+    A * B ~ A' * B'.
+Proof.
+  intros. apply ua in ea. apply ua in eb. destruct ea, eb.
+  apply idtoeqv. refl.
+Defined.
+
+Lemma ex_2_17_1_2 :
+  forall {A A' B B' : U} (ea : A ~ A') (eb : B ~ B'),
+    A * B ~ A' * B'.
+Proof.
+  destruct 1 as [f ef], 1 as [g eg].
+  apply isequiv_qinv in ef. destruct ef as [f' [Hf1 Hf2]].
+  apply isequiv_qinv in eg. destruct eg as [g' [Hg1 Hg2]].
+  unfold equiv.
+(*  exists (fun '(a, b) => (f a, g b)).
+  apply qinv_isequiv. unfold qinv.
+  exists (fun '(a', b') => (f' a', g' b')).
+*)
+  exists (fun x => (f (pr1 x), g (pr2 x))).
+  apply qinv_isequiv. unfold qinv.
+  exists (fun x => (f' (pr1 x), g' (pr2 x))).
+  split; unfold homotopy, comp, id in *; destruct x; cbn.
+    rewrite Hf1, Hg1. refl.
+    rewrite Hf2, Hg2. refl.
+Defined.
+
+Lemma ex_2_17_1_2' :
+  forall {A A' B B' : U} (ea : A ~ A') (eb : B ~ B'),
+    A * B ~ A' * B'.
+Proof.
+  destruct 1 as [f [[f1 Hf1] [f2 Hf2]]],
+           1 as [g [[g1 Hg1] [g2 Hg2]]].
+  unfold equiv.
+(*  exists (fun '(a, b) => (f a, g b)).
+  apply qinv_isequiv. unfold qinv.
+  exists (fun '(a', b') => (f' a', g' b')).
+*)
+  exists (fun x => (f (pr1 x), g (pr2 x))).
+  unfold isequiv. split.
+    exists (fun x => (f1 (pr1 x), g1 (pr2 x))).
+      compute in *. destruct x. rewrite Hf1, Hg1. refl.
+    exists (fun x => (f2 (pr1 x), g2 (pr2 x))).
+      compute in *. destruct x. rewrite Hf2, Hg2. refl.
+Defined.
+
+Lemma aux : 
+  forall A B : U,
+    (forall x : A * B, (pr1 x, pr2 x) = x) =
+    (forall x : A * B, x = x).
+Proof.
+  intros. apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. intros. destruct x. apply (X (a, b)).
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. intros. destruct x. cbn. apply X.
+  split; compute; intro; apply funext; destruct x0; refl.
+Defined.
+
+Lemma ex_2_17_2 :
+  forall (A A' B B' : U) (ea : A ~ A') (eb : B ~ B'),
+    ex_2_17_1_1 ea eb = ex_2_17_1_2 ea eb.
+Proof.
+  intros.
+  rewrite <- (idtoeqv_ua' ea), <- (idtoeqv_ua' eb).
+  unfold ex_2_17_1_1. destruct (ua ea), (ua eb).
+  rewrite 2!ua_id. cbn.
+  unfold idtoeqv, isequiv_id, transport, id.
+  Check fun x : A * B =>
+ match x as p return ((pr1 p, pr2 p) = p) with
+ | (a, b) => refl (a, b)
+ end.
+
+  assert (
+          transport id (aux A B) (fun x : A * B =>
+          match x as p return ((pr1 p, pr2 p) = p) with
+              | (a, b) => refl (a, b)
+          end)
+          =
+          fun x => refl x).
+    apply funext. destruct x.
+Restart.
+  intros. unfold ex_2_17_1_1, ex_2_17_1_2.
+  destruct ea, eb, (ua (| x, i |)), (ua (| x0, i0 |)).
+  destruct (isequiv_qinv _), (isequiv_qinv _), p, p0.
+Abort.
+
+Lemma ex_2_17_2' :
+  forall (A A' B B' : U) (ea : A ~ A') (eb : B ~ B'),
+    ex_2_17_1_1 ea eb = ex_2_17_1_2' ea eb.
+Proof.
+  intros. unfold ex_2_17_1_1, ex_2_17_1_2.
+  destruct ea, eb, (ua (| x, i |)), (ua (| x0, i0 |)).
+  destruct i as [[] []], i0 as [[] []].
+  compute.
+  apply sigma_eq_intro. esplit. Unshelve.
+    Focus 2. cbn. apply funext. destruct x5. admit.
+    compute. Search funext.
+Abort.
+
+Lemma sum_pres_equiv :
+  forall A A' B B' : U,
+    A ~ A' -> B ~ B' -> (A + B) ~ (A' + B').
+Proof.
+  intros * p q. apply ua in p. apply ua in q. destruct p, q.
+  apply idtoeqv. refl.
+Defined.
+
+Lemma ua_equiv_sym :
+  forall (A B : U) (e : A ~ B),
+    ua (equiv_sym _ _ e) = inv (ua e).
+Proof.
+  intros. unfold inv. destruct (ua e).
+  rewrite ua_idtoeqv.
+  apply ap. 
+  destruct e as [f [[f1 H1] [f2 H2]]].
+  compute. apply sigma_eq_intro. esplit.
+Abort.
+
+Lemma sigma_pres_equiv :
+  forall (A A' : U) (B : A -> U) (B' : A' -> U)
+    (ea : A ~ A') (eb : forall x : A, B x ~ B' (transport _ (ua ea) x)),
+      sigma B ~ sigma B'.
+Proof.
+  intros. unfold equiv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [x y]. exists (transport _ (ua ea) x).
+    exact (transport id (ua (eb x)) y).
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. destruct 1 as [x y].
+    exists (transport _ (ua (equiv_sym _ _ ea)) x).
+    rewrite transport_ua. assert (A = A').
+      apply ua, ea.
+    destruct X.
+    destruct ea as [f [[f1 H1] [f2 H2]]].
+    cbn. unfold homotopy, comp, id in *. rewrite H1.
+Abort.
 
 (** Chapter 3 *)
 
