@@ -4,6 +4,8 @@ Local Set Default Proof Mode "Classic".
 
 Set Universe Polymorphism.
 
+(** Chapter 1 *)
+
 (** * 1.3 Universes and families *)
 
 Definition U := Type.
@@ -320,11 +322,13 @@ Proof.
     apply nb, b.
 Defined.
 
-(*Definition le (n m : N) : U :=
+(*
+Definition le (n m : N) : U :=
   {k : N & add n k = m}.
 
 Definition lt (n m : N) : U :=
-  {k : N & add n (S k) = m}.*)
+  {k : N & add n (S k) = m}.
+*)
 
 (** * 1.12 Identity types *)
 
@@ -432,7 +436,7 @@ Proof. refl. Defined.
 (** Looks like concepts from chapter 2 are NOT needed. *)
 
 (** **** Ex. 1.4 *)
-Fixpoint iter (C : Type) (c0 : C) (cs : C -> C) (n : N) : C :=
+Fixpoint iter (C : U) (c0 : C) (cs : C -> C) (n : N) : C :=
 match n with
     | 0 => c0
     | S n' => cs (iter C c0 cs n')
@@ -444,7 +448,7 @@ match n with
     | S n' => n'
 end.
 
-Definition rec (C : Type) (c0 : C) (cs : N -> C -> C) (n : N) : C :=
+Definition rec (C : U) (c0 : C) (cs : N -> C -> C) (n : N) : C :=
   iter
     (N -> C -> C)
     (fun _ _ => c0)
@@ -454,14 +458,14 @@ Definition rec (C : Type) (c0 : C) (cs : N -> C -> C) (n : N) : C :=
     c0.
 
 Lemma rec_spec_0 :
-  forall (C : Type) (c0 : C) (cs : N -> C -> C),
+  forall (C : U) (c0 : C) (cs : N -> C -> C),
     rec C c0 cs 0 = c0.
 Proof.
   reflexivity.
 Defined.
 
 Lemma rec_spec_1 :
-  forall (C : Type) (c0 : C) (cs : N -> C -> C) (n : N),
+  forall (C : U) (c0 : C) (cs : N -> C -> C) (n : N),
     rec C c0 cs (S n) = cs n (rec C c0 cs n).
 Proof.
   intros. unfold rec. cbn.
@@ -526,10 +530,114 @@ Proof.
   apply (based_path_ind A x (fun y p => C x y p) (X x) y p).
 Defined.
 
+(** **** Ex. 1.16 *)
+
+Lemma add_comm :
+  forall n m : N, add n m = add m n.
+Proof.
+  induction n as [| n']; cbn; intros.
+    induction m as [| m']; cbn.
+      refl.
+      rewrite <- IHm'. refl.
+    rewrite IHn'. induction m as [| m']; cbn.
+      refl.
+      rewrite <- IHm'. refl.
+Defined.
+
 (** **** Ex. 1.8 TODO *)
 
+Definition mul (n : N) : N -> N :=
+  N_rect (fun _ => N) 0 (fun m r => add n r).
+
+(*
+Definition mul : N -> N -> N :=
+  N_rect (fun _ => N -> N) (fun _ => 0) (fun n r => fun m => add n (r m)).
+*)
+
+Lemma add_0_r :
+  forall n : N, add n 0 = n.
+Proof.
+  induction n as [| n']; cbn.
+    refl.
+    rewrite IHn'. refl.
+Defined.
+
+Lemma add_assoc :
+  forall a b c : N,
+    add (add a b) c = add a (add b c).
+Proof.
+  induction a as [| a']; cbn; intros.
+    refl.
+    rewrite IHa'. refl.
+Defined.
+
+Lemma mul_0_l :
+  forall n : N, mul 0 n = 0.
+Proof.
+  induction n as [| n']; cbn.
+    refl.
+    rewrite IHn'. refl.
+Defined.
+
+Lemma mul_0_r :
+  forall n : N, mul n 0 = 0.
+Proof. refl. Defined.
+
+Lemma mul_comm :
+  forall n m : N, mul n m = mul m n.
+Proof.
+  intros. revert n.
+  induction m as [| m']; cbn; intros.
+    rewrite mul_0_l. refl.
+    induction n as [| n']; cbn.
+      rewrite mul_0_l. refl.
+      rewrite IHm', <- IHn', IHm'. cbn. rewrite <- !add_assoc.
+        rewrite (add_comm n' m'). refl.
+Defined.
+
+Lemma mul_add_l :
+  forall a b c : N,
+    mul a (add b c) = add (mul a b) (mul a c).
+Proof.
+  intros a b c. revert a c.
+  induction b as [| b']; cbn; intros.
+    refl.
+    rewrite IHb', add_assoc. refl.
+Defined.
+
+Lemma mul_add_r :
+  forall a b c : N,
+    mul (add a b) c = add (mul a c) (mul b c).
+Proof.
+  intros. rewrite mul_comm, mul_add_l, (mul_comm c a), (mul_comm c b). refl.
+Defined.
+
+Lemma mul_assoc :
+  forall a b c : N, mul (mul a b) c = mul a (mul b c).
+Proof.
+  intros. revert a b.
+  induction c as [| c']; cbn; intros.
+    refl.
+    rewrite IHc'. rewrite mul_add_l. refl.
+Defined.
+
+(*
+(R, +) is a commutative monoid with identity element 0:
+(a + b) + c = a + (b + c)
+0 + a = a + 0 = a
+a + b = b + a
+(R, ⋅) is a monoid with identity element 1:
+(a⋅b)⋅c = a⋅(b⋅c)
+1⋅a = a⋅1 = a
+Multiplication left and right distributes over addition:
+a⋅(b + c) = (a⋅b) + (a⋅c)
+(a + b)⋅c = (a⋅c) + (b⋅c)
+Multiplication by 0 annihilates R:
+0⋅a = a⋅0 = 0
+*)
+
 (** **** Ex. 1.9 *)
-Inductive Fin : N -> Type :=
+Inductive Fin : N -> U :=
     | Fin_1 : Fin (S 0)
     | Fin_SS : forall n : N, Fin (S n) -> Fin (S (S n)).
 
@@ -624,20 +732,6 @@ Proof.
                        _ _ p).
 Defined.
 
-(** **** Ex. 1.16 *)
-
-Lemma add_comm :
-  forall n m : N, add n m = add m n.
-Proof.
-  induction n as [| n']; cbn; intros.
-    induction m as [| m']; cbn.
-      refl.
-      rewrite <- IHm'. refl.
-    rewrite IHn'. induction m as [| m']; cbn.
-      refl.
-      rewrite <- IHm'. refl.
-Defined.
-
 (** Chapter 2 *)
 
 (** * 2.1 Types are higher groupoids *)
@@ -704,17 +798,18 @@ Defined.
 
 (** Eckmann-Hilton omitted TODO *)
 
-(*Record Pointed : U :=
+(*
+Class Pointed : U :=
 {
     carrier : U;
-    point : carrier;
+    basepoint : carrier;
 }.
 
-Instance loopspace Pointed : d :=
+Instance loopspace (A : Pointed) : Pointed :=
 {
-    carrier := a = a;
-    point := refl a;
-}.*)
+    carrier := @basepoint A = @basepoint A;
+    basepoint := refl (@basepoint A);
+}.
 
 Definition Pointed : U := {A : U & A}.
 
@@ -722,12 +817,107 @@ Definition loopspace (A : Pointed) : Pointed :=
 match A with
     | (| _, a |) => (| a = a, refl a |)
 end.
+*)
 
-Fixpoint nfold_loopspace (n : N) (A : Pointed) : Pointed :=
+Definition loopspace (A : U) (a : A) : U := a = a.
+
+Fixpoint nfold_loopspace (n : N) (A : U) (a : A) : U :=
 match n with
-    | 0 => A
-    | S n' => nfold_loopspace n' (loopspace A)
+    | 0 => loopspace A a
+    | S n' => nfold_loopspace n' (loopspace A a) (refl a)
 end.
+
+Definition loopspace2 (A : U) (a : A) : U := refl a = refl a.
+
+Infix "^" := cat (at level 60, right associativity).
+
+Definition whisker_l
+  {A : U} {a b c : A} {r s : b = c} (q : a = b) (beta : r = s)
+  : cat q r = cat q s.
+Proof.
+  destruct q.
+  exact ((cat_refl_l _ _ _ r) ^ beta ^ inv (cat_refl_l _ _ _ s)).
+Defined.
+
+Definition whisker_r
+  {A : U} {a b c : A} {p q : a = b} (alfa : p = q) (r : b = c)
+  : cat p r = cat q r.
+Proof.
+  destruct r.
+  exact ((cat_refl_r _ _ _ p) ^ alfa ^ inv (cat_refl_r _ _ _ q)).
+Defined.
+
+Definition horizontal_comp
+  {A : U} {a b c : A} {p q : a = b} {r s : b = c}
+  (alfa : p = q) (beta : r = s)
+  : cat p r = cat q s :=
+    whisker_r alfa r ^ whisker_l q beta.
+
+Definition horizontal_comp'
+  {A : U} {a b c : A} {p q : a = b} {r s : b = c}
+  (alfa : p = q) (beta : r = s)
+  : cat p r = cat q s :=
+    whisker_l p beta ^ whisker_r alfa s.
+
+Lemma wut :
+  forall (A : U) (x y : A) (p q : x = y) (alfa : p = q),
+    match alfa in (_ = q) return (p = q) with
+        | refl _ => refl p
+    end
+    = alfa.
+Proof.
+  destruct alfa. refl.
+Defined.
+
+Lemma horizontal_comp_spec :
+  forall
+    {A : U} {a : A} (alfa beta : refl a = refl a),
+      horizontal_comp alfa beta = alfa ^ beta.
+Proof.
+  intros. unfold horizontal_comp, whisker_l, whisker_r. simpl.
+  rewrite !cat_refl_r, !wut. refl.
+Defined.
+
+Lemma horizontal_comp'_spec :
+  forall
+    {A : U} {a : A} (alfa beta : refl a = refl a),
+      horizontal_comp' alfa beta = beta ^ alfa.
+Proof.
+  intros. unfold horizontal_comp', whisker_l, whisker_r. simpl.
+  rewrite !cat_refl_r, !wut. refl.
+Defined.
+
+Lemma horizontal_comps :
+  forall
+    {A : U} {a b c : A} {p q : a = b} {r s : b = c}
+    (alfa : p = q) (beta : r = s),
+      horizontal_comp alfa beta = horizontal_comp' alfa beta.
+Proof.
+  destruct alfa, beta. destruct p, r. compute. refl.
+Defined.
+
+Lemma Eckmann_Hiltron :
+  forall {A : U} {a : A} (alfa beta : refl a = refl a),
+    alfa ^ beta = beta ^ alfa.
+Proof.
+  intros.
+  rewrite <- horizontal_comp_spec.
+  rewrite <- horizontal_comp'_spec.
+  rewrite horizontal_comps. refl.
+Defined.
+
+(* TODO *)
+Lemma whisker_l_cat :
+  forall
+    {A : U} {a b c : A} {p : a = a} {q : a = a} (alfa : p = q), U.
+Proof.
+  intros.
+Check      whisker_r alfa (cat p q).
+
+Check whisker_r (whisker_r alfa q) p.
+Abort.
+
+
 
 (** * 2.2 Functions are functors *)
 
@@ -1390,7 +1580,7 @@ Proof.
   intro. unfold equiv. exists id. apply isequiv_id.
 Defined.
 
-Definition idtoeqv {A B : Type} (p : A = B) : equiv A B.
+Definition idtoeqv {A B : U} (p : A = B) : equiv A B.
 Proof.
   unfold equiv. exists (transport _ p).
   destruct p. cbn. apply isequiv_id.
@@ -1398,7 +1588,7 @@ Defined.
 
 Axiom ua : forall {A B : U} (e : equiv A B), @eq U A B.
 
-Definition apply_equiv {A B : Type} (e : A ~ B) : A -> B := pr1' e.
+Definition apply_equiv {A B : U} (e : A ~ B) : A -> B := pr1' e.
 Coercion apply_equiv : equiv >-> Funclass.
 
 Axiom idtoeqv_ua :
@@ -1696,6 +1886,28 @@ Proof.
 Defined.
 
 (** **** Ex. 2.4 TODO *)
+
+(* Zero dimensional: x = y, boundaries are points
+   One  dimensional: p = q, boundaries are paths (zero dim)
+   Two  dimensional: r = s, boundaries are one dimensional paths
+   n+1  dimensional: t = u, boundaries are n dimensional paths
+*)
+
+Goal forall x y : N, x = y. Abort.
+Goal forall (x y : N) (p q : x = y), p = q. Abort.
+Goal forall (x y : N) (p q : x = y) (r s : p = q), r = s. Abort.
+
+Fixpoint path (n : N) (A : U) : U :=
+  forall x y : A,
+match n with
+    | 0 => x = y
+    | S n' => path n' (x = y)
+end.
+
+Compute path 0 N.
+Compute path 1 N.
+Compute path (S 1) N.
+Compute path (S (S 1)) N.
 
 (** **** Ex. 2.5 *)
 
