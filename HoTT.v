@@ -544,23 +544,7 @@ Proof.
       rewrite <- IHm'. refl.
 Defined.
 
-(** **** Ex. 1.8 TODO *)
-
-Definition mul (n : N) : N -> N :=
-  N_rect (fun _ => N) 0 (fun m r => add n r).
-
-(*
-Definition mul : N -> N -> N :=
-  N_rect (fun _ => N -> N) (fun _ => 0) (fun n r => fun m => add n (r m)).
-*)
-
-Lemma add_0_r :
-  forall n : N, add n 0 = n.
-Proof.
-  induction n as [| n']; cbn.
-    refl.
-    rewrite IHn'. refl.
-Defined.
+(** **** Ex. 1.8 *)
 
 Lemma add_assoc :
   forall a b c : N,
@@ -570,6 +554,26 @@ Proof.
     refl.
     rewrite IHa'. refl.
 Defined.
+
+Lemma add_0_l :
+  forall n : N, add 0 n = n.
+Proof. cbn. refl. Defined.
+
+Lemma add_0_r :
+  forall n : N, add n 0 = n.
+Proof.
+  induction n as [| n']; cbn.
+    refl.
+    rewrite IHn'. refl.
+Defined.
+
+Definition mul (n : N) : N -> N :=
+  N_rect (fun _ => N) 0 (fun m r => add n r).
+
+(*
+Definition mul : N -> N -> N :=
+  N_rect (fun _ => N -> N) (fun _ => 0) (fun n r => fun m => add n (r m)).
+*)
 
 Lemma mul_0_l :
   forall n : N, mul 0 n = 0.
@@ -621,20 +625,75 @@ Proof.
     rewrite IHc'. rewrite mul_add_l. refl.
 Defined.
 
-(*
-(R, +) is a commutative monoid with identity element 0:
-(a + b) + c = a + (b + c)
-0 + a = a + 0 = a
-a + b = b + a
-(R, ⋅) is a monoid with identity element 1:
-(a⋅b)⋅c = a⋅(b⋅c)
-1⋅a = a⋅1 = a
-Multiplication left and right distributes over addition:
-a⋅(b + c) = (a⋅b) + (a⋅c)
-(a + b)⋅c = (a⋅c) + (b⋅c)
-Multiplication by 0 annihilates R:
-0⋅a = a⋅0 = 0
-*)
+(** (N, +, 0, * 1) truly is a semiring *)
+
+Definition exp (n : N) : N -> N :=
+  N_rect (fun _ => N) (S 0) (fun _ r => mul n r).
+
+Notation "1" := (S 0).
+
+Lemma exp_1_l :
+  forall n : N, exp n 1 = n.
+Proof.
+  intro. cbn. rewrite add_0_r. refl.
+Defined.
+
+Lemma exp_1_r :
+  forall n : N, exp 1 n = 1.
+Proof.
+  induction n as [| n']; cbn.
+    refl.
+    rewrite IHn'. cbn. refl.
+Defined.
+
+Lemma exp_not_assoc :
+  ~ forall a b c : N, exp (exp a b) c = exp a (exp b c).
+Proof.
+  intro. specialize (X (S (S 1)) (S 1) (S 1)).
+  cbn in X.
+Abort.
+
+Lemma exp_0_l :
+  forall n : N,
+    exp 0 n =
+    match n with
+        | 0 => 1
+        | _ => 0
+    end.
+Proof.
+  destruct n; cbn.
+    refl.
+    rewrite mul_0_l. refl.
+Defined.
+
+Lemma exp_0_r :
+  forall n : N, exp n 0 = 1.
+Proof.
+  cbn. refl.
+Defined.
+
+Lemma exp_add :
+  forall a b c : N,
+    exp a (add b c) = mul (exp a b) (exp a c).
+Proof.
+  intros. revert a b.
+  induction c as [| c']; cbn; intros.
+    rewrite 2!add_0_r. refl.
+    rewrite add_comm. cbn. rewrite add_comm.
+      rewrite IHc'. rewrite mul_comm, mul_assoc, (mul_comm _ a). refl.
+Defined.
+
+Lemma exp_exp :
+  forall a b c : N,
+    exp (exp a b) c = exp a (mul b c).
+Proof.
+  intros. revert a b.
+  induction c as [| c']; cbn; intros.
+    refl.
+    rewrite IHc', exp_add. refl.
+Defined.
+
+(* but (N, ^) is not even a monoid. *)
 
 (** **** Ex. 1.9 *)
 Inductive Fin : N -> U :=
@@ -732,15 +791,19 @@ Proof.
                        _ _ p).
 Defined.
 
+(** **** Ex. 1.16 MOVED *)
+
 (** Chapter 2 *)
 
 (** * 2.1 Types are higher groupoids *)
 
+(* Lemma 2.1.1 *)
 Definition inv {A : U} {x y : A} (p : x = y) : y = x :=
 match p with
     | refl _ => refl x
 end.
 
+(* Lemma 2.1.2 *)
 Definition cat {A : U} {x y z : A} (p : x = y) (q : y = z) : x = z :=
 match p, q with
     | refl _, refl _ => refl x
@@ -796,8 +859,6 @@ Proof.
   destruct p, q, r. cbn. refl.
 Defined.
 
-(** Eckmann-Hilton omitted TODO *)
-
 (*
 Class Pointed : U :=
 {
@@ -817,7 +878,6 @@ Definition loopspace (A : Pointed) : Pointed :=
 match A with
     | (| _, a |) => (| a = a, refl a |)
 end.
-*)
 
 Definition loopspace (A : U) (a : A) : U := a = a.
 
@@ -826,8 +886,9 @@ match n with
     | 0 => loopspace A a
     | S n' => nfold_loopspace n' (loopspace A a) (refl a)
 end.
+*)
 
-Definition loopspace2 (A : U) (a : A) : U := refl a = refl a.
+Module Eckmann_Hilton.
 
 Infix "^" := cat (at level 60, right associativity).
 
@@ -917,17 +978,17 @@ Check      whisker_r alfa (cat p q).
 Check whisker_r (whisker_r alfa q) p.
 Abort.
 
-
+End Eckmann_Hilton.
 
 (** * 2.2 Functions are functors *)
 
+(* Lemma 2.2.1 *)
 Definition ap {A B : U} (f : A -> B) {x y : A} (p : x = y) : f x = f y :=
 match p with
     | refl _ => refl (f x)
 end.
 
-(* Lemma 2.2.2 *)
-
+(* Lemma 2.2.2 i) *)
 Lemma ap_cat :
   forall (A B : U) (f : A -> B) (x y z : A) (p : x = y) (q : y = z),
     ap f (cat p q) = cat (ap f p) (ap f q).
@@ -935,6 +996,7 @@ Proof.
   destruct p, q. cbn. refl.
 Defined.
 
+(* Lemma 2.2.2 ii) *)
 Lemma ap_inv :
   forall (A B : U) (f : A -> B) (x y : A) (p : x = y),
     ap f (inv p) = inv (ap f p).
@@ -942,6 +1004,7 @@ Proof.
   destruct p. cbn. refl.
 Defined.
 
+(* Lemma 2.2.2 iii) *)
 Lemma ap_ap :
   forall (A B C : U) (f : A -> B) (g : B -> C) (x y : A) (p : x = y),
     ap g (ap f p) = ap (comp f g) p.
@@ -949,6 +1012,7 @@ Proof.
   destruct p. refl.
 Defined.
 
+(* Lemma 2.2.2 iv) *)
 Lemma ap_id :
   forall (A : U) (x y : A) (p : x = y),
     ap id p = p.
@@ -967,7 +1031,20 @@ end.
 
 Notation "p *" := (transport p) (at level 50, only parsing).
 
-(** Path lifting omitted. *)
+(* Lemma 2.3.2 *)
+Lemma lift :
+  forall {A : U} {P : A -> U} {x y : A} (u : P x) (p : x = y),
+    (x, u) = (y, transport _ p u).
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+Lemma pr1_lift :
+  forall {A : U} {P : A -> U} {x y : A} (u : P x) (p : x = y),
+    ap pr1 (lift u p) = p.
+Proof.
+  destruct p. cbn. refl.
+Defined.
 
 (* Lemma 2.3.4 *)
 Definition apd
@@ -1020,10 +1097,11 @@ Defined.
 
 (** * 2.4 Homotopies and equivalences *)
 
+(* Definition 2.4.1 *)
 Definition homotopy {A : U} {P : A -> U} (f g : forall x : A, P x) : U :=
   forall x : A, f x = g x.
 
-(* Lemma 2.4.2 *)
+(* Lemma 2.4.2.1 *)
 Lemma homotopy_refl :
   forall (A : U) (P : A -> U) (f : forall x : A, P x),
     homotopy f f.
@@ -1031,6 +1109,7 @@ Proof.
   unfold homotopy. refl.
 Defined.
 
+(* Lemma 2.4.2.2 *)
 Lemma homotopy_sym :
   forall (A : U) (P : A -> U) (f g : forall x : A, P x),
     homotopy f g -> homotopy g f.
@@ -1038,6 +1117,7 @@ Proof.
   unfold homotopy. intros. rewrite X. refl.
 Defined.
 
+(* Lemma 2.4.2.3 *)
 Lemma homotopy_trans :
   forall (A : U) (P : A -> U) (f g h : forall x : A, P x),
     homotopy f g -> homotopy g h -> homotopy f h.
@@ -1053,11 +1133,6 @@ Proof.
   unfold homotopy. destruct p. cbn. destruct (H x). cbn. refl.
 Defined.
 
-Lemma ap_refl :
-  forall (A B : U) (f : A -> B) (x : A),
-    ap f (refl x) = refl (f x).
-Proof. refl. Defined.
-
 (* Corollary 2.4.4 *)
 Lemma homotopy_id :
   forall (A : U) (f : A -> A) (H : homotopy f id) (x : A),
@@ -1071,9 +1146,44 @@ Proof.
     rewrite <- !cat_assoc, !cat_inv_r, !cat_refl_r in X. apply X.
 Defined.
 
+Lemma ap_refl :
+  forall (A B : U) (f : A -> B) (x : A),
+    ap f (refl x) = refl (f x).
+Proof. refl. Defined.
+
+(* Definition 2.4.6 *)
 Definition qinv {A B : U} (f : A -> B) : U :=
   {g : B -> A & homotopy (comp g f) id * homotopy (comp f g) id}.
 
+(* Example 2.4.7 *)
+Lemma qinv_id :
+  forall A : U, qinv (@id A).
+Proof.
+  intro. unfold qinv.
+  exists id.
+  compute. split; refl.
+Defined.
+
+(* Example 2.4.8 *)
+Lemma qinv_cat_l :
+  forall (A : U) (x y z : A) (p : x = y),
+    qinv (@cat A x y z p).
+Proof.
+  intros. unfold qinv.
+  exists (@cat A y x z (inv p)).
+  split; compute; destruct p, x0; refl.
+Defined.
+
+Lemma qinv_cat_r :
+  forall (A : U) (x y z : A) (p : x = y),
+    qinv (fun q => @cat A z x y q p).
+Proof.
+  intros. unfold qinv.
+  exists (fun q => @cat A z y x q (inv p)).
+  split; compute; destruct p, x0; refl.
+Defined.
+
+(* Example 2.4.9 *)
 Lemma qinv_transport :
   forall (A : U) (P : A -> U) (x y : A) (p : x = y),
     qinv (@transport A P x y p).
@@ -1085,6 +1195,7 @@ Unshelve.
     destruct p. compute. refl.
 Defined.
 
+(* Definition 2.4.10 *)
 Definition isequiv {A B : U} (f : A -> B) : U :=
   {g : B -> A & homotopy (comp g f) (@id B)} *
   {h : B -> A & homotopy (comp f h) (@id A)}.
@@ -1111,20 +1222,21 @@ Lemma isequiv_qinv :
     isequiv f -> qinv f.
 Proof.
   destruct 1 as [[g α] [h β]].
-  unfold qinv.
-  eapply (| comp g (comp f h), _ |).
+  unfold qinv. esplit.
 Unshelve.
-  cbn. hsplit; compute in *; intros.
+  Focus 2. exact (comp g (comp f h)).
+  cbn. split; compute in *; intros.
     rewrite β, α. refl.
     rewrite α, β. refl.
 Defined.
 
+(* Definition 2.4.11 *)
 Definition equiv (A B : U) : U :=
   {f : A -> B & isequiv f}.
 
 Notation "A ~ B" := (equiv A B) (at level 50).
 
-(* Lemma 2.4.12 *)
+(* Lemma 2.4.12 i) *)
 Lemma equiv_refl :
   forall A : U, equiv A A.
 Proof.
@@ -1136,6 +1248,7 @@ Unshelve.
   compute. hsplit; refl.
 Defined.
 
+(* Lemma 2.4.12 ii) *)
 Lemma equiv_sym :
   forall A B : U, equiv A B -> equiv B A.
 Proof.
@@ -1148,6 +1261,7 @@ Unshelve.
   compute in *. hsplit; intros; rewrite ?α, ?β; refl.
 Defined.
 
+(* Lemma 2.4.12 iii) *)
 Lemma equiv_trans :
   forall A B C : U, equiv A B -> equiv B C -> equiv A C.
 Proof.
@@ -1174,13 +1288,17 @@ Restart.
         exact (cat Hg2 (Hf2 x)).
 Defined.
 
+(** * 2.6 Cartesian product types *)
+
 Definition prod_eq_intro
   {A B : U} {x y : A * B} (pq : (pr1 x = pr1 y) * (pr2 x = pr2 y)) : x = y.
 Proof.
   destruct x, y; cbn in *. destruct pq as [[] []]. refl.
 Defined.
 
+(*
 Notation "'pair=' p q" := (prod_eq_intro p q) (at level 50).
+*)
 
 (* In the book, elimination rules for products are [ap pr1] and [ap pr2]. *)
 Definition prod_eq_elim
@@ -1214,12 +1332,10 @@ Lemma prod_eq_intro_isequiv :
     isequiv (@prod_eq_intro A B x y).
 Proof.
   intros. apply qinv_isequiv. unfold qinv.
-  eapply (| fun p => (ap pr1 p, ap pr2 p), _ |).
-Unshelve.
-  cbn. hsplit.
-    unfold homotopy. intros H. destruct H, x. cbn. refl.
-    unfold homotopy. intros H. destruct x, y. cbn in *.
-      destruct H as [[] []]. compute. refl.
+  exists prod_eq_elim.
+  unfold homotopy, comp, id. split.
+    destruct x0, x. cbn. refl.
+    destruct x, y. cbn. intros [[] []]. compute. refl.
 Defined.
 
 (* Characterization of paths between pairs. *)
@@ -1266,7 +1382,7 @@ Theorem ap_prod_eq_intro :
     ap (fpair f g) (prod_eq_intro (p, q)) =
     @prod_eq_intro _ _ (fpair f g x) (fpair f g y) (ap f p, ap g q).
 Proof.
-  destruct x, y. cbn. destruct p, q. compute. refl.
+  intros A A' B B' [] []. cbn. intros [] [] **. compute. refl.
 Defined.
 
 (** * 2.7 Σ-types *)
@@ -1283,14 +1399,12 @@ Definition sigma_eq_elim
   {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y)
   : {p : pr1' x = pr1' y & transport B p (pr2' x) = pr2' y}.
 Proof.
-  destruct p. cbn. eapply (| refl _, _ |).
-Unshelve.
-  cbn. refl.
+  destruct p. cbn. exists (ap pr1' (refl x)). cbn. refl.
 Defined.
 
 Definition sigma_eq_elim_1
-  {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y)
-  : pr1' x = pr1' y := pr1' (sigma_eq_elim p).
+  {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y) : pr1' x = pr1' y :=
+    pr1' (sigma_eq_elim p).
 
 Lemma sigma_eq_comp :
   forall (A : U) (B : A -> U) (x y : {a : A & B a})
@@ -1313,21 +1427,20 @@ Theorem sigma_eq_elim_equiv :
     isequiv (@sigma_eq_elim A B x y).
 Proof.
   intros. apply qinv_isequiv. unfold qinv.
-  eapply (| sigma_eq_intro, _ |).
-Unshelve.
-  cbn. hsplit.
-    unfold homotopy. destruct x, y. destruct x1. cbn in *.
-      destruct x1, e. cbn. refl.
-    unfold homotopy. destruct x, y. destruct x1. cbn in *. refl.
+  exists sigma_eq_intro.
+  unfold homotopy, comp, id.
+  split.
+    destruct x0, x, y. cbn in *. destruct x0. cbn in e. destruct e.
+      cbn. refl.
+    destruct x0. destruct x. compute. refl.
 Defined.
 
+(* Corollary 2.7.3 *)
 Lemma sigma_uniq :
   forall (A : U) (B : A -> U) (z : {a : A & B a}),
     z = (| pr1' z, pr2' z |).
 Proof.
-  intros. apply sigma_eq_intro. cbn. eapply (| refl _, _ |).
-Unshelve.
-  cbn. refl.
+  intros. apply sigma_eq_intro. cbn. exists (ap pr1' (refl z)). cbn. refl.
 Defined.
 
 (* Theorem 2.7.4 *)
@@ -1345,8 +1458,6 @@ Proof.
   destruct p. cbn. refl.
 Defined.
 
-(* TODO: generalize theorem 2.6.5 *)
-
 (* Characterization of paths between dependent pairs. *)
 Lemma refl_sigma :
   forall (A : U) (B : A -> U) (x : {a : A & B a}),
@@ -1355,19 +1466,32 @@ Proof.
   destruct x. cbn. refl.
 Defined.
 
+(*
+  forall (A B : U) (x y : A * B) (p : x = y),
+    inv p = prod_eq_intro (inv (ap pr1 p), inv (ap pr2 p)).
+*)
+(* TODO *)
 Lemma inv_sigma :
   forall (A : U) (B : A -> U) (x y : {a : A & B a}) (p : x = y), U.
 Proof.
   intros.
-Check inv (ap pr1' p).
-Check inv (@apd {a : A & B a} (fun x => B (pr1' x)) pr2' _ _ (inv p)).
-Check sigma_eq_intro (| inv (ap pr1' p), inv _ |).
-Check transport _ (inv (ap pr1' p)) (pr2' y).
-Check @sigma_eq_elim _ _ y x (inv p).
-assert (pr2' x = transport _ (inv (ap pr1' p)) (pr2' y)).
-  apply inv. rewrite <- ap_inv.
+  Check @sigma_eq_intro A B y x.
+  Check inv (ap pr1' p).
+  assert ({p : pr1' y = pr1' x &
+               transport B p (pr2' y) = pr2' x}).
+    exists (inv (ap pr1' p)).
+    Check transport B (inv (ap pr1' p)) (pr2' y).
+    Check @apd {x : A & B x} _ pr2' y x (inv p).
+    Check @apd A B _ (pr1' y) (pr1' x) (inv (ap pr1' p)).
+    Check @apd {x : A & B x} (fun x => B (pr1' x)) pr2' y x (inv p).
+    Check @transportconst.
+    Check @apd (B (pr1' x)) _ (fun _ => B (pr1' x)) (pr2' x) (pr2' x) (refl _).
+rewrite <- (@apd {x : A & B x} (fun x => B (pr1' x)) pr2' y x (inv p)).
+    destruct p. cbn.
 Abort.
 
+(* TODO *)
+(* TODO: generalize theorem 2.6.5 *)
 Lemma cat_sigma :
   forall (A : U) (B : A -> U) (x y z : {a : A & B a})
   (p : x = y) (q : y = z), U.
@@ -1415,7 +1539,20 @@ Unshelve.
     destruct x0. refl.
 Defined.
 
-(** * Π-types and the function extensionality axiom *)
+(* Theorem 2.8.1 *)
+Theorem th_2_8_1 :
+  forall x y : unit, (x = y) ~ unit.
+Proof.
+  intros. unfold equiv.
+  exists unit_eq_elim.
+  apply qinv_isequiv. unfold qinv.
+  exists (unit_eq_intro x y).
+  split; compute.
+    destruct x0. refl.
+    destruct x0, x. refl.
+Defined.
+
+(** * 2.9 Π-types and the function extensionality axiom *)
 
 Definition happly {A : U} {B : A -> U}
   {f g : forall x : A, B x} (p : f = g) : forall x : A, f x = g x :=
@@ -1915,7 +2052,7 @@ Definition def_2_3_6
   {A B : U} (f : A -> B) {x y : A} (p : x = y) :
     f x = f y -> transport _ p (f x) = f y.
 Proof.
-  Check transportconst p (f x). intro q.
+  intro q.
   exact (cat (transportconst p (f x)) q).
 Defined.
 
@@ -1923,7 +2060,8 @@ Definition def_2_3_7
   {A B : U} (f : A -> B) {x y : A} (p : x = y) :
     transport _ p (f x) = f y -> f x = f y.
 Proof.
-  destruct p. cbn. intro q. exact q.
+  intro q.
+  exact (cat (inv (transportconst p (f x))) q).
 Defined.
 
 Lemma def_237_def_236 :
@@ -1931,6 +2069,10 @@ Lemma def_237_def_236 :
     def_2_3_7 f p (def_2_3_6 f p q) = q.
 Proof.
   destruct p. cbn. destruct q. refl.
+Restart.
+  intros.
+  unfold def_2_3_6, def_2_3_7.
+  rewrite cat_assoc, cat_inv_l, cat_refl_l. refl.
 Defined.
 
 Lemma def_236_def_237 :
@@ -1940,6 +2082,10 @@ Lemma def_236_def_237 :
       def_2_3_6 f p (def_2_3_7 f p q) = q.
 Proof.
   destruct p. cbn. destruct q. refl.
+Restart.
+  intros.
+  unfold def_2_3_6, def_2_3_7.
+  rewrite cat_assoc, cat_inv_r, cat_refl_l. refl.
 Defined.
 
 Lemma isequiv_def_2_3_6 :
