@@ -1259,6 +1259,13 @@ Unshelve.
   cbn. apply qinv_isequiv. eapply (| f, _ |).
 Unshelve.
   compute in *. hsplit; intros; rewrite ?α, ?β; refl.
+Restart.
+  destruct 1 as [f [[f1 H1] [f2 H2]]].
+  unfold equiv, homotopy, comp, id in *.
+  exists (fun b : B => f2 (f (f1 b))).
+  unfold isequiv. split.
+    exists f. compute. intros. rewrite H1, H2. refl.
+    exists f. compute. intros. rewrite H2, H1. refl.
 Defined.
 
 (* Lemma 2.4.12 iii) *)
@@ -1466,41 +1473,34 @@ Proof.
   destruct x. cbn. refl.
 Defined.
 
-(*
-  forall (A B : U) (x y : A * B) (p : x = y),
-    inv p = prod_eq_intro (inv (ap pr1 p), inv (ap pr2 p)).
-*)
-(* TODO *)
 Lemma inv_sigma :
-  forall (A : U) (B : A -> U) (x y : {a : A & B a}) (p : x = y), U.
+  forall (A : U) (B : A -> U) (x y : {a : A & B a}) (p : x = y),
+    inv p =
+    sigma_eq_intro (| inv (ap pr1' p),
+                      match p with
+                          | refl _ => refl (pr2' x)
+                      end
+                    |).
 Proof.
-  intros.
-  Check @sigma_eq_intro A B y x.
-  Check inv (ap pr1' p).
-  assert ({p : pr1' y = pr1' x &
-               transport B p (pr2' y) = pr2' x}).
-    exists (inv (ap pr1' p)).
-    Check transport B (inv (ap pr1' p)) (pr2' y).
-    Check @apd {x : A & B x} _ pr2' y x (inv p).
-    Check @apd A B _ (pr1' y) (pr1' x) (inv (ap pr1' p)).
-    Check @apd {x : A & B x} (fun x => B (pr1' x)) pr2' y x (inv p).
-    Check @transportconst.
-    Check @apd (B (pr1' x)) _ (fun _ => B (pr1' x)) (pr2' x) (pr2' x) (refl _).
-rewrite <- (@apd {x : A & B x} (fun x => B (pr1' x)) pr2' y x (inv p)).
-    destruct p. cbn.
-Abort.
+  destruct p, x. cbn. refl.
+Defined.
 
-(* TODO *)
-(* TODO: generalize theorem 2.6.5 *)
 Lemma cat_sigma :
   forall (A : U) (B : A -> U) (x y z : {a : A & B a})
-  (p : x = y) (q : y = z), U.
+  (p : x = y) (q : y = z),
+    cat p q =
+    sigma_eq_intro
+      (| cat (ap pr1' p) (ap pr1' q),
+         match q with
+             | refl _ =>
+                 match p with
+                     | refl _ => refl (pr2' x)
+                 end
+         end
+      |).
 Proof.
-
-(*    cat p q =
-  sigma_eq_intro (cat (ap pr1 p) (ap pr1 q), cat (ap pr2 p) (ap pr2 q)).
-*)
-Abort.
+  destruct p, q, x. cbn. refl.
+Defined.
 
 (** * 2.8 The unit type *)
 
@@ -1554,6 +1554,7 @@ Defined.
 
 (** * 2.9 Π-types and the function extensionality axiom *)
 
+(* Definition 2.9.2 *)
 Definition happly {A : U} {B : A -> U}
   {f g : forall x : A, B x} (p : f = g) : forall x : A, f x = g x :=
   fun x : A =>
@@ -1561,40 +1562,23 @@ match p with
     | refl _ => refl _
 end.
 
-(*Axiom happly_isequiv :
-  forall (A : U) (B : A -> U) (f g : forall x : A, B x),
-    isequiv (@happly A B f g).
-
-Definition funext {A : U} {B : A -> U} {f g : forall x : A, B x}
-  (h : forall x : A, f x = g x) : f = g.
-Proof.
-  pose (happly_isequiv A B f g). apply isequiv_qinv in i.
-  destruct i. apply x, h.
-Defined.
-
-Lemma happly_funext :
-  forall (A : U) (B : A -> U) (f g : forall x : A, B x)
-  (h : forall x : A, f x = g x) (x : A),
-    happly (funext h) x = h x.
-Proof.
-  intros. 
-  pose (happly_isequiv A B f g). apply isequiv_qinv in i.
-  destruct i. unfold homotopy in p. destruct p. unfold funext. cbn.
-Defined.*)
-
+(* Axiom 2.9.3.1 *)
 Axiom funext :
   forall {A : U} {B : A -> U} {f g : forall x : A, B x}
   (h : forall x : A, f x = g x), f = g.
 
+(* Axiom 2.9.3.2 *)
 Polymorphic Axiom happly_funext :
   forall (A : U) (B : A -> U) (f g : forall x : A, B x)
   (h : forall x : A, f x = g x),
     happly (funext h) = h.
 
+(* Axiom 2.9.3.3 *)
 Axiom funext_happly :
   forall (A : U) (B : A -> U) (f g : forall x : A, B x) (p : f = g),
     p = funext (fun x : A => happly p x).
 
+(* Theorem 2.9.1 *)
 Theorem funext_isequiv :
   forall (A : U) (B : A -> U) (f g : forall x : A, B x),
     isequiv (@funext A B f g).
@@ -1629,6 +1613,7 @@ Proof.
   destruct p, q. cbn. apply refl_pi.
 Defined.
 
+(* Lemma 2.9.4 *)
 Lemma transport_fun :
   forall (Z : U) (A B : Z -> U) (x y : Z)
   (f : A x -> B x) (p : x = y),
@@ -1679,8 +1664,7 @@ Unshelve.
   cbn. apply funext_isequiv.
 Defined.
 
-Check lemma_2_9_6.
-
+(* Lemma 2.9.7 *)
 Lemma lemma_2_9_7 :
   forall
     (Z : U) (A : Z -> U) (B : forall z : Z, A z -> U)
@@ -1717,33 +1701,40 @@ Proof.
   intro. unfold equiv. exists id. apply isequiv_id.
 Defined.
 
+(* Lemma 2.10.1 / Definition 2.10.2 *)
 Definition idtoeqv {A B : U} (p : A = B) : equiv A B.
 Proof.
   unfold equiv. exists (transport _ p).
   destruct p. cbn. apply isequiv_id.
 Defined.
 
+(* Axiom 2.10.3.1 *)
 Axiom ua : forall {A B : U} (e : equiv A B), @eq U A B.
 
 Definition apply_equiv {A B : U} (e : A ~ B) : A -> B := pr1' e.
 Coercion apply_equiv : equiv >-> Funclass.
 
+(* Axiom 2.10.3.2 *)
 Axiom idtoeqv_ua :
   forall {A B : U} (e : A ~ B) (x : A),
     idtoeqv (ua e) x = e x.
 
+(* Axiom 2.10.3.3 *)
 Axiom idtoeqv_ua' :
   forall {A B : U} (e : A ~ B),
     idtoeqv (ua e) = e.
 
+(* Axiom 2.10.3.4 *)
 Axiom transport_ua :
   forall {A B : U} (e : A ~ B) (x : A),
     transport _ (ua e) x = e x.
 
+(* Axiom 2.10.3.5 *)
 Axiom ua_idtoeqv :
   forall {A B : U} (p : A = B),
     p = ua (idtoeqv p).
 
+(* Axiom 2.10.3.6 *)
 Axiom ua_transport :
   forall {A B : U} (p : A = B),
     p = ua (idtoeqv p).
@@ -1754,38 +1745,44 @@ Proof.
   intro. rewrite ua_idtoeqv. apply ap. compute. refl.
 Defined.
 
+Lemma inv_ua :
+  forall (A B : U) (f : A ~ B),
+    inv (ua f) = ua (equiv_sym A B f).
+Proof.
+  intros.
+  rewrite <- (idtoeqv_ua' f).
+  generalize (ua f). clear f.
+  destruct e. rewrite !ua_id. cbn. refl.
+Defined.
+
 Lemma cat_ua :
   forall (A B C : U) (f : equiv A B) (g : equiv B C),
     cat (ua f) (ua g) = ua (equiv_trans _ _ _ f g).
 Proof.
   intros.
-  rewrite (ua_idtoeqv (ua f)), (ua_idtoeqv (ua g)).
-  assert (forall (u : A),
-    idtoeqv (cat (ua (idtoeqv (ua f))) (ua (idtoeqv (ua g)))) u =
-    idtoeqv (ua (equiv_trans A B C f g)) u).
-      intro. rewrite ?idtoeqv_ua. cbn.
-      rewrite <- transport_cat, ?transport_ua, ?idtoeqv_ua.
-      destruct f as [f [[f1 Hf1] [f2 Hf2]]], g as [g [[g1 Hg1] [g2 Hg2]]].
-      compute. refl.
-  assert (
-    idtoeqv (cat (ua (idtoeqv (ua f))) (ua (idtoeqv (ua g)))) =
-    idtoeqv (ua (equiv_trans A B C f g))).
-      apply sigma_eq_intro. esplit. Unshelve.
-        Focus 3. destruct (idtoeqv _), (idtoeqv _). cbn.
-          apply funext. intro. cbn in X. apply X.
-        destruct _. cbn. destruct (ua _). cbn in *. unfold transport.
-          assert (p : id = x).
-            apply funext. symmetry. apply X.
-          destruct p.
-          assert (funext (fun x => X x) =  refl id).
-            rewrite refl_pi. apply ap. apply funext. intro. admit.
-          rewrite X0. admit.
-  apply (ap ua) in X0. rewrite <- !ua_idtoeqv in *.
-    rewrite <- !ua_idtoeqv in X0. assumption.
-Admitted.
+  rewrite <- (idtoeqv_ua' f), <- (idtoeqv_ua' g).
+  generalize (ua f), (ua g). clear f g.
+  destruct e, e. rewrite !ua_id. cbn. refl.
+Defined.
 
-(** ** 2.11 Identity types *)
+Lemma lemma_2_10_5 :
+  forall (A : U) (B : A -> U) (x y : A) (p : x = y) (u : B x),
+    transport B p u = transport id (ap B p) u.
+Proof.
+  destruct p. cbn. refl.
+Defined.
 
+Lemma lemma_2_10_5' :
+  forall (A : U) (B : A -> U) (x y : A) (p : x = y) (u : B x),
+    transport B p u = idtoeqv (ap B p) u.
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+(** ** 2.11 Identity type *)
+
+(* Theorem 2.11.1 *)
+Infix "^" := cat (at level 60, right associativity).
 Theorem ap_isequiv :
   forall (A B : U) (f : A -> B) (x y : A),
     isequiv f -> isequiv (@ap A B f x y).
@@ -1796,19 +1793,17 @@ Proof.
 Unshelve.
   Focus 2. intros. compute in *.
     apply (cat (inv (H2 x)) (cat (ap g X) (H2 y))).
-  unfold homotopy, comp, id in *. hsplit; intros.
-    Focus 2. destruct x0. rewrite ap_refl, cat_refl_l, cat_inv_l. refl.
-    rewrite !ap_cat. rewrite !ap_inv. rewrite !ap_ap.
-Restart.
-  destruct 1 as [[g1 H1] [g2 H2]].
-  unfold isequiv, homotopy, comp, id in *.
-  split; esplit. Unshelve.
-    Focus 3. intro p. exact (cat (inv (H2 x)) (cat (ap g2 p) (H2 y))).
-      intros. cbn. rewrite !ap_cat, !ap_inv, !ap_ap. admit.
-    Focus 2. intro p. exact (cat (inv (H2 x)) (cat (ap g2 p) (H2 y))).
+  unfold homotopy, comp, id in *. split; intros.
+    Focus 2. destruct x0. generalize (H2 x). destruct e. cbn. refl.
+    Check ap_cat.
+    Check ap_inv.
+    Check ap_ap.
+    Check ap_id.
+    Check homotopy_natural.
+    (* This is doable. *)
 Admitted.
 
-(* Lemma 2.11.2 *)
+(* Lemma 2.11.2.1 *)
 Lemma transport_eq_l :
   forall (A : U) (a x y : A) (p : x = y) (q : a = x),
     @transport _ (fun x : A => a = x) _ _ p q = cat q p.
@@ -1816,6 +1811,7 @@ Proof.
   destruct p, q. cbn. refl.
 Defined.
 
+(* Lemma 2.11.2.2 *)
 Lemma transport_eq_r :
   forall (A : U) (a x y : A) (p : x = y) (q : x = a),
     @transport _ (fun x : A => x = a) _ _ p q = cat (inv p) q.
@@ -1823,6 +1819,7 @@ Proof.
   destruct p, q. cbn. refl.
 Defined.
 
+(* Lemma 2.11.2.3 *)
 Lemma transport_eq :
   forall (A : U) (x y : A) (p : x = y) (q : x = x),
     @transport _ (fun x : A => x = x) _ _ p q = cat (inv p) (cat q p).
