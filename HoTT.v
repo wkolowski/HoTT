@@ -1782,7 +1782,10 @@ Defined.
 (** ** 2.11 Identity type *)
 
 (* Theorem 2.11.1 *)
+
+(*
 Infix "^" := cat (at level 60, right associativity).
+*)
 Theorem ap_isequiv :
   forall (A B : U) (f : A -> B) (x y : A),
     isequiv f -> isequiv (@ap A B f x y).
@@ -1801,6 +1804,44 @@ Unshelve.
     Check ap_id.
     Check homotopy_natural.
     (* This is doable. *)
+Admitted.
+
+Goal
+  forall (A B : U) (w w' : A * B) (p q : w = w'),
+    (p = q) = (ap pr1 p = ap pr1 q) * (ap pr2 p = ap pr2 q).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists (fun r => (ap (ap pr1) r, ap (ap pr2) r)).
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. destruct 1.
+    Check (prod_eq_uniq _ _ _ _ p).
+    rewrite (prod_eq_uniq _ _ _ _ q). destruct e, e0. apply prod_eq_uniq.
+    (*ewrite prod_eq_uniq, <- e, <- e0, <- prod_eq_uniq. refl.*)
+  split; unfold homotopy, comp, id.
+    Focus 2. destruct x, p, w. cbn. refl.
+    destruct p, x. apply prod_eq_intro. assert (refl w = q).
+      rewrite prod_eq_uniq, <- e, <- e0, <- prod_eq_uniq. refl.
+    split.
+      Focus 2. compute. destruct X, w.
+Admitted.
+
+Goal
+  forall (A : U) (B : A -> U) (f g : forall x : A, B x) (p q : f = g),
+    (p = q) = forall x : A, happly p x = happly q x.
+Proof.
+  intros. apply ua. unfold equiv.
+  esplit.
+Unshelve.
+  Focus 2. destruct 1. refl.
+  apply qinv_isequiv. unfold qinv.
+  esplit.
+Unshelve.
+  Focus 2. intro. rewrite (funext_happly _ _ _ _ p), (funext_happly _ _ _ _ q).
+    apply ap, funext, X.
+  unfold homotopy, comp, id. split.
+    intro. destruct (internal_eq_rew_r _). apply funext. intro.
+      destruct p. cbn.
 Admitted.
 
 (* Lemma 2.11.2.1 *)
@@ -1858,8 +1899,6 @@ Proof.
   destruct p. intros. rewrite cat_refl_l, cat_refl_r. cbn. apply equiv_refl.
 Defined.
 
-(* TODO: 2.11, examples: products and functions *)
-
 (** * 2.12 Coproducts *)
 
 Definition code {A B : U} (a : A) (x : A + B) : U :=
@@ -1890,11 +1929,11 @@ Unshelve.
 Defined.
 
 Definition encode
-  {A B : U} (a : A) (x : A + B) (p : inl a = x) : code a x :=
+  {A B : U} {a : A} {x : A + B} (p : inl a = x) : code a x :=
     transport _ p (refl a).
 
 Definition decode :
-  forall (A B : U) (x : A + B) (a : A) (c : code a x),
+  forall {A B : U} {x : A + B} {a : A} (c : code a x),
     inl a = x.
 Proof.
   destruct x; unfold code.
@@ -1902,7 +1941,56 @@ Proof.
     destruct 1.
 Defined.
 
-(* TODO: encode-decode *)
+Lemma decode_encode :
+  forall (A B : U) (a : A) (x : A + B) (p : inl a = x),
+    decode (encode p) = p.
+Proof.
+  destruct p. cbn. refl.
+Defined.
+
+Lemma encode_decode :
+  forall {A B : U} {x : A + B} {a : A} (c : code a x),
+    encode (decode c) = c.
+Proof.
+  destruct x, c; refl.
+Defined.
+
+(* Theorem 2.12.5 *)
+Lemma coprod_eq_char :
+  forall (A B : U) (a : A) (x : A + B),
+    (inl a = x) = code a x.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists encode.
+  apply qinv_isequiv. unfold qinv.
+  exists decode.
+  unfold homotopy, comp, id; split.
+    apply encode_decode.
+    apply decode_encode.
+Defined.
+
+(* Corollary 2.12.1 *)
+Lemma inl_eq_char :
+  forall (A B : U) (x y : A),
+    (@inl A B x = @inl A B y) = (x = y).
+Proof.
+  intros. rewrite coprod_eq_char. cbn. refl.
+Defined.
+
+(* Not immediately provable with this approach. *)
+Lemma inr_eq_char :
+  forall (A B : U) (x y : B),
+    (@inr A B x = @inr A B y) = (x = y).
+Proof.
+  intros.
+Abort.
+
+Lemma inl_inr_eq_char :
+  forall (A B : U) (x : A) (y : B),
+    (inl x = inr y) = empty.
+Proof.
+  intros. rewrite coprod_eq_char. cbn. refl.
+Defined.
 
 Lemma transport_inl :
   forall (Z : U) (A B : Z -> U) (x y : Z) (p : x = y) (a : A x),
@@ -1919,6 +2007,150 @@ Lemma transport_inr :
 Proof.
   destruct p. cbn. refl.
 Defined.
+
+(** * 2.13 Natural numbers *)
+
+Fixpoint code_N (n m : N) : U :=
+match n, m with
+    | 0, 0 => unit
+    | 0, _ => empty
+    | _, 0 => empty
+    | S n', S m' => code_N n' m'
+end.
+
+Fixpoint encode_N_aux (n : N) : code_N n n :=
+match n with
+    | 0 => tt
+    | S n' => encode_N_aux n'
+end.
+
+Definition encode_N {n m : N} (p : n = m) : code_N n m :=
+  transport _ p (encode_N_aux n).
+
+Fixpoint decode_N {n m : N} (c : code_N n m) {struct n} : n = m.
+Proof.
+  destruct n as [| n'], m as [| m']; cbn in *.
+    refl.
+    destruct c.
+    destruct c.
+    exact (ap S (decode_N _ _ c)).
+Defined.
+
+Lemma decode_encode_N :
+  forall (n m : N) (p : n = m),
+    decode_N (encode_N p) = p.
+Proof.
+  unfold encode_N. destruct p. cbn. induction n as [| n']; cbn.
+    refl.
+    unfold id in IHn'. rewrite IHn'. cbn. refl.
+Defined.
+
+Lemma encode_decode_N :
+  forall {n m : N} (c : code_N n m),
+    encode_N (decode_N c) = c.
+Proof.
+  unfold encode_N.
+  induction n as [| n']; destruct m as [| m']; cbn; intros; try destruct c.
+    refl.
+    rewrite <- transport_ap. unfold comp. apply IHn'.
+Defined.
+
+(* Theorem 2.13.1 *)
+Lemma eq_N_char :
+  forall n m : N,
+    (n = m) = code_N n m.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists encode_N.
+  apply qinv_isequiv. unfold qinv.
+  exists decode_N.
+  unfold homotopy, comp, id; split.
+    apply encode_decode_N.
+    apply decode_encode_N.
+Defined.
+
+Lemma isProp_code_N_aux :
+  forall (n m : N) (c1 c2 : code_N n m), c1 = c2.
+Proof.
+  induction n as [| n'], m as [| m']; cbn.
+    1-3: destruct c1, c2. refl.
+    intros. apply IHn'.
+Defined.
+
+Lemma isProp_eq_N_aux :
+  forall (n m : N) (p q : n = m), p = q.
+Proof.
+  intros n m. destruct (inv (eq_N_char n m)).
+  apply isProp_code_N_aux.
+Defined.
+
+(* Corollary 2.13.2 *)
+Lemma neq_succ_0 :
+  forall n : N, S n <> 0.
+Proof.
+  intros n p. exact (encode_N p).
+Defined.
+
+(** * 2.14 Example: equality of structures *)
+
+(* Definition 2.14.1.1 *)
+Definition SemigroupStr (A : U) : U :=
+  {m : A -> A -> A & forall x y z : A, m x (m y z) = m (m x y) z}.
+
+(* Definition 2.14.1.2 *)
+Definition Semigroup : U :=
+  {A : U & SemigroupStr A}.
+
+(* 2.14.1 Lifting equivalences *)
+Lemma transport_SemigroupStr_pr1' :
+  forall
+    (A B : U) (e : A ~ B)
+    (m : A -> A -> A)
+    (a : forall x y z : A, m x (m y z) = m (m x y) z),
+      let f := pr1' (isequiv_qinv _ _ e (pr2' e)) in
+        pr1' (transport SemigroupStr (ua e) (| m, a |)) =
+        fun b1 b2 : B =>
+          e (m (f b1) (f b2)).
+Proof.
+  intros. apply funext. intro b1. apply funext. intro b2.
+  unfold SemigroupStr.
+  rewrite (
+    transport_sigma U (fun A => A -> A -> A)
+      (fun '(| A, m |) => forall x y z : A, m x (m y z) = m (m x y) z)
+      A B (ua e) m a); cbn.
+  rewrite 2!transport_fun, transport_ua.
+  apply ap. unfold f. rewrite <- (idtoeqv_ua' e).
+  generalize (ua e). destruct e0. rewrite <- ua_idtoeqv.
+  compute. refl.
+Defined.
+
+Goal
+  forall
+    (A B : Semigroup)
+    (SA : forall (x y : pr1' A) (p q : x = y), p = q),
+      let m := pr1' (pr2' A) in
+      let m' := pr1' (pr2' B) in
+        (A = B) =
+        {e : pr1' A ~ pr1' B &
+             forall x y : pr1' A, e (m x y) = m' (e x) (e y)}.
+Proof.
+  intros. apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. intro p. exists (idtoeqv (ap pr1' p)). intros.
+    destruct p. refl.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. intros [e H]. apply sigma_eq_intro.
+    exists (ua e).
+    apply sigma_eq_intro. esplit.
+Unshelve.
+  Focus 2.
+    destruct A as [A [ma a]], B as [B [mb b]]. cbn in *.
+    rewrite transport_SemigroupStr_pr1'.
+    apply funext. intro b1. apply funext. intro b2.
+    rewrite H. rewrite <- (idtoeqv_ua' e).
+    generalize (ua e). destruct e0. cbn; unfold id. refl.
+Admitted.
 
 (** Exercises *)
 
@@ -2623,56 +2855,17 @@ Proof.
     destruct (encode_bool q). refl.
 Defined.
 
-(* encode-decode for N *)
-Fixpoint code_N (n m : N) : U :=
-match n, m with
-    | 0, 0 => unit
-    | 0, _ => empty
-    | _, 0 => empty
-    | S n', S m' => code_N n' m'
-end.
-
-Fixpoint encode_N_aux (n : N) : code_N n n :=
-match n with
-    | 0 => tt
-    | S n' => encode_N_aux n'
-end.
-
-Definition encode_N {n m : N} (p : n = m) : code_N n m :=
-  transport _ p (encode_N_aux n).
-
-Fixpoint decode_N {n m : N} (c : code_N n m) {struct n} : n = m.
-Proof.
-  destruct n as [| n'], m as [| m']; cbn in *.
-    refl.
-    destruct c.
-    destruct c.
-    exact (ap S (decode_N _ _ c)).
-Defined.
-
-Lemma decode_encode_N :
-  forall (n m : N) (p : n = m),
-    decode_N (encode_N p) = p.
-Proof.
-  unfold encode_N. destruct p. cbn. induction n as [| n']; cbn.
-    refl.
-    unfold id in IHn'. rewrite IHn'. cbn. refl.
-Defined.
-
-Lemma code_N_isProp :
-  forall (n m : N) (c1 c2 : code_N n m),
-    c1 = c2.
-Proof.
-  induction n as [| n'], m as [| m']; cbn.
-    1-3: destruct c1, c2. refl.
-    intros. apply IHn'.
-Defined.
-
 Lemma isSet_N : isSet N.
 Proof.
   unfold isSet. intros.
   rewrite <- (decode_encode_N _ _ p), <- (decode_encode_N _ _ q).
   rewrite (code_N_isProp x y (encode_N p) (encode_N q)). refl.
+Restart.
+  unfold isSet. intros n m. destruct (inv (N_eq_char n m)).
+  revert m.
+  induction n as [| n'], m as [| m']; cbn; try destruct p, q; intros.
+    refl.
+    apply IHn'.
 Defined.
 
 Lemma isSet_prod :
