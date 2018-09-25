@@ -1377,7 +1377,7 @@ Proof.
   destruct p, x. cbn. refl.
 Defined.
 
-Definition fpair {A A' B B'} (f : A -> A') (g : B -> B')
+Definition fpair {A A' B B' : U} (f : A -> A') (g : B -> B')
   : A * B -> A' * B' :=
     fun x => (f (pr1 x), g (pr2 x)).
 
@@ -2152,6 +2152,125 @@ Unshelve.
     generalize (ua e). destruct e0. cbn; unfold id. refl.
 Admitted.
 
+(** 2.15 Universal properties *)
+
+Definition fpair1 {A B C : U} (f : A -> B) (g : A -> C) : A -> B * C :=
+  fun x : A => (f x, g x).
+
+(* Definition 2.15.1 *)
+Definition unpair1 {A B C : U} (f : A -> B * C) : (A -> B) * (A -> C) :=
+  (fun x : A => pr1 (f x), fun x : A => pr2 (f x)).
+
+(* Theorem 2.15.2 *)
+Lemma prod_universal_in :
+  forall A B C : U,
+    (A -> B * C) = (A -> B) * (A -> C).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists unpair1.
+  apply qinv_isequiv. unfold qinv.
+  exists (fun p => fpair1 (pr1 p) (pr2 p)).
+  unfold homotopy, comp, id; split.
+    destruct x; compute. apply prod_eq_intro. cbn. split; apply funext; refl.
+    intro f. compute. apply funext. intro. destruct (f x). refl.
+Defined.
+
+(* Definition 2.15.4 *)
+Definition fpair2
+  {A : U} {B C : A -> U}
+  (f : forall x : A, B x) (g : forall x : A, C x)
+  : forall x : A, B x * C x :=
+    fun x : A => (f x, g x).
+
+Definition unpair2
+  {A : U} {B C : A -> U}
+  (f : forall x : A, B x * C x)
+  : (forall x : A, B x) * (forall x : A, C x) :=
+    (fun x : A => pr1 (f x), fun x : A => pr2 (f x)).
+
+(* Theorem 2.15.5 *)
+Lemma pi_universal_in :
+  forall (A : U) (B C : A -> U),
+    (forall x : A, B x * C x) = (forall x : A, B x) * (forall x : A, C x).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists unpair2.
+  apply qinv_isequiv. unfold qinv.
+  exists (fun p => fpair2 (pr1 p) (pr2 p)).
+  split; compute.
+    destruct x. apply prod_eq_intro. cbn. split; apply funext; refl.
+    intro. apply funext. intro. destruct (x x0). refl.
+Defined.
+
+Definition fpair3
+  {A : U} {B : A -> U} {C : forall x : A, B x -> U}
+  (p : {f : forall x : A, B x & forall x : A, C x (f x)})
+  : forall x : A, {y : B x & C x y}.
+Proof.
+  destruct p as [f H]. intro.
+  exists (f x). apply H.
+Defined.
+
+(* Definition 2.15.6 *)
+Definition unpair3
+  {A : U} {B : A -> U} {C : forall x : A, B x -> U}
+  (f : forall x : A, {y : B x & C x y})
+  : {f : forall x : A, B x & forall x : A, C x (f x)}.
+Proof.
+  exists (fun x : A => pr1' (f x)).
+  intro. destruct (f x). cbn. assumption.
+Defined.
+
+(* Theorem 2.15.7 *)
+Theorem pi_sigma_universal_in :
+  forall {A : U} {B : A -> U} {C : forall x : A, B x -> U},
+    (forall x : A, {y : B x & C x y}) =
+    {f : forall x : A, B x & forall x : A, C x (f x)}.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists unpair3.
+  apply qinv_isequiv. unfold qinv.
+  exists fpair3.
+  compute; split.
+    destruct x. apply sigma_eq_intro. cbn. exists (refl _).
+      cbn. refl.
+    intro f. apply funext. intro. destruct (f x). refl.
+Defined.
+
+(* Theorem 2.15.9 *)
+Lemma pi_sigma_universal_out :
+  forall (A : U) (B : A -> U) (C : {x : A & B x} -> U),
+    (forall (x : A) (y : B x), C (| x, y |)) =
+    (forall w : {x : A & B x}, C w).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists (sigma_rect A B C).
+  apply qinv_isequiv. unfold qinv.
+  exists (fun f x y => f (| x, y |)).
+  split; compute.
+    intro f. apply funext. destruct x. refl.
+    refl.
+Defined.
+
+(* Theorem 2.15.10 *)
+Lemma based_path_universal :
+  forall (A : U) (a : A) (B : forall x : A, a = x -> U),
+    (forall (x : A) (p : a = x), B x p) = B a (refl a).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists (fun f : forall (x : A) (p : a = x), B x p => f a (refl a)).
+  apply qinv_isequiv. unfold qinv.
+  exists based_path_ind.
+  split; compute.
+    refl.
+    intro f. apply funext. intro. apply funext. destruct x0. refl.
+Defined.
+
+(* Definition 2.15.11 *)
+Definition pullback
+  {A B C : U} (f : A -> C) (g : B -> C) : U :=
+    {a : A & {b : B & f a = g b}}.
+
 (** Exercises *)
 
 (** **** Ex. 1.6 *)
@@ -2263,17 +2382,17 @@ Goal forall x y : N, x = y. Abort.
 Goal forall (x y : N) (p q : x = y), p = q. Abort.
 Goal forall (x y : N) (p q : x = y) (r s : p = q), r = s. Abort.
 
-Fixpoint path (n : N) (A : U) : U :=
+Fixpoint npath (n : N) (A : U) : U :=
   forall x y : A,
 match n with
     | 0 => x = y
-    | S n' => path n' (x = y)
+    | S n' => npath n' (x = y)
 end.
 
-Compute path 0 N.
-Compute path 1 N.
-Compute path (S 1) N.
-Compute path (S (S 1)) N.
+Compute npath 0 N.
+Compute npath 1 N.
+Compute npath (S 1) N.
+Compute npath (S (S 1)) N.
 
 (** **** Ex. 2.5 *)
 
@@ -2350,11 +2469,75 @@ Proof.
 Defined.
 
 (** **** Ex. 2.7 TODO *)
+
+Definition fpair_dep
+  {A A' : U} {B : A -> U} {B' : A' -> U}
+  (f : A -> A') (g : forall x : A, B x -> B' (f x)) (p : {x : A & B x})
+  : {x : A' & B' x} := (| f (pr1' p), g (pr1' p) (pr2' p) |).
+
+Theorem ap_sigma_eq_intro :
+  forall (A A' : U) (B : A -> U) (B' : A' -> U) (x y : {a : A & B a})
+  (p : pr1' x = pr1' y) (q : transport _ p (pr2' x) = pr2' y)
+  (f : {x : A & B x} -> {x : A' & B' x}), U.
+Proof.
+  intros.
+  intros.
+    Check ap f (sigma_eq_intro (| p, q |)).
+    Check @sigma_eq_intro _ _ (f x) (f y).
+    assert ({p : pr1' (f x) = pr1' (f y) &
+                 transport B' p (pr2' (f x)) = pr2' (f y)}).
+      exists (ap pr1' (ap f (sigma_eq_intro (| p, q |)))).
+      generalize (sigma_eq_intro (| p, q |)).
+      destruct e. cbn. refl. Show Proof.
+Abort.
+
+Theorem ap_sigma_eq_intro :
+  forall (A A' : U) (B : A -> U) (B' : A' -> U) (x y : {a : A & B a})
+  (p : pr1' x = pr1' y) (q : transport _ p (pr2' x) = pr2' y)
+  (f : A -> A') (g : forall x : A, B x -> B' (f x)), U.
+Proof.
+  intros. Check @fpair. Check @fpair_dep.
+    Check ap (fpair_dep f g) (sigma_eq_intro (| p, q |)).
+    Check @sigma_eq_intro _ _ (fpair_dep f g x) (fpair_dep f g y).
+    Eval cbn in pr1' (fpair_dep f g x).
+    Eval cbn in pr2' (fpair_dep f g x).
+    Eval cbn in pr2' (fpair_dep f g y).
+    assert ({p : pr1' (fpair_dep f g x) = pr1' (fpair_dep f g y) &
+                 transport B' p (g (pr1' x) (pr2' x)) = g (pr1' y) (pr2' y)}).
+      exists (ap f p).
+      rewrite <- q. Search transport.
+      rewrite <- (transport_family _ _ _ g _ _ p (pr2' x)).
+      rewrite <- (transport_ap _ _ B' f _ _ p).
+      refl.
+Abort.
+
+Theorem ap_prod_eq_intro' :
+  forall (A A' B B' : U) (x y : A * B)
+  (p : pr1 x = pr1 y) (q : pr2 x = pr2 y)
+  (f : A -> A') (g : B -> B'), U.
+Proof.
+  intros.
+  Check ap (fpair f g) (prod_eq_intro (p, q)).
+  Eval cbn in @prod_eq_intro _ _ (fpair f g x) (fpair f g y).
+  Eval cbn in pr1 (fpair f g x). Check ap f p. Check (ap f p, ap g q).
+  Check ap f p.
+Proof.
+Abort.
+
 (** **** Ex. 2.8 TODO *)
+
+Theorem ap_prod_eq_intro' :
+  forall (A A' B B' : U) (x y : A * B)
+  (p : pr1 x = pr1 y) (q : pr2 x = pr2 y)
+  (f : A -> A') (g : B -> B'),
+    ap (fpair f g) (prod_eq_intro (p, q)) =
+    @prod_eq_intro _ _ (fpair f g x) (fpair f g y) (ap f p, ap g q).
+Proof.
+Abort.
 
 (** **** Ex. 2.9 *)
 
-Lemma fun_sum :
+Lemma sum_fun_universal:
   forall A B C : U,
     (A + B -> C) = (A -> C) * (B -> C).
 Proof.
@@ -2371,7 +2554,7 @@ Proof.
     compute. intro. apply funext. destruct x0; refl.
 Defined.
 
-Lemma pi_sum :
+Lemma sum_pi_universal :
   forall (A B : U) (C : A + B -> U),
     (forall x : A + B, C x) =
     (forall a : A, C (inl a)) * (forall b : B, C (inr b)).
@@ -2384,6 +2567,19 @@ Proof.
     split; compute.
       destruct x; refl.
       intro. apply funext. destruct x0; refl.
+Defined.
+
+Lemma sigma_fun_universal:
+  forall (A C : U) (B : A -> U),
+    ({x : A & B x} -> C) = (forall x : A, B x -> C).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists (fun f x y => f (| x, y |)).
+  apply qinv_isequiv. unfold qinv.
+  exists (fun (f : forall x : A, B x -> C) p => f (pr1' p) (pr2' p)).
+  split; compute.
+    refl.
+    intro f. apply funext. destruct x. refl.
 Defined.
 
 (** **** Ex. 2.10 *)
@@ -2535,7 +2731,7 @@ Proof.
   destruct b1, b2, c; refl.
 Defined.
 
-Lemma bool_eq_char :
+Lemma eq_bool_char :
   forall x y : bool,
     (x = y) = code_bool x y.
 Proof.
@@ -2859,9 +3055,9 @@ Lemma isSet_N : isSet N.
 Proof.
   unfold isSet. intros.
   rewrite <- (decode_encode_N _ _ p), <- (decode_encode_N _ _ q).
-  rewrite (code_N_isProp x y (encode_N p) (encode_N q)). refl.
+  rewrite (isProp_code_N_aux x y (encode_N p) (encode_N q)). refl.
 Restart.
-  unfold isSet. intros n m. destruct (inv (N_eq_char n m)).
+  unfold isSet. intros n m. destruct (inv (eq_N_char n m)).
   revert m.
   induction n as [| n'], m as [| m']; cbn; try destruct p, q; intros.
     refl.
@@ -3670,8 +3866,6 @@ Defined.
 Definition DN_rec : U :=
   forall A B : U, isProp B -> (A -> B) -> ~ ~ A -> B.
 
-Search trunc.
-
 Lemma ex_3_14 :
   LEM -> {R : DN_rec &
             forall (A B : U) (H : isProp B) (f : A -> B) (x : A),
@@ -3918,7 +4112,7 @@ Proof.
   unfold AC_Fin'.
   induction n as [| n']; cbn; intros A P SA PP f.
     apply trunc'. esplit. Unshelve. 1,3: destruct x.
-    rewrite pi_sum in *.
+    rewrite sum_pi_universal in *.
       destruct SA as [SA1 SA2], PP as [PP1 PP2], f as [f1 f2].
       pose (B := fun x => A (inr x)).
       pose (P' := fun x => P (inr x)).
