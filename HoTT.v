@@ -2524,16 +2524,99 @@ Proof.
 Proof.
 Abort.
 
-(** **** Ex. 2.8 TODO *)
+(** **** Ex. 2.8 *)
 
-Theorem ap_prod_eq_intro' :
-  forall (A A' B B' : U) (x y : A * B)
-  (p : pr1 x = pr1 y) (q : pr2 x = pr2 y)
-  (f : A -> A') (g : B -> B'),
-    ap (fpair f g) (prod_eq_intro (p, q)) =
-    @prod_eq_intro _ _ (fpair f g x) (fpair f g y) (ap f p, ap g q).
+Definition code_sum {A B : U} (x y : A + B) : U :=
+match x, y with
+    | inl a, inl a' => a = a'
+    | inl _, inr _ => empty
+    | inr _, inl _ => empty
+    | inr b, inr b' => b = b'
+end.
+
+Definition encode_sum_aux
+  {A B : U} (x : A + B) : code_sum x x :=
+match x with
+    | inl a => refl a
+    | inr b => refl b
+end.
+
+Definition encode_sum
+  {A B : U} {x y : A + B} (p : x = y) : code_sum x y :=
+    transport _ p (encode_sum_aux x).
+
+Definition decode_sum
+  {A B : U} {x y : A + B} (c : code_sum x y) : x = y.
 Proof.
-Abort.
+  destruct x, y; cbn in *.
+    apply ap. assumption.
+    destruct c.
+    destruct c.
+    apply ap. assumption.
+Defined.
+
+Lemma decode_encode_sum :
+  forall {A B : U} {x y : A + B} (p : x = y),
+    decode_sum (encode_sum p) = p.
+Proof.
+  destruct p, x; cbn; refl.
+Defined.
+
+Lemma encode_decode_sum :
+  forall {A B : U} {x y : A + B} (c : code_sum x y),
+    encode_sum (decode_sum c) = c.
+Proof.
+  destruct x, y, c; refl.
+Defined.
+
+Lemma sum_eq_char :
+  forall (A B : U) (x y : A + B),
+    (x = y) = code_sum x y.
+Proof.
+  intros A B x y. apply ua. unfold equiv.
+  exists encode_sum.
+  apply qinv_isequiv. unfold qinv.
+  exists decode_sum. split.
+    compute. destruct x, y; destruct x; refl.
+    compute. destruct x0, x; refl.
+Defined.
+
+Definition copair
+  {A A' B B' : U} (f : A -> A') (g : B -> B') : A + B -> A' + B' :=
+    fun x : A + B =>
+    match x with
+        | inl a => inl (f a)
+        | inr b => inr (g b)
+    end.
+
+Definition ap_code
+  {A A' B B' : U} (f : A -> A') (g : B -> B') {x y : A + B}
+  (c : code_sum x y) : code_sum (copair f g x) (copair f g y).
+Proof.
+  destruct x, y; cbn in *; try apply ap; assumption.
+Defined.
+
+Lemma ap_decode_sum :
+  forall
+    (A A' B B' : U) (x y : A + B)
+    (f : A -> A') (g : B -> B')
+    (c : code_sum x y),
+      ap (copair f g) (decode_sum c) =
+      decode_sum (ap_code f g c).
+Proof.
+  destruct x, y, c; refl.
+Defined.
+
+Theorem ap_encode_sum :
+  forall
+    (A A' B B' : U) (x y : A + B)
+    (f : A -> A') (g : B -> B')
+    (p : x = y),
+      encode_sum (ap (copair f g) p) =
+      ap_code f g (encode_sum p).
+Proof.
+  destruct x, y, p; refl.
+Defined.
 
 (** **** Ex. 2.9 *)
 
@@ -2619,7 +2702,126 @@ Unshelve.
 Defined.
 
 (** **** Ex. 2.11 TODO *)
+
+Module ex_2_11.
+
+Record commutative_square : U :=
+{
+    P : U;
+    A : U;
+    B : U;
+    C : U;
+    f : A -> C;
+    g : B -> C;
+    h : P -> A;
+    k : P -> B;
+    commutative : comp h f = comp k g;
+}.
+
+Definition induced_map
+  (S : commutative_square) (X : U)
+  (u : X -> P S)
+  : pullback (fun f' : X -> A S => comp f' (f S))
+             (fun g' : X -> B S => comp g' (g S)).
+Proof.
+  unfold pullback.
+  exists (comp u (h S)), (comp u (k S)).
+  compute. apply funext. intro.
+  destruct S. compute in *.
+  exact (happly commutative0 (u x)).
+Defined.
+
+Definition homotopy_pullback_square
+  (S : commutative_square) : U :=
+    forall X : U, isequiv (induced_map S X).
+
+Definition pullback_pr1
+  {A B C : U} (f : A -> C) (g : B -> C) (x : pullback f g) : A :=
+    pr1' x.
+
+Definition pullback_pr2
+  {A B C : U} (f : A -> C) (g : B -> C) (x : pullback f g) : B :=
+    pr1' (pr2' x).
+
+Definition pullback_to_square
+  {A B C : U} (f : A -> C) (g : B -> C) : commutative_square.
+Proof.
+eapply
+{|
+    P := pullback f g;
+    A := A;
+    B := B;
+    C := C;
+    f := f;
+    g := g;
+    h := pullback_pr1 f g;
+    k := pullback_pr2 f g;
+|}.
+Unshelve.
+  compute. apply funext. destruct x as [a [b p]]. assumption.
+Defined.
+
+Theorem ex_2_11 :
+  forall (A B C : U) (f : A -> C) (g : B -> C),
+    homotopy_pullback_square (pullback_to_square f g).
+Proof.
+  unfold homotopy_pullback_square.
+  intros A B C f g X.
+  apply qinv_isequiv. unfold qinv. cbn. esplit.
+Unshelve.
+  Focus 2. cbn. unfold pullback. intros p x.
+    exists (pr1' p x). exists (pr1' (pr2' p) x).
+    exact (happly (pr2' (pr2' p)) x).
+  unfold homotopy, comp, id. split.
+    intros [h [k H]]. unfold induced_map. apply sigma_eq_intro; cbn.
+      esplit. Unshelve.
+        Focus 3. compute. refl.
+        apply sigma_eq_intro. cbn. esplit. Unshelve.
+          Focus 3. compute. refl.
+          cbn. unfold id. rewrite funext_happly. apply ap.
+            apply funext. intro. rewrite happly_funext. refl.
+    intro u. apply funext. intro. apply sigma_eq_intro. cbn. esplit. Unshelve.
+      Focus 2. refl.
+      rewrite 2!happly_funext. apply sigma_eq_intro. cbn. esplit. Unshelve.
+        Focus 2. refl.
+        destruct (u x) as [a [b H]]. cbn. refl.
+Defined.
+
+End ex_2_11.
+
 (** **** Ex. 2.12 TODO *)
+
+Module ex_2_12.
+
+Definition is_commutative_square
+  {P A B C : U} (f : A -> C) (g : B -> C) (h : P -> A) (k : P -> B) : U :=
+    comp h f = comp k g.
+
+Lemma ex_2_12 :
+  forall
+    (A B C D E F : U)
+    (ab : A -> B) (ac : A -> C)
+    (bd : B -> D)
+    (cd : C -> D) (ce : C -> E)
+    (df : D -> F)
+    (ef : E -> F),
+      is_commutative_square ef df ce cd ->
+        is_commutative_square cd bd ac ab =
+        is_commutative_square ef (comp bd df) (comp ac ce) ab.
+Proof.
+  unfold is_commutative_square, comp.
+  intros * H. apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. intro H'. apply funext. intro.
+    rewrite (happly H (ac0 x)). apply ap. apply (happly H').
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. intro H'. apply funext. intro.
+    apply (fun H => happly H (ac0 x)) in H. cbn in H.
+    apply (fun H' => happly H' x) in H'. cbn in H'.
+Abort.
+
+End ex_2_12.
 
 (** **** Ex. 2.13 *)
 
@@ -2868,8 +3070,21 @@ Defined.
 
 (** **** Ex. 2.14 *)
 
-(** If we assume p : x = y gives x ≡ y, then refl x : x = y and by
-    path induction we have p = refl x. *)
+(** Let's assume the equality reflection rule, i. e. if x = y then x ≡ y.
+
+    Lemma: for all x, y and p : x = y we have p = refl x.
+    Proof.
+      Let's take any x, y and p : x = y.
+      We have refl x : x = x, but thanks to p we have x ≡ y and thus
+      refl x : x = y.
+      Therefore the expression p = refl x is well-typed and we can
+      use based path induction to reduce this to refl x = refl x,
+      which we prove by refl (refl x).
+    Qed.
+
+    If we now take some p : x = x, we know from the above that p = refl x
+    and therefore, because of the equality reflection rule we must also
+    have p ≡ refl x. *)
 
 (** **** Ex. 2.15 *)
 
@@ -2877,10 +3092,10 @@ Lemma ex_2_15 :
   forall (A : U) (B : A -> U) (x y : A) (p : x = y),
     transport B p = idtoeqv (ap B p).
 Proof.
-  intros. destruct p. cbn. refl.
+  destruct p. cbn. refl.
 Defined.
 
-(** **** Ex. 2.16 *)
+(** **** Ex. 2.16 TODO *)
 
 (** **** Ex. 2.17 *)
 
@@ -2929,6 +3144,20 @@ Proof.
       compute in *. destruct x. rewrite Hf1, Hg1. refl.
     exists (fun x => (f2 (pr1 x), g2 (pr2 x))).
       compute in *. destruct x. rewrite Hf2, Hg2. refl.
+(*
+Restart.
+  intros * f g. unfold equiv.
+  exists (fun x => (pr1' f (pr1 x), pr1' g (pr2 x))).
+  unfold isequiv. split.
+    exists (fun x => (pr1' (pr1 (pr2' f)) (pr1 x), pr1' (pr1 (pr2' g)) (pr2 x))).
+      compute. destruct x, f as [f [[f1 Hf1] [f2 Hf2]]],
+                           g as [g [[g1 Hg1] [g2 Hg2]]].
+        compute in *. rewrite Hf1, Hg1. refl.
+    exists (fun x => (pr1' (pr2 (pr2' f)) (pr1 x), pr1' (pr2 (pr2' g)) (pr2 x))).
+      compute. destruct x, f as [f [[f1 Hf1] [f2 Hf2]]],
+                           g as [g [[g1 Hg1] [g2 Hg2]]].
+        compute in *. rewrite Hf2, Hg2. refl.
+*)
 Defined.
 
 Lemma aux : 
@@ -2951,39 +3180,22 @@ Lemma ex_2_17_2 :
 Proof.
   intros.
   rewrite <- (idtoeqv_ua' ea), <- (idtoeqv_ua' eb).
-  unfold ex_2_17_1_1. destruct (ua ea), (ua eb).
-  rewrite 2!ua_id. cbn.
-  unfold idtoeqv, isequiv_id, transport, id.
-  Check fun x : A * B =>
- match x as p return ((pr1 p, pr2 p) = p) with
- | (a, b) => refl (a, b)
- end.
-
-  assert (
-          transport id (aux A B) (fun x : A * B =>
-          match x as p return ((pr1 p, pr2 p) = p) with
-              | (a, b) => refl (a, b)
-          end)
-          =
-          fun x => refl x).
-    apply funext. destruct x.
-Restart.
-  intros. unfold ex_2_17_1_1, ex_2_17_1_2.
-  destruct ea, eb, (ua (| x, i |)), (ua (| x0, i0 |)).
-  destruct (isequiv_qinv _), (isequiv_qinv _), p, p0.
-Abort.
-
-Lemma ex_2_17_2' :
-  forall (A A' B B' : U) (ea : A ~ A') (eb : B ~ B'),
-    ex_2_17_1_1 ea eb = ex_2_17_1_2' ea eb.
-Proof.
-  intros. unfold ex_2_17_1_1, ex_2_17_1_2.
-  destruct ea, eb, (ua (| x, i |)), (ua (| x0, i0 |)).
-  destruct i as [[] []], i0 as [[] []].
-  compute.
-  apply sigma_eq_intro. esplit. Unshelve.
-    Focus 2. cbn. apply funext. destruct x5. admit.
-    compute. Search funext.
+  generalize (ua ea), (ua eb). destruct e, e.
+  unfold ex_2_17_1_1. rewrite 2!ua_id.
+  apply sigma_eq_intro. cbn. esplit.
+Unshelve.
+  Focus 2. unfold id. apply funext. intros [a b]. cbn. refl.
+  assert ((funext
+     (fun x : A * B =>
+      match x as p return (p = (pr1 p, pr2 p)) with
+      | (a, b) => refl (a, b)
+      end)) = funext (fun x => inv (prod_uniq _ _ x))).
+    apply ap. apply funext. intros [a b]. cbn. refl.
+  rewrite X.
+  Check funext (fun x : A * B => inv (prod_uniq A B x)).
+  Check happly (refl _).
+  unfold id.
+  apply prod_eq_intro. cbn. split.
 Abort.
 
 Lemma sum_pres_equiv :
@@ -3024,6 +3236,18 @@ Unshelve.
     destruct ea as [f [[f1 H1] [f2 H2]]].
     cbn. unfold homotopy, comp, id in *. rewrite H1.
 Abort.
+
+(** **** Ex. 2.18 *)
+
+Lemma homotopy_natural_dependent :
+  forall
+    (A : U) (B : A -> U) (f g : forall x : A, B x)
+    (H : homotopy f g) (x y : A) (p : x = y),
+      cat (ap (transport B p) (H x)) (apd g p) =
+      cat (apd f p) (H y).
+Proof.
+  destruct p. cbn. destruct (H x). compute. refl.
+Defined.
 
 (** Chapter 3 *)
 
@@ -3608,61 +3832,6 @@ Proof.
 Defined.
 
 (** **** Ex. 3.2 *)
-
-Definition code_sum {A B : U} (x y : A + B) : U :=
-match x, y with
-    | inl a, inl a' => a = a'
-    | inl _, inr _ => empty
-    | inr _, inl _ => empty
-    | inr b, inr b' => b = b'
-end.
-
-Definition encode_sum_aux
-  {A B : U} (x : A + B) : code_sum x x :=
-match x with
-    | inl a => refl a
-    | inr b => refl b
-end.
-
-Definition encode_sum
-  {A B : U} {x y : A + B} (p : x = y) : code_sum x y :=
-    transport _ p (encode_sum_aux x).
-
-Definition decode_sum
-  {A B : U} {x y : A + B} (c : code_sum x y) : x = y.
-Proof.
-  destruct x, y; cbn in *.
-    apply ap. assumption.
-    destruct c.
-    destruct c.
-    apply ap. assumption.
-Defined.
-
-Lemma decode_encode_sum :
-  forall {A B : U} {x y : A + B} (p : x = y),
-    decode_sum (encode_sum p) = p.
-Proof.
-  destruct p, x; cbn; refl.
-Defined.
-
-Lemma encode_decode_sum :
-  forall {A B : U} {x y : A + B} (c : code_sum x y),
-    encode_sum (decode_sum c) = c.
-Proof.
-  destruct x, y, c; refl.
-Defined.
-
-Lemma sum_eq_char :
-  forall (A B : U) (x y : A + B),
-    (x = y) = code_sum x y.
-Proof.
-  intros A B x y. apply ua. unfold equiv.
-  exists encode_sum.
-  apply qinv_isequiv. unfold qinv.
-  exists decode_sum. split.
-    compute. destruct x, y; destruct x; refl.
-    compute. destruct x0, x; refl.
-Defined.
 
 Lemma isSet_coprod :
   forall A B : U,
