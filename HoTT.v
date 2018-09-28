@@ -4,16 +4,16 @@ Local Set Default Proof Mode "Classic".
 
 Set Universe Polymorphism.
 
-(** Chapter 1 *)
+(** * Chapter 1 *)
 
-(** * 1.3 Universes and families *)
+(** ** 1.3 Universes and families *)
 
 Definition U := Type.
 
 (*Notation "'U'" := Type.
 *)
 
-(** * 1.4 Dependent function types (Π-types) *)
+(** ** 1.4 Dependent function types (Π-types) *)
 
 Notation "A -> B" :=
   (forall _ : A, B) (at level 99, right associativity, B at level 200).
@@ -23,7 +23,7 @@ Definition id {A : U} (x : A) : A := x.
 Definition swap {A B C : U} (f : A -> B -> C) : B -> A -> C :=
   fun (b : B) (a : A) => f a b.
 
-(** * 1.12 Identity types *)
+(** ** 1.12 Identity types *)
 
 Inductive eq {A : U} (x : A) : A -> U :=
     | refl : eq x x.
@@ -34,7 +34,7 @@ Notation "x = y" := (eq x y) (at level 70, no associativity).
 
 Ltac refl := intros; apply refl.
 
-(** * 1.5 Product types *)
+(** ** 1.5 Product types *)
 
 Inductive prod (A B : U) : U :=
     | pair : A -> B -> prod A B.
@@ -87,7 +87,7 @@ match x with
     | (a, b) => f a b
 end.
 
-(** ** [unit] *)
+(** *** [unit] *)
 
 Inductive unit : U :=
     | tt : unit.
@@ -108,7 +108,7 @@ Proof.
   destruct u. refl.
 Defined.
 
-(** * 1.6 Dependent pair types (Σ-types) *)
+(** ** 1.6 Dependent pair types (Σ-types) *)
 
 Inductive sigma {A : U} (B : A -> U) : U :=
     | dpair : forall x : A, B x -> sigma B.
@@ -165,7 +165,7 @@ Definition Magma : U :=
 Definition PointedMagma : U :=
   {A : U & (A -> A -> A) * A}.
 
-(** * 1.7 Coproduct types *)
+(** ** 1.7 Coproduct types *)
 
 Inductive coprod (A B : U) : U :=
     | inl : A -> coprod A B
@@ -193,7 +193,7 @@ match x with
     | inr b => g b
 end.
 
-(** ** [empty] *)
+(** *** [empty] *)
 
 Inductive empty : U := .
 
@@ -203,7 +203,7 @@ Definition empty_rec' {C : U} (x : empty) : C :=
 Definition empty_ind' {C : empty -> U} (x : empty) : C x :=
   match x with end.
 
-(** * 1.8 The type of booleans *)
+(** ** 1.8 The type of booleans *)
 
 Inductive bool : U :=
     | true : bool
@@ -234,7 +234,7 @@ Defined.
     - A * B := forall x : bool, bool_rec' A B x
 *)
 
-(** * 1.9 The natural numbers *)
+(** ** 1.9 The natural numbers *)
 
 Inductive N : U :=
     | O : N
@@ -307,7 +307,7 @@ Proof.
     intros n H j k. rewrite H. refl.
 Defined.
 
-(** * 1.11 Propositions as types *)
+(** ** 1.11 Propositions as types *)
 
 Definition not (A : U) := A -> empty.
 
@@ -330,7 +330,7 @@ Definition lt (n m : N) : U :=
   {k : N & add n (S k) = m}.
 *)
 
-(** * 1.12 Identity types *)
+(** ** 1.12 Identity types *)
 
 Definition indiscernability
   {A : U} {C : A -> U} {x y : A} (p : x = y) (cx : C x) : C y :=
@@ -364,7 +364,7 @@ Defined.
 
 Notation "x <> y" := (~ x = y) (at level 50).
 
-(** * Exercises *)
+(** ** Exercises *)
 
 (** Status: all done. *)
 
@@ -783,11 +783,11 @@ Defined.
 
 (** **** Ex. 1.16 MOVED *)
 
-(** Chapter 2 *)
+(** * Chapter 2 *)
 
 (** Exercises TODO: 4, 7, 12, 16, 17 *)
 
-(** * 2.1 Types are higher groupoids *)
+(** ** 2.1 Types are higher groupoids *)
 
 (* Lemma 2.1.1 *)
 Definition inv {A : U} {x y : A} (p : x = y) : y = x :=
@@ -965,7 +965,7 @@ Abort.
 
 End Eckmann_Hilton.
 
-(** * 2.2 Functions are functors *)
+(** ** 2.2 Functions are functors *)
 
 (* Lemma 2.2.1 *)
 Definition ap {A B : U} (f : A -> B) {x y : A} (p : x = y) : f x = f y :=
@@ -1005,7 +1005,7 @@ Proof.
   destruct p. refl.
 Defined.
 
-(** * 2.3 Type families are fibrations *)
+(** ** 2.3 Type families are fibrations *)
 
 (* Lemma 2.3.1 *)
 Definition transport {A : U} (P : A -> U) {x y : A}
@@ -1080,7 +1080,7 @@ Proof.
   destruct p. cbn. refl.
 Defined.
 
-(** * 2.4 Homotopies and equivalences *)
+(** ** 2.4 Homotopies and equivalences *)
 
 (* Definition 2.4.1 *)
 Definition homotopy {A : U} {P : A -> U} (f g : forall x : A, P x) : U :=
@@ -1280,7 +1280,7 @@ Restart.
         exact (cat Hg2 (Hf2 x)).
 Defined.
 
-(** * 2.6 Cartesian product types *)
+(** ** 2.6 Cartesian product types *)
 
 Definition prod_eq_intro
   {A B : U} {x y : A * B} (pq : (pr1 x = pr1 y) * (pr2 x = pr2 y)) : x = y.
@@ -1377,7 +1377,7 @@ Proof.
   intros A A' B B' [] []. cbn. intros [] [] **. compute. refl.
 Defined.
 
-(** * 2.7 Σ-types *)
+(** ** 2.7 Σ-types *)
 
 Definition sigma_eq_intro
   {A : U} {B : A -> U} {x y : {x : A & B x}}
@@ -1487,7 +1487,7 @@ Proof.
   destruct p, q, x. cbn. refl.
 Defined.
 
-(** * 2.8 The unit type *)
+(** ** 2.8 The unit type *)
 
 Definition unit_eq_intro
   (x y : unit) (u : unit) : x = y :=
@@ -1537,7 +1537,7 @@ Proof.
     destruct x0, x. refl.
 Defined.
 
-(** * 2.9 Π-types and the function extensionality axiom *)
+(** ** 2.9 Π-types and the function extensionality axiom *)
 
 (* Definition 2.9.2 *)
 Definition happly {A : U} {B : A -> U}
@@ -1884,7 +1884,7 @@ Proof.
   destruct p. intros. rewrite cat_refl_l, cat_refl_r. cbn. apply equiv_refl.
 Defined.
 
-(** * 2.12 Coproducts *)
+(** ** 2.12 Coproducts *)
 
 Definition code {A B : U} (a : A) (x : A + B) : U :=
 match x with
@@ -1993,7 +1993,7 @@ Proof.
   destruct p. cbn. refl.
 Defined.
 
-(** * 2.13 Natural numbers *)
+(** ** 2.13 Natural numbers *)
 
 Fixpoint code_N (n m : N) : U :=
 match n, m with
@@ -2083,7 +2083,7 @@ Proof.
   apply encode_N in p. cbn in p. assumption.
 Defined.
 
-(** * 2.14 Example: equality of structures *)
+(** ** 2.14 Example: equality of structures *)
 
 (* Definition 2.14.1.1 *)
 Definition SemigroupStr (A : U) : U :=
@@ -2144,7 +2144,7 @@ Unshelve.
     generalize (ua e). destruct e0. cbn; unfold id. refl.
 Admitted.
 
-(** 2.15 Universal properties *)
+(** ** 2.15 Universal properties *)
 
 Definition fpair1 {A B C : U} (f : A -> B) (g : A -> C) : A -> B * C :=
   fun x : A => (f x, g x).
@@ -2263,7 +2263,7 @@ Definition pullback
   {A B C : U} (f : A -> C) (g : B -> C) : U :=
     {a : A & {b : B & f a = g b}}.
 
-(** Exercises *)
+(** ** Exercises *)
 
 (** **** Ex. 1.6 *)
 
@@ -3237,9 +3237,11 @@ Proof.
   destruct p. cbn. destruct (H x). compute. refl.
 Defined.
 
-(** Chapter 3 Sets and logic *)
+(** * Chapter 3 Sets and logic *)
 
-(** * 3.1 Sets and n-types *)
+(** TODO: exercise 3.10 *)
+
+(** ** 3.1 Sets and n-types *)
 
 (* Definition 3.1.1 *)
 Definition isSet (A : U) : U :=
@@ -3340,7 +3342,7 @@ Proof.
     apply neq_false_true. assumption.
 Defined.
 
-(** * 3.2 Propositions as types? *)
+(** ** 3.2 Propositions as types? *)
 
 Definition bad_LEM : U := forall A : U, A + ~ A.
 Definition bad_DNE : U := forall A : U, ~ ~ A -> A.
@@ -3406,7 +3408,7 @@ Proof.
     apply neq_false_true. apply inv. assumption.
 Defined.
 
-(** 3.3 Mere propositions *)
+(** ** 3.3 Mere propositions *)
 
 (* Definition 3.3.1 *)
 Definition isProp (P : U) : U :=
@@ -3500,7 +3502,7 @@ Proof.
     unfold type1 in X. apply X.
 Defined.
 
-(** * 3.4 Classical vs. intuitionistic logic *)
+(** ** 3.4 Classical vs. intuitionistic logic *)
 
 (* Definition 3.4.1 *)
 Definition LEM : U :=
@@ -3521,7 +3523,7 @@ Definition decidable_family {A : U} (B : A -> U) : U :=
 Definition decidable_equality (A : U) : U :=
   forall x y : A, (x = y) + ~ (x = y).
 
-(** * 3.5 Subsets and propositional resizing *)
+(** ** 3.5 Subsets and propositional resizing *)
 
 (* Lemma 3.5.1 *)
 Lemma subtype_eq_intro :
@@ -3540,6 +3542,33 @@ Definition prop : U := {P : U & isProp P}.
 Coercion prop_to_Sortclass (p : prop) : U := pr1' p.
 
 (* TODO: propositional resizing axiom *)
+
+Lemma wut :
+  forall P : U,
+    isProp P -> forall (x : P) (p : x = x),
+      p = refl x.
+Proof.
+  intros P PP x p. apply isProp_isSet. assumption.
+Defined.
+
+Lemma subtype_eq_intro_steroids :
+  forall (A : U) (P : A -> U),
+    (forall x : A, isProp (P x)) ->
+      forall u v : {x : A & P x},
+        (u = v) = (pr1' u = pr1' v).
+Proof.
+  intros A P PP u v. apply ua. unfold equiv.
+  exists (ap pr1').
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. destruct u as [x px], v as [y py]. cbn.
+    intro p. apply sigma_eq_intro. exists p. cbn. apply PP.
+  unfold homotopy, comp, id; split.
+    destruct u as [u pu], v as [v pv]. cbn. destruct x, (PP u pu pv).
+      cbn. rewrite (wut (P u) (PP u) _ (PP u (id pu) pu)). cbn. refl.
+    destruct x, u. cbn.
+      rewrite (wut (P x) (PP x) _ (PP x (id p) p)). refl.
+Defined.
 
 (** ** 3.6 The logic of mere propositions *)
 
@@ -3736,25 +3765,77 @@ Unshelve.
     apply funext. intro. apply path.
 Defined.
 
-(* Lemma 3.8.5 TODO *)
+(** **** Ex. 3.17 *)
+
+Lemma trunc_ind :
+  forall {A : U} {B : trunc A -> U},
+    (forall x : trunc A, isProp (B x)) ->
+    (forall x : A, B (trunc' x)) ->
+      forall x : trunc A, B x.
+Proof.
+  intros A B PB H. intro. eapply trunc_rec.
+    apply PB.
+    intro. specialize (H X). assert (p : trunc' X = x).
+      apply path.
+      rewrite <- p. assumption.
+    assumption.
+Defined.
+
+(** **** Ex. 1.14 MOVED *)
+
+(** Because both endpoints of the path are fixed. For a counterexample,
+    see below. *)
+
+Lemma negb_not_refl :
+  ua negb_equiv <> refl bool.
+Proof.
+  intro. assert (transport (fun A => A) (refl bool) true = false).
+    destruct X. rewrite transport_ua. cbn. refl.
+  cbn in X0. apply neq_false_true. apply inv. assumption.
+Defined.
+
+(* Lemma 3.8.5 *)
 Lemma not_general_AC :
   {X : U & {Y : X -> U & (forall x : X, isSet (Y x)) * ~ bad_PNE X Y}}.
 Proof.
-  exists (sigma (fun A : U => trunc (bool = A))).
+  exists {A : U & trunc (bool = A)}.
   pose (x := (| bool, trunc' (refl bool) |) : {X : U & trunc (bool = X)}).
   exists (fun y => x = y).
   assert (forall x0 : {X : U & trunc (bool = X)}, isSet (x = x0)).
-    destruct x0 as (A & p). assert (isSet A).
+    destruct x0 as (A & p). Search isSet. assert (isSet A).
       revert p. apply trunc_rec.
         apply isProp_isSet'.
-        intro. destruct X. apply isSet_bool.
-      admit.
+        intros []. apply isSet_bool.
+      revert p. apply trunc_ind.
+        intro. apply isProp_isSet'.
+        intros []. unfold isSet.
+        rewrite (sigma_uniq _ _ x). cbn.
+        rewrite subtype_eq_intro_steroids. cbn.
+          rewrite ex_2_13. apply isSet_bool.
+          intro. apply isProp_trunc.
     split.
       exact X.
-      unfold bad_PNE. intro bad_PNE. specialize (bad_PNE X).
-        assert (forall x0 : {X : U & trunc (bool = X)}, trunc (x = x0)).
-          destruct x0. revert t.
-Abort.
+      unfold bad_PNE. intro H. specialize (H X).
+        assert (forall x0 : {A : U & trunc (bool = A)}, trunc (x = x0)).
+          intro. destruct x0 as [y p]. revert p. apply trunc_ind.
+            intro. apply isProp_trunc.
+            destruct x0. apply trunc'. refl.
+        specialize (H X0). revert H. apply trunc_rec.
+          apply isProp_empty.
+          intro f. assert (SX : isSet {X : U & trunc (bool = X)}).
+            apply isProp_isSet. intros a b. rewrite <- (f a), <- (f b). refl.
+          pose (p :=  @sigma_eq_intro _ _ x x
+                       (| ua negb_equiv,
+                          path
+                           (transport (fun x0 : U => trunc (bool = x0)) 
+                           (ua negb_equiv) (trunc' (refl bool)))
+                           (trunc' (refl bool))|)).
+          specialize (SX x x (refl x) p).
+          apply (ap sigma_eq_elim) in SX.
+          unfold p in SX. rewrite sigma_eq_comp in SX.
+          apply (ap pr1') in SX. cbn in SX.
+          apply inv, negb_not_refl in SX. assumption.
+Defined.
 
 (** ** 3.9 The principle of unique choice *)
 
@@ -3998,12 +4079,14 @@ Proof.
   unfold isProp in P. rewrite (P _ (encode_sum q)). refl.
 Defined.
 
+(** **** Ex. 3.3 MOVED *)
+
 (** **** Ex. 3.4 *)
 
 Lemma ex_3_4 :
-  forall A : U, isProp A ~ isContr (A -> A).
+  forall A : U, isProp A = isContr (A -> A).
 Proof.
-  intro. unfold equiv. esplit.
+  intro. apply ua. unfold equiv. esplit.
 Unshelve. Focus 2.
   unfold isProp, isContr. intro p. exists id. intro. apply funext.
     intro. apply p.
@@ -4013,9 +4096,9 @@ Unshelve. Focus 2.
     pose (p1 := p (fun _ => x)). apply happly with x in p1.
     pose (p2 := p (fun _ => y)). apply happly with x in p2.
     rewrite <- p1, p2. refl.
-  split.
-    compute. intro. apply isProp_isContr.
-    compute. intro. apply isProp_isProp.
+  split; compute; intro.
+    apply isProp_isContr.
+    apply isProp_isProp.
 Defined.
 
 (** **** Ex. 3.5 *)
@@ -4025,14 +4108,16 @@ Lemma ex_3_5 :
 Proof.
   intro. assert (isProp (A -> isContr A)).
     apply isProp_fun. apply isProp_isContr.
- unfold equiv. esplit. Unshelve. Focus 2.
-    unfold isProp, isContr. intros p x. exists x. apply p.
-  apply qinv_isequiv. unfold qinv. esplit. Unshelve. Focus 2.
-    unfold isContr, isProp. intros H x y. destruct (H x).
-      rewrite <- (e x), <- (e y). refl.
-  split.
-    compute. intro. apply X.
-    compute. intro. apply funext. intro y. apply funext. intro z.
+ unfold equiv. esplit.
+Unshelve.
+  Focus 2. unfold isProp, isContr. intros p x. exists x. apply p.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. unfold isContr, isProp. intros H x y. destruct (H x).
+    rewrite <- (e x), <- (e y). refl.
+  split; compute; intro.
+    apply X.
+    apply funext. intro y. apply funext. intro z.
       destruct (x y y). destruct (x y z). refl.
 Defined.
 
@@ -4042,7 +4127,7 @@ Lemma ex_3_7 :
   forall A B : U,
     isProp A -> isProp B -> ~ (A * B) -> isProp (A + B).
 Proof.
-  intros A B PA PB NAB x y. Search coprod.
+  intros A B PA PB NAB x y.
   rewrite sum_eq_char. destruct x, y; cbn.
     apply PA.
     apply NAB. split; assumption.
@@ -4072,13 +4157,14 @@ Lemma ex_3_8 :
 Proof.
   intros * H1 H2 H3. unfold equiv.
   exists (fun e => trunc' (H2 e)).
-  apply qinv_isequiv. esplit. Unshelve. Focus 2.
-    apply trunc_rec.
-      intros e1 e2. apply H3.
-      exact H1.
-    split.
-      compute. intro. apply path.
-      compute. intro. apply H3.
+  apply qinv_isequiv. esplit.
+Unshelve.
+  Focus 2. apply trunc_rec.
+    intros e1 e2. apply H3.
+    exact H1.
+  split; compute; intro.
+    apply path.
+    apply H3.
 Defined.
 
 (** **** Ex. 3.9 *)
@@ -4097,7 +4183,7 @@ Proof.
 Defined.
 
 Lemma ex_3_9 :
-  LEM -> sigma isProp ~ bool.
+  LEM -> {P : U & isProp P} ~ bool.
 Proof.
   unfold LEM. intro LEM.
   unfold equiv. esplit.
@@ -4134,7 +4220,7 @@ Unshelve.
             rewrite <- e0. symmetry. apply e0.
 Defined.
 
-(** **** Ex. 3.10 *)
+(** **** Ex. 3.10 TODO *)
 
 (** **** Ex. 3.11 *)
 
@@ -4173,7 +4259,7 @@ Proof.
       destruct 1.
       specialize (f x). revert f. apply trunc_rec.
         apply isProp_empty.
-        intro. apply n. assumption.
+        intro. exact (n X0).
 Defined.
 
 Lemma ex_3_13 :
@@ -4230,7 +4316,29 @@ Unshelve.
     compute. intro. apply funext. intro. destruct (x x0).
 Defined.
 
-(** **** Ex. 3.15 TODO *)
+(** **** Ex. 3.15 *)
+
+Definition pCont (A : U) : U :=
+  forall P : U, isProp P -> (A -> P) -> P.
+
+Definition make_pCont {A : U} (x : A) : pCont A :=
+  fun _ _ f => f x.
+
+Definition pCont_rec :
+  forall A B : U, isProp B -> (A -> B) -> pCont A -> B.
+Proof.
+  unfold pCont. intros A B PB f pc.
+  apply pc.
+    apply PB.
+    exact f.
+Defined.
+
+Lemma pCont_comp :
+  forall (A B : U) (PB : isProp B) (f : A -> B) (x : A),
+    pCont_rec A B PB f (make_pCont x) = f x.
+Proof. refl. Defined.
+
+(** TODO: Looks like we DON'T need propositional resizing. Why is that? *)
 
 (** **** Ex. 3.16 *)
 
@@ -4284,22 +4392,7 @@ Proof.
   intro. rewrite (ex_3_14' LEM). apply f.
 Defined.
 
-(** **** Ex. 3.17 *)
-
-Lemma ex_3_17 :
-  forall {A : U} {B : trunc A -> U},
-    (forall x : trunc A, isProp (B x)) ->
-    (forall x : A, B (trunc' x)) ->
-      forall x : trunc A, B x.
-Proof.
-  intros A B PB H.
-  intro. Check @trunc_rec. eapply trunc_rec.
-    apply PB.
-    intro. specialize (H X). assert (p : trunc' X = x).
-      apply path.
-      rewrite <- p. assumption.
-    assumption.
-Defined.
+(** **** Ex. 3.17 MOVED EARLIER *)
 
 (** **** Ex. 3.18 *)
 
@@ -4343,7 +4436,7 @@ Defined.
 
 (** **** Ex. 3.20 *)
 
-(** See lemma_3_11_9 *)
+(** See lemma_3_11_9_2 *)
 
 (** **** Ex. 3.21 *)
 
@@ -4388,17 +4481,17 @@ Defined.
 Lemma ex_3_21 :
   forall P : U, isProp P ~ (P ~ trunc P).
 Proof.
-  intro. apply iff_equiv.
+  intro. apply isProp_iff_equiv.
     apply isProp_isProp.
     apply ex_3_21_aux.
-    intro. apply iff_equiv.
+    intro. apply isProp_iff_equiv.
       assumption.
       apply isProp_trunc.
-      apply trunc'.
+      exact trunc'.
       apply trunc_rec.
         assumption.
-        intro. assumption.
-    intro. apply ua in X. rewrite X. apply isProp_trunc.
+        exact id.
+    intro p. rewrite (ua p). apply isProp_trunc.
 Defined.
 
 (** **** Ex. 3.22 *)
@@ -4588,7 +4681,7 @@ Proof.
 Defined.
 
 Definition goal (P : N -> U) : U :=
-  sigma (fun n : N => trunc (P n * forall m : N, P m -> n <= m)).
+  {n : N & trunc (P n * forall m : N, P m -> n <= m)}.
 
 Lemma isProp_goal :
   forall P : N -> U, isProp (goal P).
@@ -4635,19 +4728,6 @@ Proof.
       revert Hn. apply trunc_rec.
         apply isProp_empty.
         destruct 1. contradiction.
-Defined.
-
-(** **** Ex. 1.14 MOVED *)
-
-(** Because both endpoints of the path are fixed. For a counterexample,
-    see *)
-
-Lemma negb_not_refl :
-  ua negb_equiv <> refl bool.
-Proof.
-  intro. assert (transport (fun A => A) (refl bool) true = false).
-    destruct X. rewrite transport_ua. cbn. refl.
-  cbn in X0. apply neq_false_true. apply inv. assumption.
 Defined.
 
 (** ** My own stuff *)
@@ -4797,6 +4877,56 @@ Defined.
 
 End term1.
 
+(** ** More of my own stuffs. *)
+
+Lemma isProp_eq_empty :
+  isProp (empty = empty).
+Proof.
+  intros p q.
+  rewrite (ua_idtoeqv p), (ua_idtoeqv q). apply ap.
+  generalize (idtoeqv p), (idtoeqv q). clear p q.
+  intros [f [[f1 Hf1] [f2 Hf2]]] [g [[g1 Hg1] [g2 Hg2]]].
+  apply sigma_eq_intro. cbn. esplit.
+Unshelve.
+  Focus 2. apply funext. destruct x.
+  apply prod_eq_intro. cbn; split.
+    apply sigma_eq_intro. cbn. esplit. Unshelve.
+      Focus 3. apply funext. destruct x.
+      apply funext. destruct x.
+    apply sigma_eq_intro. cbn. esplit. Unshelve.
+      Focus 2. apply funext. destruct x.
+      apply funext. destruct x.
+Defined.
+
+Lemma isProp_eq_empty' :
+  forall A : U,
+    isProp (A = empty).
+Proof.
+  unfold isProp. intros A p q. destruct (inv p). apply isProp_eq_empty.
+Defined.
+
+Lemma not_A_is_path_to_empty :
+  forall A : U,
+    (~ A) = (A = empty).
+Proof.
+  intro. apply ua. unfold equiv. esplit.
+Unshelve.
+  2: {
+    intro f. apply ua. unfold equiv.
+    exists f.
+    apply qinv_isequiv. unfold qinv.
+    exists (fun e : empty => match e with end).
+    split; compute.
+      destruct x.
+      intro. destruct (f x).
+  }
+  apply qinv_isequiv. unfold qinv.
+    exists (fun p => match p with | refl _ => id end).
+    split; compute.
+      intro. apply isProp_eq_empty'.
+      intro f. apply funext. intro x. destruct (f x).
+Defined.
+
 (** * 4 Equivalences *)
 
 Lemma sigma_prod :
@@ -4834,6 +4964,8 @@ Unshelve.
     destruct x as [g [H1 H2]]. cbn. apply sigma_eq_intro. cbn.
       exists (refl g). cbn. rewrite 2!happly_funext. refl.
 Defined.
+
+(** ** 4.1 Quasi-inverses *)
 
 Lemma lemma_4_1_1 :
   forall (A B : U) (f : A -> B) (g : qinv f),
