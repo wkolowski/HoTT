@@ -364,7 +364,7 @@ Defined.
 
 Notation "x <> y" := (~ x = y) (at level 50).
 
-(** ** Exercises *)
+(** ** Exercises from chapter 1 *)
 
 (** Status: all done. *)
 
@@ -784,8 +784,6 @@ Defined.
 (** **** Ex. 1.16 MOVED *)
 
 (** * Chapter 2 *)
-
-(** Exercises TODO: 4, 7, 12, 16, 17 *)
 
 (** ** 2.1 Types are higher groupoids *)
 
@@ -2263,7 +2261,9 @@ Definition pullback
   {A B C : U} (f : A -> C) (g : B -> C) : U :=
     {a : A & {b : B & f a = g b}}.
 
-(** ** Exercises *)
+(** ** Exercises from chapter 2 *)
+
+(** Status: TODO 4, 7, 12, 16, 17 *)
 
 (** **** Ex. 1.6 *)
 
@@ -3239,8 +3239,6 @@ Defined.
 
 (** * Chapter 3 Sets and logic *)
 
-(** TODO: exercise 3.10 *)
-
 (** ** 3.1 Sets and n-types *)
 
 (* Definition 3.1.1 *)
@@ -4039,7 +4037,9 @@ Unshelve.
     apply isProp_isProp.
 Defined.
 
-(** ** Exercises *)
+(** ** Exercises from chapter 3 *)
+
+(** Status: TODO 3.10 *)
 
 (** **** Ex. 3.1 *)
 
@@ -4967,29 +4967,69 @@ Defined.
 
 (** ** 4.1 Quasi-inverses *)
 
-Lemma lemma_4_1_1 :
-  forall (A B : U) (f : A -> B) (g : qinv f),
-    qinv f = forall x : A, x = x.
-Proof.
-  intros. assert (e : isequiv f).
-    apply qinv_isequiv. assumption.
-  rewrite qinv_qinv' in *.
-  pose (p := (| f, e |) : A ~ B).
-  assert (idtoeqv (ua p) = p).
-    apply idtoeqv_ua'.
-  destruct (ua p). compute in X. clear p.
-  apply sigma_eq_elim in X. cbn in X.
-  destruct X as [p q]. rewrite <- p. unfold qinv'.
-  rewrite sigma_prod_assoc.
-  assert ((forall x : A, x = x) = (@id A = @id A)).
-    apply ua. unfold equiv. esplit.
-Abort.
+Lemma comp_id_l :
+  forall (A B : U) (f : A -> B),
+    comp id f = f.
+Proof. refl. Defined.
 
+Lemma comp_id_r :
+  forall (A B : U) (f : A -> B),
+    comp f id = f.
+Proof. refl. Defined.
+
+Lemma aux' :
+  forall (A : U) (c : A),
+    isContr {x : A & x = c}.
+Proof.
+  intros. destruct (isContr_single_ended_path A c) as [[c' p] H].
+  unfold isContr. exists (| c', inv p |).
+  intro. destruct y as [x q]. destruct p, q. cbn. refl.
+Defined.
+
+Lemma aux'' :
+  forall A : U,
+    (forall x : A, x = x) = (@id A = @id A).
+Proof.
+  intro. apply ua. unfold equiv. esplit.
+Unshelve.
+  Focus 2. intro H. apply funext. exact H.
+  apply qinv_isequiv. unfold qinv. esplit.
+Unshelve.
+  Focus 2. intro H. apply happly. exact H.
+  unfold homotopy, comp, id; split; intros.
+    apply inv, funext_happly.
+    apply happly_funext.
+Defined.
+
+(* Lemma 4.1.1 *)
 Lemma lemma_4_1_1 :
-  forall (A B : U) (f : A -> B) (X : qinv f),
+  forall (A B : U) (f : A -> B) (e : qinv f),
+    qinv f ~ forall x : A, x = x.
+Proof.
+  intros. rewrite qinv_qinv'. apply qinv_isequiv in e.
+  assert (p := idtoeqv_ua' (| f, e |)). destruct (ua (| f, e |)).
+  apply sigma_eq_elim in p. cbn in p. destruct p as [p q], p. clear e q.
+  unfold qinv'. rewrite aux'', sigma_prod_assoc.
+  change {x : A -> A & comp x id = id}
+    with {x : A -> A & x = id}.
+  assert (p := ua (lemma_3_11_9_2 _
+                    (fun p => comp id (pr1' p) = id)
+                    (aux' (A -> A) id))).
+  cbn in p. rewrite comp_id_l in p. rewrite <- p. apply equiv_refl.
+Defined.
+
+Lemma qinv_is_loop :
+  forall (A B : U) (f : A -> B) (e : qinv f),
     qinv f = forall x : A, x = x.
 Proof.
-  intros. apply ua. unfold equiv. esplit.
+  intros. apply ua. apply lemma_4_1_1. assumption.
+Defined.
+
+Lemma lemma_4_1_1_no_ua :
+  forall (A B : U) (f : A -> B) (X : qinv f),
+    qinv f ~ forall x : A, x = x.
+Proof.
+  intros. unfold equiv. esplit.
 Unshelve.
   Focus 2. destruct 1 as [g [H1 H2]]. intro.
     unfold homotopy, comp, id in *.
@@ -5006,9 +5046,30 @@ Unshelve.
       apply p.
       apply q.
   split.
-    unfold homotopy. intro. apply funext. intro. unfold comp.
-      destruct X as [g [H1 H2]]. unfold homotopy in *.
+    intro H. apply funext. intro. destruct X as [g [H1 H2]].
+      unfold homotopy, comp, id in *.
       rewrite ap_cat. rewrite ap_inv. rewrite ap_ap.
-        assert (comp f g = id).
-          apply funext. assumption.
+        assert (id = comp f g).
+          apply funext. compute. intro. apply inv. apply H2.
+Abort.
+
+(* Theorem 4.1.3 *)
+Theorem qinv_is_bad :
+  ~ forall (A B : U) (f : A -> B), isProp (qinv f).
+Proof.
+  intro H.
+  pose (A := {X : U & trunc (bool = X)}).
+  pose (a := (| bool, trunc' (refl bool) |) : A).
+  specialize (H A A id).
+  rewrite qinv_is_loop in H.
+  2: apply qinv_id.
+  unfold isProp, A in H.
+  pose (f := fun X : {X : U & trunc (bool = X)} => refl X).
+  assert (forall X : {X : U & trunc (bool = X)},
+            isProp {p : X = X & p <> refl X}).
+    intros [X p] [q q'] [r r']. apply sigma_eq_intro. cbn.
+
+  assert (isProp (forall X : {X : U & trunc (bool = X)},
+                    {p : X = X & p <> refl X})).
+    intros g h. apply funext.
 Abort.
