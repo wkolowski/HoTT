@@ -5505,3 +5505,38 @@ Restart.
         intro. apply isProp_trunc.
       symmetry in X0. intros.
 Abort.
+
+(** This file is based on the paper "Generalizations of Hedberg's Theorem"
+    by Kraus, Escardó, Coquand and Altenkirch. *)
+
+(** TODO:
+    1. bool -> nat is separated
+    2. funext -> separated -> isSet
+    3. isSet <-> || x = y || -> x = y
+    4. ||X|| -> X <-> constant endomap
+    5. fix f is prop
+*)
+
+(** * 2 Preliminaries *)
+
+Print decidable_equality.
+(* ===> fun A : U => forall x y : A, (x = y) + (x <> y) : U -> U *)
+
+Definition const' {A B : U} (f : A -> B) : U :=
+  forall x y : A, f x = f y.
+
+Definition collapsible (A : U) : U :=
+  {f : A -> A & const' f}.
+
+Definition path_collapsible (A : U) : U :=
+  forall x y : A, collapsible (x = y).
+
+(** * Hedberg's Theorem *)
+
+(* Lemma 1 *)
+Lemma discrete_path_collapsible :
+  forall A : U,
+    decidable_equality A -> path_collapsible A.
+Proof.
+  intro.
+  unfold decidable_equality, path_collapsible.
