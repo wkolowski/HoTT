@@ -230,6 +230,16 @@ Definition hstable (A : U) : U :=
 Definition hseparated (A : U) : U :=
   forall x y : A, trunc (x = y) -> x = y.
 
+Lemma isProp_hstable :
+  ~ forall A : U, isProp (hstable A).
+Proof.
+  unfold isProp, hstable.
+  intro f. specialize (f bool (fun _ => true) (fun _ => false)).
+  apply happly in f.
+    apply neq_false_true. apply inv. assumption.
+    exact (trunc' false).
+Defined.
+
 Lemma separated_hseparated :
   forall A : U,
     separated A -> hseparated A.
@@ -284,3 +294,100 @@ Defined.
     don't need functional extensionality to prove that separated types
     are h-separated. *)
 
+Definition fixpoint {A : U} (f : A -> A) : U :=
+  {x : A & x = f x}.
+
+(* Proposition 3 *)
+Lemma ap_const_aux :
+  forall {A B : U} {f : A -> B} (c : const f) {x y : A} (p : x = y),
+    ap f p = cat (c x y) (inv (c y y)).
+Proof.
+  destruct p. cbn. intros. rewrite cat_inv_r. refl.
+Defined.
+
+Lemma ap_const :
+  forall {A B : U} {f : A -> B},
+    const f -> forall {x : A} (p : x = x),
+      ap f p = refl (f x).
+Proof.
+  intros A B f c x p. rewrite (ap_const_aux c p). apply cat_inv_r.
+Defined.
+
+Lemma inv_cat :
+  forall {A : U} {x y z : A} (p : x = y) (q : y = z),
+    inv (cat p q) = cat (inv q) (inv p).
+Proof.
+  destruct p, q. cbn. refl.
+Defined.
+
+(* Lemma 4 (Fixed Point Lemma) *)
+Lemma isProp_fixpoint :
+  forall (A : U) (f : A -> A),
+    const f -> isProp (fixpoint f).
+Proof.
+  unfold const, isProp, fixpoint.
+  intros A f c [x p] [y q].
+  apply sigma_eq_intro. cbn.
+  destruct (cat p (cat (c x y) (inv q))).
+  exists (cat p (inv q)).
+  rewrite transport_eq_fun, ap_id, (ap_const c), cat_refl_r, inv_cat,
+          inv_inv, <- cat_assoc, cat_inv_l, cat_refl_r.
+  refl.
+Defined.
+
+(* Theorem 3 *)
+Lemma collapsible_hstable :
+  forall {A : U},
+    collapsible A -> hstable A.
+Proof.
+  unfold collapsible, const, hstable.
+  intros A [f c] ta.
+  cut (fixpoint f).
+    exact pr1'.
+    revert ta. apply trunc_rec.
+      apply isProp_fixpoint. exact c.
+      intro a. exists (f a). apply c.
+Defined.
+
+Lemma hstable_collapsible :
+  forall {A : U},
+    hstable A -> collapsible A.
+Proof.
+  unfold hstable, collapsible, const.
+  intros A f.
+  exists (fun x : A => f (trunc' x)).
+  intros x y. apply ap, path.
+Defined.
+
+(*
+Goal
+  hstable = collapsible.
+Proof.
+  apply funext. intro A.
+  apply ua. unfold equiv.
+  exists hstable_collapsible.
+  apply qinv_isequiv. unfold qinv.
+  exists collapsible_hstable.
+  unfold homotopy, comp, id, hstable, collapsible, const; split.
+    Focus 2. intro f. apply funext. intro x.
+      compute. destruct (trunc_rec _). rewrite e. apply ap, path.
+    intros [f c]. apply sigma_eq_intro. esplit. Unshelve.
+      Focus 2. apply funext. intro x. cbn. destruct (trunc_rec _).
+        cbn. rewrite e. apply c.
+      rewrite transport_pi. cbn.
+        apply funext. intro x. apply funext. intro y.
+        rewrite transport_pi. rewrite transport_eq_fun.
+Abort.
+*)
+
+Lemma wut :
+  LEM ->
+    forall (A B : U) (f : A -> B) (c : const f),
+      isSet B -> trunc A -> B.
+Proof.
+  unfold const, isSet. intros LEM A B f c SA ta.
+  
+  Search isSet. Print collapsible. Print separated.
+  apply isSet_hseparated in SA.
+  unfold hseparated in SA.
+Abort.

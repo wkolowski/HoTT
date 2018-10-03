@@ -1838,7 +1838,7 @@ Defined.
 
 (* Theorem 2.11.5 *)
 Theorem transport_eq_isequiv :
-  forall (A : U) (a x y : A) (p : x = y) (q : x = x) (r : y = y),
+  forall (A : U) (x y : A) (p : x = y) (q : x = x) (r : y = y),
     equiv (@transport _ (fun x => x = x) _ _ p q = r) (cat q p = cat p r).
 Proof.
   destruct p. intros. rewrite cat_refl_l, cat_refl_r. cbn. apply equiv_refl.
