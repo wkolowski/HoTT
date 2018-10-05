@@ -33,7 +33,7 @@ Definition collapsible (A : U) : U :=
 Definition path_collapsible (A : U) : U :=
   forall x y : A, collapsible (x = y).
 
-(** * Hedberg's Theorem *)
+(** * 3 Hedberg's Theorem *)
 
 (* Lemma 1 *)
 Lemma decidable_equality_path_collapsible :
@@ -294,6 +294,8 @@ Defined.
     don't need functional extensionality to prove that separated types
     are h-separated. *)
 
+(** * 4 Collapsibility implies H-Stability *)
+
 Definition fixpoint {A : U} (f : A -> A) : U :=
   {x : A & x = f x}.
 
@@ -359,6 +361,21 @@ Proof.
   intros x y. apply ap, path.
 Defined.
 
+(** The authors claim that this is provable. *)
+Lemma wut :
+  LEM ->
+    forall (A B : U) (f : A -> B) (c : const f),
+      isSet B -> trunc A -> B.
+Proof.
+  unfold const, isSet. intros LEM A B f c SA ta.
+  
+  Search isSet. Print collapsible. Print separated.
+  apply isSet_hseparated in SA.
+  unfold hseparated in SA.
+Abort.
+
+(** * 5 Global Collapsibility implies Decidable Equality *)
+
 (*
 Goal
   hstable = collapsible.
@@ -380,14 +397,265 @@ Proof.
 Abort.
 *)
 
-Lemma wut :
-  LEM ->
-    forall (A B : U) (f : A -> B) (c : const f),
-      isSet B -> trunc A -> B.
+Lemma not_everything_collapsible :
+  ~ forall A : U, collapsible A.
 Proof.
-  unfold const, isSet. intros LEM A B f c SA ta.
-  
-  Search isSet. Print collapsible. Print separated.
-  apply isSet_hseparated in SA.
-  unfold hseparated in SA.
-Abort.
+  Check not_Prop_making_functor trunc.
+  intro H.
+  assert (forall A : U, hstable A).
+    intro. apply collapsible_hstable. apply H.
+  apply (not_Prop_making_functor trunc).
+    intros. apply path.
+    exact (trunc' false).
+    apply X.
+Defined.
+
+(* Lemma 5, my custom proof *)
+Lemma lemma_5 :
+  forall (A : U) (x y : A),
+    (forall z : A, collapsible ((x = z) + (y = z))) ->
+      decidable (x = y).
+Proof.
+  unfold collapsible, const, decidable.
+  intros A x y H.
+  pose (p := (| pr1' (H x) (inl (refl x)), pr2' (H x) (inl (refl x)) _ |)).
+  destruct p as [e1 p].
+  pose (q := (| pr1' (H y) (inr (refl y)), pr2' (H y) (inr (refl y)) _ |)).
+  destruct q as [e2 q].
+  destruct e1.
+    destruct e2.
+      left. exact e0.
+      right. destruct 1. assert (inl e = inr e0).
+        rewrite <- p, <- q. apply (pr2' (H x)).
+        apply encode_sum in X. cbn in X. assumption.
+    left. apply inv. exact e.
+Defined.
+
+(* Theorem 4 *)
+Theorem all_collapsible_all_decidable_equality :
+  (forall A : U, collapsible A) ->
+  (forall A : U, decidable_equality A).
+Proof.
+  unfold decidable_equality.
+  intros H A x y.
+  apply lemma_5. intro. apply H.
+Defined.
+
+(** * 6 Populatedness *)
+
+(* Definition 5 *)
+Definition populated (A : U) : U :=
+  forall f : A -> A, const f -> fixpoint f.
+
+(* Proposition 4.1 *)
+Definition make_populated {A : U} (x : A) : populated A :=
+  fun (f : A -> A) (c : const f) =>
+    (| f x, c x (f x) |).
+
+(* Proposition 4.2 *)
+Lemma isProp_populated :
+  forall A : U,
+    isProp (populated A).
+Proof.
+  unfold isProp, populated.
+  intros A f g.
+  apply funext. intro h. apply funext. intro c.
+  apply isProp_fixpoint. assumption.
+Defined.
+
+Lemma trunc_populated :
+  forall A : U,
+    trunc A -> populated A.
+Proof.
+  unfold populated, const, fixpoint.
+  intros A ta f c.
+  revert ta. apply trunc_rec.
+    apply isProp_fixpoint. assumption.
+    intro a. exists (f a). apply c.
+Defined.
+
+(* Theorem 5 *)
+Theorem populated_spec :
+  forall A : U,
+    populated A =
+    forall P : U, isProp P -> (P -> A) -> (A -> P) -> P.
+Proof.
+  intro. apply isProp_iff_eq.
+    apply isProp_populated.
+    unfold isProp. intros f g. repeat (apply funext; intro).
+      apply x0.
+    unfold populated. intros H P PP f g. apply g.
+      apply (H (fun x : A => f (g x))). intros x y.
+      rewrite (PP (g x) (g y)). refl.
+    intro H.
+    assert (populated A).
+      unfold populated, const, fixpoint. intros f c. apply H.
+        apply isProp_fixpoint. exact c.
+        exact pr1'.
+        intro a. exists (f a). apply c. 
+    assumption.
+Defined.
+
+Print Assumptions populated_spec.
+
+(** * 7 Taboos and Counter-Models *)
+
+Check @trunc'.
+(* ===> @trunc' : forall A : U, A -> trunc A *)
+
+Check trunc_populated.
+(* ===> trunc_populated : forall A : U, trunc A -> populated A *)
+
+Lemma populated_dbl_neg :
+  forall A : U,
+    populated A -> ~ ~ A.
+Proof.
+  unfold populated.
+  intros A H f.
+  assert (x : A).
+    eapply (H (fun x => match f x with end)). intros x y. destruct (f x).
+  destruct (f x).
+Defined.
+
+(** ** 7.1 Inhabited and H-Inhabited *)
+
+Lemma not_all_hstable :
+  ~ forall A : U, hstable A.
+Proof.
+  unfold hstable. apply not_Prop_making_functor.
+    intros. apply path.
+    exact (trunc' false).
+Defined.
+
+Lemma not_all_hstable' :
+  ~ forall A : U, trunc A -> A.
+Proof.
+  intros. apply not_all_hstable.
+Defined.
+
+(* TODO: any relation has a functional subrelation. *)
+
+(** ** 7.2 H-Inhabited and Populated *)
+
+Definition ap2
+  {A B C : U} (f : A -> B -> C) {x x' : A} {y y' : B}
+  (p : x = x') (q : y = y') : f x y = f x' y'.
+Proof.
+  destruct p, q. refl.
+Defined.
+
+(* Lemma 6 *)
+Lemma populated_hstable :
+  forall A : U,
+    populated (hstable A).
+Proof.
+  unfold populated, const, fixpoint, hstable.
+  intros A f c. esplit.
+Unshelve.
+  Focus 2. intro ta. assert (fixpoint f).
+    unfold fixpoint. revert ta. apply trunc_rec.
+      apply isProp_fixpoint. exact c.
+      intro a. exists (fun _ => f (fun _ => a) (trunc' a)).
+        apply funext. intro x.
+        rewrite <- (c (fun _ => a) (fun _ => f (fun _ => a) (trunc' a))).
+        apply ap, path.
+    exact (pr1' X ta).
+  apply funext. intro ta. destruct (trunc_rec _). cbn. rewrite e.
+    apply ap2. apply funext. intro. destruct (trunc_rec _).
+      cbn. rewrite e, e0. rewrite (c x x1). refl.
+      refl.
+Defined.
+
+Lemma not_all_populated_trunc :
+  (forall A : U, populated A -> trunc A) ->
+    forall A : U, trunc (hstable A).
+Proof.
+  intros H A. apply H. apply populated_hstable.
+Defined.
+
+(* Theorem 6 *)
+Theorem theorem_6 :
+  (forall A : U, populated A -> trunc A) =
+  (forall A : U, trunc (trunc A -> A)).
+Proof.
+  apply isProp_iff_eq.
+    intros f g. repeat (apply funext; intro). apply path.
+    intros f g. repeat (apply funext; intro). apply path.
+    intros H A. apply H. apply populated_hstable.
+    intros H A PA.
+      specialize (H A). revert H. apply trunc_rec.
+        apply isProp_trunc.
+        intro f. unfold populated, const, fixpoint in PA.
+        apply trunc'. eapply (pr1' (PA (fun x : A => f (trunc' x)) _)).
+Unshelve.
+  intros. cbn. apply ap, path.
+Defined.
+
+Lemma populated_spec' :
+  forall A : U,
+    populated A = (trunc (trunc A -> A) -> trunc A).
+Proof.
+  intro A.
+  apply isProp_iff_eq.
+    apply isProp_populated.
+    apply isProp_fun, isProp_trunc.
+    intro H. apply trunc_rec.
+      apply isProp_trunc.
+      intro f. unfold populated, const, fixpoint in H.
+        apply trunc'. eapply (pr1' (H (fun x : A => f (trunc' x)) _)).
+        Unshelve. Focus 2. intros. cbn. apply ap, path.
+    unfold populated, const, fixpoint. intros H f c.
+    assert (trunc (trunc A -> A)).
+      apply trunc'. intro ta. assert (trunc (trunc A -> A)).
+        revert ta. apply trunc_rec.
+          apply isProp_trunc.
+          intro x. apply trunc'. intros _. exact x.
+      assert (fixpoint f).
+        unfold fixpoint. revert X. apply trunc_rec.
+          apply isProp_fixpoint. assumption.
+          intro g. exists (f (g ta)). apply c.
+        exact (pr1' X0).
+    specialize (H X). revert H. apply trunc_rec.
+      apply isProp_fixpoint. assumption.
+      intro x. exists (f x). apply c.
+Defined.
+
+Lemma conclusion_of_theorem_6_is_propositional_axiom_of_choice :
+  (forall A : U, trunc (trunc A -> A)) =
+  (forall (P : U) (Y : P -> U), isProp P ->
+    (forall p : P, trunc (Y p)) -> trunc (forall p : P, Y p)).
+Proof.
+  apply isProp_iff_eq.
+    apply isProp_pi. intro. apply isProp_trunc.
+    repeat (apply isProp_pi; intro). apply isProp_trunc.
+    Focus 2. intros H A.
+      specialize (H (trunc A) (fun _ => A) (isProp_trunc A)).
+      cbn in H. apply H. exact id.
+    intros H P Y PP f. specialize (H (forall p : P, Y p)).
+      revert H. apply trunc_rec.
+        apply isProp_trunc.
+        intro. apply trunc'. intro. apply X.
+          specialize (f p). revert f. apply trunc_rec.
+            apply isProp_trunc.
+            intro. apply trunc'. intro. rewrite (PP p0 p). assumption.
+Defined.
+
+(** ** 7.3 Populated and Non-Empty *)
+
+(* Lemma 7 *)
+Lemma dbl_neg_populated_LEM :
+  (forall A : U, ~ ~ A -> populated A) -> LEM.
+Proof.
+  unfold populated, const, fixpoint, LEM.
+  intros H P PP.
+  eapply (pr1' (H _ _ _ _)).
+Unshelve.
+  intro. apply X. right. intro. apply X. left. assumption.
+  exact id.
+  intros. apply ex_3_7.
+    assumption.
+    apply isProp_fun, isProp_empty.
+    intro. destruct X. destruct (n p).
+Defined.
+
+Print Assumptions dbl_neg_populated_LEM.
