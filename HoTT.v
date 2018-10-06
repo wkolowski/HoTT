@@ -1844,346 +1844,6 @@ Proof.
   destruct p. intros. rewrite cat_refl_l, cat_refl_r. cbn. apply equiv_refl.
 Defined.
 
-(** *** Paths between paths *)
-
-Lemma empty_eq2 :
-  forall (x y : empty) (p q : x = y),
-    (p = q) = unit.
-Proof.
-  intros. apply ua. unfold equiv.
-  exists (fun _ => tt).
-  apply qinv_isequiv. unfold qinv.
-  exists (fun _ => match x with end).
-  split; compute.
-    destruct x0. refl.
-    destruct x.
-Defined.
-
-Inductive option (A : U) : U :=
-    | None : option A
-    | Some : A -> option A.
-
-Arguments None {A}.
-Arguments Some {A}.
-
-Definition code_option {A : U} (x y : option A) : U :=
-match x, y with
-    | None, None => unit
-    | Some x, Some y => x = y
-    | _, _ => empty
-end.
-
-Definition code_option_aux
-  {A : U} (x : option A) : code_option x x :=
-match x with
-    | None => tt
-    | Some _ => refl _
-end.
-
-Definition encode_option
-  {A : U} {x y : option A} (p : x = y) : code_option x y :=
-    transport _ p (code_option_aux x).
-
-Definition decode_option
-  {A : U} {x y : option A} (c : code_option x y) : x = y.
-Proof.
-  destruct x, y, c; refl.
-Defined.
-
-Lemma encode_decode_option :
-  forall {A : U} {x y : option A} (c : code_option x y),
-    encode_option (decode_option c) = c.
-Proof.
-  destruct x, y, c; cbn; refl.
-Defined.
-
-Lemma decode_encode_option :
-  forall {A : U} {x y : option A} (p : x = y),
-    decode_option (encode_option p) = p.
-Proof.
-  destruct p, x; cbn; refl.
-Defined.
-
-Lemma eq_option_char :
-  forall (A : U) (x y : option A),
-    (x = y) = code_option x y.
-Proof.
-  intros. apply ua. unfold equiv.
-  exists encode_option.
-  apply qinv_isequiv. unfold qinv.
-  exists decode_option.
-  split; intro.
-    apply encode_decode_option.
-    apply decode_encode_option.
-Defined.
-
-Definition code_option_eq {A : U} {x y : option A} (p q : x = y) : U :=
-match x, y with
-    | None, None => unit (*encode_option p = encode_option q (*unit*)*)
-    | Some x, Some y => p = q (*encode_option p = encode_option q*)
-    | _, _ => empty
-end.
-
-Definition code_option_eq' {A : U} {x y : option A} (p q : x = y) : U.
-Proof.
-  destruct x, y.
-    Compute encode_option p.
-    apply encode_option in p. cbn in p.
-Abort.
-
-Definition encode_option_eq_aux
-  {A : U} {x y : option A} (p : x = y) : code_option_eq p p.
-Proof.
-  destruct p, x; cbn.
-    exact tt.
-    refl.
-Defined.
-
-Definition encode_option_eq
-  {A : U} {x y : option A} {p q : x = y} (r : p = q) : code_option_eq p q :=
-    transport _ r (encode_option_eq_aux p).
-
-Definition decode_option_eq
-  {A : U} {x y : option A} {p q : x = y} (c : code_option_eq p q) : p = q.
-Proof.
-  destruct x, y; cbn in *.
-    revert p q. rewrite eq_option_char. cbn. destruct p, q. refl.
-    1-2: destruct c.
-    assumption.
-Defined.
-
-Lemma eq_None_None :
-  forall A : U,
-    (@None A = None) = unit.
-Proof.
-  intros. apply ua. unfold equiv.
-  exists (fun _ => tt).
-  apply qinv_isequiv. unfold qinv.
-  exists (fun _ => refl None).
-  unfold homotopy, comp, id; split.
-    destruct x. refl.
-    generalize (refl (@None A)).
-      rewrite eq_option_char. cbn. destruct e, x. refl.
-Defined.
-
-Lemma isSet_None :
-  forall (A : U) (p q : @None A = None),
-    p = q.
-Proof.
-  intro. rewrite eq_None_None. destruct p, q. refl.
-Defined.
-
-Lemma path_None :
-  forall (A : U) (p : @None A = None),
-    p = refl None.
-Proof.
-  intros. apply isSet_None.
-Defined.
-
-Lemma encode_decode_option_eq :
-  forall (A : U) (x y : option A) (p q : x = y) (c : code_option_eq p q),
-    encode_option_eq (decode_option_eq c) = c.
-Proof.
-  destruct x, y. cbn. destruct c.
-    destruct (encode_option_eq _). refl.
-    destruct c.
-    destruct c.
-    cbn.
-Abort.
-
-Lemma option_eq2_intro :
-  forall (A : U) (x y : option A) (p q : x = y),
-    encode_option p = encode_option q -> p = q.
-Proof.
-  intros * H. apply (ap decode_option) in H.
-  rewrite !decode_encode_option in H. assumption.
-Defined.
-
-(*
-Goal
-  forall (A : U) (x y : option A) (p q : x = y),
-    code_option_eq p q -> p = q.
-Proof.
-  destruct x, y; cbn; intros.
-    apply option_eq2_intro.
-(*    assumption.*)
-    1-2: destruct X.
-    (*apply option_eq2_intro. assumption.*)
-    assumption.
-Defined.
-*)
-
-Goal
-  forall (A : U) (x y : option A) (p q : x = y),
-    (p = q) = code_option_eq p q.
-Proof.
-  intros. apply ua. unfold equiv. esplit.
-Unshelve.
-  Focus 2.
-Abort.
-
-(*
-Lemma option_eq2_elim :
-  forall (A : U) (x y : option A) (p q : x = y),
-    p = q -> encode_option p = encode_option q.
-Proof.
-  intros * H. apply (ap decode_option) in H.
-  rewrite !decode_encode_option in H. assumption.
-Defined.
-*)
-
-Goal
-  forall (A : U) (x y : option A) (p q : x = y),
-    (p = q) = (encode_option p = encode_option q).
-Proof.
-  intros. apply ua. unfold equiv.
-Abort.
-
-Lemma prod_eq_eq_intro :
-  forall {A B : U} {w w' : A * B} {p q : w = w'},
-    (ap pr1 p = ap pr1 q) * (ap pr2 p = ap pr2 q) -> p = q.
-Proof.
-  intros A B w w' p q [r s].
-  rewrite prod_eq_uniq, <- r, <- s, <- prod_eq_uniq. refl.
-Restart.
-  intros A B w w' p q [r s].
-  pose (a := prod_eq_uniq p).
-  pose (b :=
-       ap prod_eq_intro
-         (@prod_eq_intro _ _
-            (ap pr1 p, ap pr2 p)
-            (ap pr1 q, ap pr2 q)
-            (r, s))).
-  pose (c := inv (prod_eq_uniq q)).
-  exact (cat a (cat b c)).
-Defined.
-
-Lemma prod_eq_eq_elim :
-  forall {A B : U} {w w' : A * B} {p q : w = w'},
-    p = q -> (ap pr1 p = ap pr1 q) * (ap pr2 p = ap pr2 q).
-Proof.
-  intros A B w w' p q r. split.
-    exact (ap (ap pr1) r).
-    exact (ap (ap pr2) r).
-Defined.
-
-Lemma prod_eq_comp :
-  forall {A B : U} {w w' : A * B} (p : pr1 w = pr1 w') (q : pr2 w = pr2 w'),
-    prod_eq_elim (prod_eq_intro (p, q)) = (p, q).
-Proof.
-  destruct w, w'. cbn. destruct p, q. compute. refl.
-Defined.
-
-Goal
-  forall
-    (A B : U) (w w' : A * B) (p q : w = w')
-    (r : ap pr1 p = ap pr1 q) (s : ap pr2 p = ap pr2 q),
-      ap (ap pr1) (prod_eq_eq_intro (r, s)) = r.
-Proof.
-  intros. unfold prod_eq_eq_intro.
-  rewrite !ap_cat, !ap_ap, !ap_inv.
-  assert (comp prod_eq_intro (ap pr1) = @pr1 (pr1 w = pr1 w') _).
-    apply funext. destruct w, w'. cbn. intros [[] []]. cbn. refl.
-  assert (p = prod_eq_intro (ap pr1 p, ap pr2 p)).
-    apply prod_eq_uniq.
-  pose (t := r).
-  rewrite X0 in t. rewrite prod_eq_comp_1 in t.
-  Check @prod_eq_uniq.
-  Check @prod_eq_comp.
-Abort.
-
-Goal
-  forall
-    (A B : U) (w w' : A * B) (p q : w = w') (r : p = q),
-      ap (ap pr1) r = ap (ap pr1) r.
-Proof.
-  intros.
- destruct r, p, w. cbn.
-Abort.
-
-Goal
-  forall (A B : U) (w w' : A * B)
-  (p1 q1 : pr1 w = pr1 w') (p2 q2 : pr2 w = pr2 w')
-  (r : p1 = q1) (s : p2 = q2), U.
-Proof.
-  intros.
-  pose (p := prod_eq_intro (p1, p2)).
-  pose (q := prod_eq_intro (q1, q2)).
-  Check @prod_eq_eq_intro A B w w' p q.
-  assert (r' : ap pr1 p = ap pr1 q).
-    unfold p, q. rewrite 2!prod_eq_comp_1. assumption. Show Proof.
-  pose (X' := internal_eq_rew_r (pr1 w = pr1 w') (ap pr1 (prod_eq_intro (p1, p2))) p1
-     (fun e : pr1 w = pr1 w' => e = ap pr1 (prod_eq_intro (q1, q2)))
-     (internal_eq_rew_r (pr1 w = pr1 w') (ap pr1 (prod_eq_intro (q1, q2)))
-        q1 (fun e : pr1 w = pr1 w' => p1 = e) r
-        (prod_eq_comp_1 A B w w' q1 q2)) (prod_eq_comp_1 A B w w' p1 p2)).
-  assert (s' : ap pr2 p = ap pr2 q).
-    unfold p, q. rewrite 2!prod_eq_comp_2. assumption. Show Proof.
-  pose (X'' := internal_eq_rew_r (pr2 w = pr2 w') (ap pr2 (prod_eq_intro (p1, p2))) p2
-     (fun e : pr2 w = pr2 w' => e = ap pr2 (prod_eq_intro (q1, q2)))
-     (internal_eq_rew_r (pr2 w = pr2 w') (ap pr2 (prod_eq_intro (q1, q2)))
-        q2 (fun e : pr2 w = pr2 w' => p2 = e) s
-        (prod_eq_comp_2 A B w w' q1 q2)) (prod_eq_comp_2 A B w w' p1 p2)).
-  assert ( 
-      ap (ap pr1) (prod_eq_eq_intro (r', s')) = r').
-    destruct w, w'. cbn in *. destruct r, s, p1, p2. cbn in *.
-Abort.
-
-Goal
-  forall (A B : U) (w w' : A * B) (p q : w = w'),
-    (p = q) = (ap pr1 p = ap pr1 q) * (ap pr2 p = ap pr2 q).
-Proof.
-  intros. apply ua. unfold equiv.
-  exists prod_eq_eq_elim.
-  apply qinv_isequiv. unfold qinv.
-  exists prod_eq_eq_intro.
-  unfold homotopy, comp, id; split.
-    Focus 2. destruct x, p, w. cbn. refl.
-Abort.
-
-Lemma pi_eq_eq_intro :
-  forall {A : U} {B : A -> U} {f g : forall x : A, B x} {p q : f = g},
-    (forall x : A, happly p x = happly q x) -> p = q.
-Proof.
-  intros * H.
-  exact (cat (funext_happly p)
-          (cat (ap funext (funext H)) (inv (funext_happly q)))).
-Defined.
-
-Lemma pi_eq_eq_elim :
-  forall {A : U} {B : A -> U} {f g : forall x : A, B x} {p q : f = g},
-    (p = q) -> forall x : A, happly p x = happly q x.
-Proof.
-  destruct 1. refl.
-Restart.
-Restart.
-  intros * H x.
-  exact (happly (ap happly H) x).
-Defined.
-
-Goal
-  forall (A : U) (B : A -> U) (f g : forall x : A, B x) (p q : f = g),
-    (p = q) = forall x : A, happly p x = happly q x.
-Proof.
-  intros. apply ua. unfold equiv.
-  exists pi_eq_eq_elim.
-  apply qinv_isequiv. unfold qinv.
-  exists pi_eq_eq_intro.
-  unfold homotopy, comp, id; split.
-    intro h. unfold pi_eq_eq_elim, pi_eq_eq_intro. apply funext. intro x.
-      rewrite !ap_cat, !ap_ap, !ap_inv.
-      rewrite !cat_pi. rewrite !happly_funext.
-      rewrite (@happly_funext _ _ _ _ (fun x0 : A => cat _ _)).
-      Search ap.
-      assert (p = q).
-        apply funext in h. apply (ap funext) in h.
-        rewrite <- 2!funext_happly in h. assumption.
-      destruct X.
-      Check @funext_happly.
-      Check happly_funext.
-      
-Abort.
-
 (** ** 2.12 Coproducts *)
 
 Definition code {A B : U} (a : A) (x : A + B) : U :=
@@ -2907,78 +2567,6 @@ Theorem ap_encode_sum :
 Proof.
   destruct x, y, p; refl.
 Defined.
-
-(* wut *)
-
-Lemma sum_eq2_elim' :
-  forall {A B : U} {w w' : A + B} {c c' : code_sum w w'},
-    c = c' -> decode_sum c = decode_sum c'.
-Proof.
-  intros * H. apply (ap decode_sum) in H. assumption.
-Defined.
-
-Lemma sum_eq2_intro' :
-  forall {A B : U} {w w' : A + B} {c c' : code_sum w w'},
-    decode_sum c = decode_sum c' -> c = c'.
-Proof.
-  intros * p. apply (ap encode_sum) in p.
-  rewrite 2!encode_decode_sum in p. assumption.
-Defined.
-
-Lemma sum_eq2_comp' :
-  forall {A B : U} {w w' : A + B} (c c' : code_sum w w') (H : c = c'),
-    sum_eq2_intro' (sum_eq2_elim' H) = H.
-Proof.
-  destruct H, w, w', c; cbn in *; refl.
-Defined.
-
-Goal
-  forall {A B : U} {w w' : A + B} {c c' : code_sum w w'},
-    (c = c') = (decode_sum c = decode_sum c').
-Proof.
-  intros. apply ua. unfold equiv.
-  exists sum_eq2_elim'.
-  apply qinv_isequiv. unfold qinv.
-  exists sum_eq2_intro'.
-  unfold homotopy, comp, id; split.
-    Focus 2. destruct x, w, w', c; cbn; refl.
-    intro p. assert (c = c').
-      admit.
-    destruct w, w'; cbn in *.
-      destruct X, c. cbn.
-Abort.
-
-Lemma sum_eq2_intro :
-  forall {A B : U} {w w' : A + B} {p q : w = w'},
-    encode_sum p = encode_sum q -> p = q.
-Proof.
-  intros * H. apply (ap decode_sum) in H.
-  rewrite 2!decode_encode_sum in H. assumption.
-Defined.
-
-Lemma sum_eq2_elim :
-  forall {A B : U} {w w' : A + B} {p q : w = w'},
-    p = q -> encode_sum p = encode_sum q.
-Proof.
-  intros * []. refl.
-Defined.
-
-Goal
-  forall {A B : U} {w w' : A + B} {p q : w = w'},
-    (p = q) = (encode_sum p = encode_sum q).
-Proof.
-  intros. apply ua. unfold equiv.
-  exists sum_eq2_elim.
-  apply qinv_isequiv. unfold qinv.
-  exists sum_eq2_intro.
-  unfold homotopy, comp, id; split.
-    Focus 2. destruct x, p, w; compute; refl.
-    intro H. rewrite <- sum_eq2_comp'.
-    
- assert (p = q).
-      apply (ap decode_sum) in H. rewrite 2!decode_encode_sum in H. exact H.
-destruct X, p, w.
-Abort.
 
 (** **** Ex. 2.9 *)
 
@@ -5104,6 +4692,476 @@ Proof.
         destruct 1. contradiction.
 Defined.
 
+(** *** Paths between paths *)
+
+Lemma empty_eq2 :
+  forall (x y : empty) (p q : x = y),
+    (p = q) = unit.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists (fun _ => tt).
+  apply qinv_isequiv. unfold qinv.
+  exists (fun _ => match x with end).
+  split; compute.
+    destruct x0. refl.
+    destruct x.
+Defined.
+
+Inductive option (A : U) : U :=
+    | None : option A
+    | Some : A -> option A.
+
+Arguments None {A}.
+Arguments Some {A}.
+
+Definition code_option {A : U} (x y : option A) : U :=
+match x, y with
+    | None, None => unit
+    | Some x, Some y => x = y
+    | _, _ => empty
+end.
+
+Definition code_option_aux
+  {A : U} (x : option A) : code_option x x :=
+match x with
+    | None => tt
+    | Some _ => refl _
+end.
+
+Definition encode_option
+  {A : U} {x y : option A} (p : x = y) : code_option x y :=
+    transport _ p (code_option_aux x).
+
+Definition decode_option
+  {A : U} {x y : option A} (c : code_option x y) : x = y.
+Proof.
+  destruct x, y, c; refl.
+Defined.
+
+Lemma encode_decode_option :
+  forall {A : U} {x y : option A} (c : code_option x y),
+    encode_option (decode_option c) = c.
+Proof.
+  destruct x, y, c; cbn; refl.
+Defined.
+
+Lemma decode_encode_option :
+  forall {A : U} {x y : option A} (p : x = y),
+    decode_option (encode_option p) = p.
+Proof.
+  destruct p, x; cbn; refl.
+Defined.
+
+Lemma eq_option_char :
+  forall (A : U) (x y : option A),
+    (x = y) = code_option x y.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists encode_option.
+  apply qinv_isequiv. unfold qinv.
+  exists decode_option.
+  split; intro.
+    apply encode_decode_option.
+    apply decode_encode_option.
+Defined.
+
+Lemma eq_None_None :
+  forall A : U,
+    (@None A = None) = unit.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists (fun _ => tt).
+  apply qinv_isequiv. unfold qinv.
+  exists (fun _ => refl None).
+  unfold homotopy, comp, id; split.
+    destruct x. refl.
+    generalize (refl (@None A)).
+      rewrite eq_option_char. cbn. destruct e, x. refl.
+Defined.
+
+Lemma isSet_None :
+  forall (A : U) (p q : @None A = None),
+    p = q.
+Proof.
+  intro. rewrite eq_None_None. destruct p, q. refl.
+Defined.
+
+Lemma isGrpd_None :
+  forall (A : U) (p q : @None A = None) (r s : p = q),
+    r = s.
+Proof.
+  intro. rewrite eq_None_None. apply isSet_unit.
+Defined.
+
+Lemma path_None :
+  forall (A : U) (p : @None A = None),
+    p = refl None.
+Proof.
+  intros. apply isSet_None.
+Defined.
+
+Definition code_option_eq {A : U} {x y : option A} (p q : x = y) : U :=
+match x, y with
+    | None, None => unit
+    | Some x, Some y => p = q (*encode_option p = encode_option q*)
+    | _, _ => empty
+end.
+
+Definition encode_option_eq_aux
+  {A : U} {x y : option A} (p : x = y) : code_option_eq p p.
+Proof.
+  destruct p, x; cbn.
+    exact tt.
+    refl.
+Restart.
+  destruct x, y; cbn.
+    exact tt.
+    apply encode_option in p. cbn in p. assumption.
+    apply encode_option in p. cbn in p. assumption.
+    refl.
+Defined.
+
+Definition encode_option_eq
+  {A : U} {x y : option A} {p q : x = y} (r : p = q) : code_option_eq p q :=
+    transport _ r (encode_option_eq_aux p).
+
+Definition decode_option_eq
+  {A : U} {x y : option A} {p q : x = y} (c : code_option_eq p q) : p = q.
+Proof.
+  destruct x, y; cbn in *.
+    apply isSet_None.
+    1-2: destruct c.
+    assumption. (*
+    rewrite <- decode_encode_option, <- c, decode_encode_option. refl.*)
+Defined.
+
+Lemma encode_decode_option_eq :
+  forall (A : U) (x y : option A) (p q : x = y) (c : code_option_eq p q),
+    encode_option_eq (decode_option_eq c) = c.
+Proof.
+  destruct x, y; cbn; intros.
+    apply isProp_unit.
+    1-2: destruct c.
+    destruct c. cbn. refl.
+Defined.
+
+Lemma decode_encode_option_eq :
+  forall (A : U) (x y : option A) (p q : x = y) (r : p = q),
+    decode_option_eq (encode_option_eq r) = r.
+Proof.
+  destruct r, p, x.
+    apply isGrpd_None.
+    cbn. refl.
+Defined.
+
+Theorem option_eq_char :
+  forall {A : U} {x y : option A} (p q : x = y),
+    (p = q) = code_option_eq p q.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists encode_option_eq.
+  apply qinv_isequiv. unfold qinv.
+  exists decode_option_eq.
+  unfold homotopy, code, id; split; intros.
+    apply encode_decode_option_eq.
+    apply decode_encode_option_eq.
+Defined.
+
+(** **** Sums *)
+
+Definition code_sum_eq {A B : U} {x y : A + B} (p q : x = y) : U :=
+match x, y with
+    | inl _, inl _ => p = q
+    | inr _, inr _ => p = q
+    | _, _ => empty
+end.
+
+Definition encode_sum_eq_aux
+  {A B : U} {x y : A + B} (p : x = y) : code_sum_eq p p.
+Proof.
+  destruct x, y; cbn.
+    1, 4: refl.
+    1-2: apply encode_sum in p; cbn in p; assumption.
+Defined.
+
+Definition encode_sum_eq
+  {A B : U} {x y : A + B} {p q : x = y} (r : p = q) : code_sum_eq p q :=
+    transport _ r (encode_sum_eq_aux p).
+
+Definition decode_sum_eq
+  {A B : U} {x y : A + B} {p q : x = y} (c : code_sum_eq p q) : p = q.
+Proof.
+  destruct x, y; cbn in *.
+    assumption.
+    1-2: destruct c.
+    assumption.
+Defined.
+
+Lemma encode_decode_sum_eq :
+  forall {A B : U} {x y : A + B} (p q : x = y) (c : code_sum_eq p q),
+    encode_sum_eq (decode_sum_eq c) = c.
+Proof.
+  destruct x, y, c; cbn; refl.
+Defined.
+
+Lemma decode_encode_sum_eq :
+  forall {A B : U} {x y : A + B} (p q : x = y) (r : p = q),
+    decode_sum_eq (encode_sum_eq r) = r.
+Proof.
+  destruct r, p, x; cbn; refl.
+Defined.
+
+Theorem eq2_sum_char :
+  forall {A B : U} {x y : A + B} (p q : x = y),
+    (p = q) = code_sum_eq p q.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists encode_sum_eq.
+  apply qinv_isequiv. unfold qinv.
+  exists decode_sum_eq.
+  unfold homotopy, comp, id; split; intros.
+    apply encode_decode_sum_eq.
+    apply decode_encode_sum_eq.
+Defined.
+
+Lemma unit_eq_char' :
+  forall x y : unit,
+    (x = y) = unit.
+Proof.
+  destruct x, y. rewrite unit_eq_char. compute. refl.
+Defined.
+
+Goal
+  forall (x y : unit + unit) (p q : x = y),
+    (p = q) = unit.
+Proof.
+  destruct x, y; rewrite sum_eq_char; cbn.
+    rewrite unit_eq_char'. intros. apply unit_eq_char'.
+    1-2: destruct p.
+    rewrite unit_eq_char'. intros. apply unit_eq_char'.
+Defined.
+
+(* wut *)
+
+Lemma sum_eq2_elim' :
+  forall {A B : U} {w w' : A + B} {c c' : code_sum w w'},
+    c = c' -> decode_sum c = decode_sum c'.
+Proof.
+  intros * H. apply (ap decode_sum) in H. assumption.
+Defined.
+
+Lemma sum_eq2_intro' :
+  forall {A B : U} {w w' : A + B} {c c' : code_sum w w'},
+    decode_sum c = decode_sum c' -> c = c'.
+Proof.
+  intros * p. apply (ap encode_sum) in p.
+  rewrite 2!encode_decode_sum in p. assumption.
+Defined.
+
+Lemma sum_eq2_comp' :
+  forall {A B : U} {w w' : A + B} (c c' : code_sum w w') (H : c = c'),
+    sum_eq2_intro' (sum_eq2_elim' H) = H.
+Proof.
+  destruct H, w, w', c; cbn in *; refl.
+Defined.
+
+Goal
+  forall {A B : U} {w w' : A + B} {c c' : code_sum w w'},
+    (c = c') = (decode_sum c = decode_sum c').
+Proof.
+  intros. apply ua. unfold equiv.
+  exists sum_eq2_elim'.
+  apply qinv_isequiv. unfold qinv.
+  exists sum_eq2_intro'.
+  unfold homotopy, comp, id; split.
+    Focus 2. destruct x, w, w', c; cbn; refl.
+    intro p. assert (c = c').
+      admit.
+    destruct w, w'; cbn in *.
+      destruct X, c. cbn.
+Abort.
+
+Lemma sum_eq2_intro :
+  forall {A B : U} {w w' : A + B} {p q : w = w'},
+    encode_sum p = encode_sum q -> p = q.
+Proof.
+  intros * H. apply (ap decode_sum) in H.
+  rewrite 2!decode_encode_sum in H. assumption.
+Defined.
+
+Lemma sum_eq2_elim :
+  forall {A B : U} {w w' : A + B} {p q : w = w'},
+    p = q -> encode_sum p = encode_sum q.
+Proof.
+  intros * []. refl.
+Defined.
+
+Goal
+  forall {A B : U} {w w' : A + B} {p q : w = w'},
+    (p = q) = (encode_sum p = encode_sum q).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists sum_eq2_elim.
+  apply qinv_isequiv. unfold qinv.
+  exists sum_eq2_intro.
+  unfold homotopy, comp, id; split.
+    Focus 2. destruct x, p, w; compute; refl.
+    intro H. rewrite <- sum_eq2_comp'.
+    
+ assert (p = q).
+      apply (ap decode_sum) in H. rewrite 2!decode_encode_sum in H. exact H.
+destruct X, p, w.
+Abort.
+
+(** **** Products *)
+
+Lemma prod_eq_eq_intro :
+  forall {A B : U} {w w' : A * B} {p q : w = w'},
+    (ap pr1 p = ap pr1 q) * (ap pr2 p = ap pr2 q) -> p = q.
+Proof.
+  intros A B w w' p q [r s].
+  rewrite prod_eq_uniq, <- r, <- s, <- prod_eq_uniq. refl.
+Restart.
+  intros A B w w' p q [r s].
+  pose (a := prod_eq_uniq p).
+  pose (b :=
+       ap prod_eq_intro
+         (@prod_eq_intro _ _
+            (ap pr1 p, ap pr2 p)
+            (ap pr1 q, ap pr2 q)
+            (r, s))).
+  pose (c := inv (prod_eq_uniq q)).
+  exact (cat a (cat b c)).
+Defined.
+
+Lemma prod_eq_eq_elim :
+  forall {A B : U} {w w' : A * B} {p q : w = w'},
+    p = q -> (ap pr1 p = ap pr1 q) * (ap pr2 p = ap pr2 q).
+Proof.
+  intros A B w w' p q r. split.
+    exact (ap (ap pr1) r).
+    exact (ap (ap pr2) r).
+Defined.
+
+Lemma prod_eq_comp :
+  forall {A B : U} {w w' : A * B} (p : pr1 w = pr1 w') (q : pr2 w = pr2 w'),
+    prod_eq_elim (prod_eq_intro (p, q)) = (p, q).
+Proof.
+  destruct w, w'. cbn. destruct p, q. compute. refl.
+Defined.
+
+Goal
+  forall
+    (A B : U) (w w' : A * B) (p q : w = w')
+    (r : ap pr1 p = ap pr1 q) (s : ap pr2 p = ap pr2 q),
+      ap (ap pr1) (prod_eq_eq_intro (r, s)) = r.
+Proof.
+  intros. unfold prod_eq_eq_intro.
+  rewrite !ap_cat, !ap_ap, !ap_inv.
+  assert (comp prod_eq_intro (ap pr1) = @pr1 (pr1 w = pr1 w') _).
+    apply funext. destruct w, w'. cbn. intros [[] []]. cbn. refl.
+  assert (p = prod_eq_intro (ap pr1 p, ap pr2 p)).
+    apply prod_eq_uniq.
+  pose (t := r).
+  rewrite X0 in t. rewrite prod_eq_comp_1 in t.
+  Check @prod_eq_uniq.
+  Check @prod_eq_comp.
+Abort.
+
+Goal
+  forall
+    (A B : U) (w w' : A * B) (p q : w = w') (r : p = q),
+      ap (ap pr1) r = ap (ap pr1) r.
+Proof.
+  intros.
+ destruct r, p, w. cbn.
+Abort.
+
+(*
+Goal
+  forall (A B : U) (w w' : A * B)
+  (p1 q1 : pr1 w = pr1 w') (p2 q2 : pr2 w = pr2 w')
+  (r : p1 = q1) (s : p2 = q2), U.
+Proof.
+  intros.
+  pose (p := prod_eq_intro (p1, p2)).
+  pose (q := prod_eq_intro (q1, q2)).
+  Check @prod_eq_eq_intro A B w w' p q.
+  assert (r' : ap pr1 p = ap pr1 q).
+    unfold p, q. rewrite 2!prod_eq_comp_1. assumption. Show Proof.
+  pose (X' := internal_eq_rew_r (pr1 w = pr1 w') (ap pr1 (prod_eq_intro (p1, p2))) p1
+     (fun e : pr1 w = pr1 w' => e = ap pr1 (prod_eq_intro (q1, q2)))
+     (internal_eq_rew_r (pr1 w = pr1 w') (ap pr1 (prod_eq_intro (q1, q2)))
+        q1 (fun e : pr1 w = pr1 w' => p1 = e) r
+        (prod_eq_comp_1 A B w w' q1 q2)) (prod_eq_comp_1 A B w w' p1 p2)).
+  assert (s' : ap pr2 p = ap pr2 q).
+    unfold p, q. rewrite 2!prod_eq_comp_2. assumption. Show Proof.
+  pose (X'' := internal_eq_rew_r (pr2 w = pr2 w') (ap pr2 (prod_eq_intro (p1, p2))) p2
+     (fun e : pr2 w = pr2 w' => e = ap pr2 (prod_eq_intro (q1, q2)))
+     (internal_eq_rew_r (pr2 w = pr2 w') (ap pr2 (prod_eq_intro (q1, q2)))
+        q2 (fun e : pr2 w = pr2 w' => p2 = e) s
+        (prod_eq_comp_2 A B w w' q1 q2)) (prod_eq_comp_2 A B w w' p1 p2)).
+  assert ( 
+      ap (ap pr1) (prod_eq_eq_intro (r', s')) = r').
+    destruct w, w'. cbn in *. destruct r, s, p1, p2. cbn in *.
+Abort.
+*)
+
+Goal
+  forall (A B : U) (w w' : A * B) (p q : w = w'),
+    (p = q) = (ap pr1 p = ap pr1 q) * (ap pr2 p = ap pr2 q).
+Proof.
+  intros. apply ua. unfold equiv.
+  exists prod_eq_eq_elim.
+  apply qinv_isequiv. unfold qinv.
+  exists prod_eq_eq_intro.
+  unfold homotopy, comp, id; split.
+    Focus 2. destruct x, p, w. cbn. refl.
+Abort.
+
+Lemma pi_eq_eq_intro :
+  forall {A : U} {B : A -> U} {f g : forall x : A, B x} {p q : f = g},
+    (forall x : A, happly p x = happly q x) -> p = q.
+Proof.
+  intros * H.
+  exact (cat (funext_happly p)
+          (cat (ap funext (funext H)) (inv (funext_happly q)))).
+Defined.
+
+Lemma pi_eq_eq_elim :
+  forall {A : U} {B : A -> U} {f g : forall x : A, B x} {p q : f = g},
+    (p = q) -> forall x : A, happly p x = happly q x.
+Proof.
+  destruct 1. refl.
+Restart.
+Restart.
+  intros * H x.
+  exact (happly (ap happly H) x).
+Defined.
+
+Goal
+  forall (A : U) (B : A -> U) (f g : forall x : A, B x) (p q : f = g),
+    (p = q) = forall x : A, happly p x = happly q x.
+Proof.
+  intros. apply ua. unfold equiv.
+  exists pi_eq_eq_elim.
+  apply qinv_isequiv. unfold qinv.
+  exists pi_eq_eq_intro.
+  unfold homotopy, comp, id; split.
+    intro h. unfold pi_eq_eq_elim, pi_eq_eq_intro. apply funext. intro x.
+      rewrite !ap_cat, !ap_ap, !ap_inv.
+      rewrite !cat_pi. rewrite !happly_funext.
+      rewrite (@happly_funext _ _ _ _ (fun x0 : A => cat _ _)).
+      Search ap.
+      assert (p = q).
+        apply funext in h. apply (ap funext) in h.
+        rewrite <- 2!funext_happly in h. assumption.
+      destruct X.
+      Check @funext_happly.
+      Check happly_funext.
+      
+Abort.
+
 (** ** My own stuff *)
 
 Module term1.
@@ -5145,26 +5203,17 @@ Proof.
   intros. apply isProp_code_term. unfold isProp. apply X.
 Defined.
 
-Definition encode_term_aux :
-  forall {Var : U} (t : term Var), code_term t t.
-Proof.
-  induction t; cbn.
-    refl.
-    assumption.
-    split; assumption.
-Defined.
-
-Fixpoint encode_term_aux'
+Fixpoint encode_term_aux
   {Var : U} (t : term Var) : code_term t t :=
 match t with
     | Var v => refl v
-    | Lam f => fun v => encode_term_aux' (f v)
-    | App t1 t2 => (encode_term_aux' t1, encode_term_aux' t2)
+    | Lam f => fun v => encode_term_aux (f v)
+    | App t1 t2 => (encode_term_aux t1, encode_term_aux t2)
 end.
 
 Definition encode_term
   {Var : U} {t1 t2 : term Var} (p : t1 = t2) : code_term t1 t2 :=
-    transport _ p (encode_term_aux' t1).
+    transport _ p (encode_term_aux t1).
 
 Definition ap2
   {A B C : U} (f : A -> B -> C)
@@ -5223,10 +5272,16 @@ Lemma encode_decode_term' :
     encode_term (decode_term c) = c.
 Proof.
   induction t1; destruct t2; intro c; try (destruct c; fail).
-    destruct c. cbn. refl.
-    cbn in c. apply funext. intro v.
-Focus 2. cbn.
-      cbn. unfold ap2.
+    cbn in c. destruct c. cbn. refl.
+    cbn in c. apply funext. intro v. specialize (X v (t0 v) (c v)).
+      rewrite <- X.
+    Focus 2. cbn in c. destruct c as [c1 c2].
+      rewrite <- (IHt1_1 t2_1 c1), <- (IHt1_2 t2_2 c2).
+      apply prod_eq_intro; split.
+        induction t1_1; destruct t2_1; cbn in c1.
+          destruct c1. cbn. destruct (term_rect _). cbn. refl.
+          destruct c1.
+          destruct c1.
 Abort.
 
 Lemma term_isSet :
@@ -5248,6 +5303,8 @@ Proof.
     apply encode_decode_term; assumption.
     apply decode_encode_term; assumption.
 Defined.
+
+Search funext.
 
 End term1.
 
