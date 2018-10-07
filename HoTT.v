@@ -4803,17 +4803,13 @@ Defined.
 Definition code_option_eq {A : U} {x y : option A} (p q : x = y) : U :=
 match x, y with
     | None, None => unit
-    | Some x, Some y => p = q (*encode_option p = encode_option q*)
+    | Some x, Some y => p = q
     | _, _ => empty
 end.
 
 Definition encode_option_eq_aux
   {A : U} {x y : option A} (p : x = y) : code_option_eq p p.
 Proof.
-  destruct p, x; cbn.
-    exact tt.
-    refl.
-Restart.
   destruct x, y; cbn.
     exact tt.
     apply encode_option in p. cbn in p. assumption.
@@ -4831,8 +4827,7 @@ Proof.
   destruct x, y; cbn in *.
     apply isSet_None.
     1-2: destruct c.
-    assumption. (*
-    rewrite <- decode_encode_option, <- c, decode_encode_option. refl.*)
+    assumption.
 Defined.
 
 Lemma encode_decode_option_eq :
@@ -4865,6 +4860,107 @@ Proof.
   unfold homotopy, code, id; split; intros.
     apply encode_decode_option_eq.
     apply decode_encode_option_eq.
+Defined.
+
+(** And again *)
+
+Definition code_option_eq' {A : U} {x y : option A} (p q : x = y) : U :=
+(*
+Proof.
+  destruct x, y.
+    exact unit.
+    1-2: exact empty.
+    Check @ap _ _. (@encode_option A (Some a) (Some a0)). _ _ p. q.*)
+match x, y with
+    | None, None => unit
+    | Some _, Some _ => encode_option p = encode_option q
+    | _, _ => empty
+end.
+
+Lemma wut1 :
+  forall {A : U} {x y : option A} {p q : x = y},
+    code_option_eq p q -> code_option_eq' p q.
+Proof.
+  destruct x, y; cbn; intros.
+    exact tt.
+    1-2: assumption.
+     apply ap. assumption.
+Defined.
+
+Lemma wut2 :
+  forall {A : U} {x y : option A} {p q : x = y},
+    code_option_eq' p q -> code_option_eq p q.
+Proof.
+  destruct x, y; cbn; intros.
+    exact tt.
+    1-2: assumption.
+     rewrite <- decode_encode_option, <- X, decode_encode_option. refl.
+Defined.
+
+Goal
+  @code_option_eq' = @code_option_eq.
+Proof.
+  apply funext. intro A. apply funext. intro x. apply funext. intro y.
+  apply funext. intro p. apply funext. intro q.
+  destruct p, x; cbn.
+    Focus 2. apply ua. unfold equiv. esplit. Unshelve.
+      Focus 2. intro. rewrite <- decode_encode_option, <- X. cbn. refl.
+      apply qinv_isequiv. unfold qinv. esplit. Unshelve.
+        Focus 2. intro. rewrite <- X. cbn. refl.
+        unfold homotopy, comp, id; split.
+          intro. rewrite <- x. cbn. refl.
+          intro. assert (q = refl (Some a)).
+            rewrite <- (decode_encode_option q), <- x. cbn. refl.
+            cbn. symmetry in X. destruct X. cbn.
+            Check internal_eq_rew.
+Abort.
+
+Definition encode_option_eq_aux'
+  {A : U} {x y : option A} (p : x = y) : code_option_eq' p p.
+Proof.
+  destruct x, y; cbn.
+    exact tt.
+    apply encode_option in p. cbn in p. assumption.
+    apply encode_option in p. cbn in p. assumption.
+    refl.
+(*Restart.
+  destruct p, x; cbn.*)
+Defined.
+
+Definition encode_option_eq'
+  {A : U} {x y : option A} {p q : x = y} (r : p = q) : code_option_eq' p q :=
+    transport _ r (encode_option_eq_aux' p).
+
+Definition decode_option_eq'
+  {A : U} {x y : option A} {p q : x = y} (c : code_option_eq' p q) : p = q.
+Proof.
+  destruct x, y; cbn in *.
+    apply isSet_None.
+    1-2: destruct c.
+    exact (cat (inv (decode_encode_option p))
+               (cat
+                  (@ap _ _ (@decode_option A (Some a) (Some a0)) _ _ c)
+                  (decode_encode_option q))).
+Defined.
+
+Lemma encode_decode_option_eq' :
+  forall (A : U) (x y : option A) (p q : x = y) (c : code_option_eq' p q),
+    encode_option_eq' (decode_option_eq' c) = c.
+Proof.
+  destruct x, y; cbn; intros.
+    apply isProp_unit.
+    1-2: destruct c.
+    unfold encode_option_eq'.
+    unfold code_option_eq'. rewrite transport_eq_fun.
+Abort.
+
+Lemma decode_encode_option_eq' :
+  forall (A : U) (x y : option A) (p q : x = y) (r : p = q),
+    decode_option_eq' (encode_option_eq' r) = r.
+Proof.
+  destruct r, p, x.
+    apply isGrpd_None.
+    cbn. refl.
 Defined.
 
 (** **** Sums *)
@@ -4941,6 +5037,74 @@ Proof.
     rewrite unit_eq_char'. intros. apply unit_eq_char'.
 Defined.
 
+(** Again *)
+
+Definition code_sum_eq' {A B : U} {x y : A + B} (p q : x = y) : U.
+Proof.
+  destruct p, x.
+    exact (refl a = encode_sum q).
+    exact (refl b = encode_sum q).
+(*Restart.
+  destruct x, y; cbn in *.
+    destruct (encode_sum p). exact (encode_sum p = encode_sum q).
+    1-2: exact empty.
+    destruct (encode_sum p). exact (encode_sum p = encode_sum q).*)
+Defined.
+
+Definition encode_sum_eq_aux'
+  {A B : U} {x y : A + B} (p : x = y) : code_sum_eq' p p.
+Proof.
+  destruct p, x; cbn; refl.
+Defined.
+
+Definition encode_sum_eq'
+  {A B : U} {x y : A + B} {p q : x = y} (r : p = q) : code_sum_eq' p q :=
+    transport _ r (encode_sum_eq_aux' p).
+
+Definition decode_sum_eq'
+  {A B : U} {x y : A + B} {p q : x = y} (c : code_sum_eq' p q) : p = q.
+Proof.
+  destruct p, x; cbn in c.
+Abort.
+(*    exact (cat (@ap _ _ (@decode_sum A B (inl a) (inl a)) _ _ c)
+               (decode_encode_sum q)).*)
+(*    assumption.
+    exact (cat (@ap _ _ (@decode_sum A B (inr b) (inr b)) _ _ c)
+               (decode_encode_sum q)).
+*)
+(*
+    rewrite <- decode_encode_sum, <- c. cbn. refl.
+    rewrite <- decode_encode_sum, <- c. cbn. refl.
+*)
+(*
+  destruct x, y; cbn in *.
+    exact (cat (inv (decode_encode_sum p))
+            (cat (ap (@decode_sum _ _ (inl a) (inl a0)) c)
+              (decode_encode_sum q))).
+    1-2: destruct c.
+    exact (cat (inv (decode_encode_sum p))
+            (cat (ap (@decode_sum _ _ (inr b) (inr b0)) c)
+              (decode_encode_sum q))).*)
+
+(*
+Lemma encode_decode_sum_eq' :
+  forall {A B : U} {x y : A + B} (p q : x = y) (c : code_sum_eq' p q),
+    encode_sum_eq' (decode_sum_eq' c) = c.
+Proof.
+  destruct p, x; cbn; intros.
+    assert (q = ap inl (refl a)).
+      rewrite <- (decode_encode_sum q), <- c. cbn. refl.
+    symmetry in X. destruct X. cbn. rewrite cat_refl_r.
+      unfold encode_sum_eq'. cbn. unfold code_sum_eq'.
+      rewrite transport_eq_fun. rewrite cat_refl_l.
+      replace (fun _ => refl a) with (fun p : inl a = inl a => encode_sum p).
+    rewrite <- (decode_encode_sum q).
+  destruct x, y, c; cbn; refl.
+    2-3: destruct c.
+    rewrite (sum_eq_char A B).
+Defined.
+*)
+
 (* wut *)
 
 Lemma sum_eq2_elim' :
@@ -4979,6 +5143,26 @@ Proof.
       admit.
     destruct w, w'; cbn in *.
       destruct X, c. cbn.
+Restart.
+  intros. apply ua. unfold equiv.
+  exists (ap decode_sum).
+  apply qinv_isequiv. unfold qinv.
+  esplit.
+Unshelve.
+  Focus 2. intro p. apply (ap encode_sum) in p.
+    Check encode_decode_sum.
+    rewrite 2!encode_decode_sum in p. assumption.
+  unfold homotopy, comp, id; split.
+    destruct w, w'; cbn in *; intros.
+      destruct (internal_eq_rew _). destruct c. cbn. admit.
+      destruct c.
+      destruct c.
+      destruct (internal_eq_rew _). destruct c. cbn. admit.
+    destruct x, w, w'; cbn in *.
+      destruct c. cbn. refl.
+      destruct c.
+      destruct c.
+      destruct c. cbn. refl.
 Abort.
 
 Lemma sum_eq2_intro :
@@ -5562,38 +5746,3 @@ Restart.
         intro. apply isProp_trunc.
       symmetry in X0. intros.
 Abort.
-
-(** This file is based on the paper "Generalizations of Hedberg's Theorem"
-    by Kraus, Escardó, Coquand and Altenkirch. *)
-
-(** TODO:
-    1. bool -> nat is separated
-    2. funext -> separated -> isSet
-    3. isSet <-> || x = y || -> x = y
-    4. ||X|| -> X <-> constant endomap
-    5. fix f is prop
-*)
-
-(** * 2 Preliminaries *)
-
-Print decidable_equality.
-(* ===> fun A : U => forall x y : A, (x = y) + (x <> y) : U -> U *)
-
-Definition const' {A B : U} (f : A -> B) : U :=
-  forall x y : A, f x = f y.
-
-Definition collapsible (A : U) : U :=
-  {f : A -> A & const' f}.
-
-Definition path_collapsible (A : U) : U :=
-  forall x y : A, collapsible (x = y).
-
-(** * Hedberg's Theorem *)
-
-(* Lemma 1 *)
-Lemma discrete_path_collapsible :
-  forall A : U,
-    decidable_equality A -> path_collapsible A.
-Proof.
-  intro.
-  unfold decidable_equality, path_collapsible.
