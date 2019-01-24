@@ -5488,8 +5488,6 @@ Proof.
     apply decode_encode_term; assumption.
 Defined.
 
-Search funext.
-
 End term1.
 
 (** ** More of my own stuffs. *)
@@ -5746,3 +5744,36 @@ Restart.
         intro. apply isProp_trunc.
       symmetry in X0. intros.
 Abort.
+
+Goal
+  forall A B : U,
+    (A ~ B) ~ {R : A -> B -> U &
+               (forall a : A, isContr {b : B & R a b}) *
+               (forall b : B, isContr {a : A & R a b})}.
+Proof.
+  intros. unfold equiv. esplit. Unshelve.
+    Focus 2. intros [e H]. esplit with (fun a b => e a = b). split.
+      intro. apply isContr_single_ended_path.
+      intro. admit.
+    apply qinv_isequiv. unfold qinv. cbn. esplit. Unshelve.
+      Focus 2. intros (R & H1 & H2).
+        esplit with (fun a => pr1' (pr1' (H1 a))).
+        apply qinv_isequiv. unfold qinv.
+        esplit with (fun b => pr1' (pr1' (H2 b))).
+        unfold homotopy, comp, id. split.
+          intro b.
+            destruct (H2 b) as [[a r] p]. cbn.
+            destruct (H1 a) as [[b' r'] p']. cbn.
+            specialize (p' (| b, r |)). apply (ap pr1') in p'.
+            cbn in p'. assumption.
+          intro a.
+            destruct (H1 a) as [[b r] p]. cbn.
+            destruct (H2 b) as [[a' r'] p']. cbn.
+            specialize (p' (| a, r |)). apply (ap pr1') in p'.
+            cbn in p'. assumption.
+      unfold homotopy, comp, id. split.
+        intros [R [H1 H2]]. apply sigma_eq_intro. cbn. esplit. Unshelve.
+          Focus 3. apply funext. intro a. apply funext. intro b.
+            destruct (H1 a) as [[b' p] H1']. cbn.
+            
+            
