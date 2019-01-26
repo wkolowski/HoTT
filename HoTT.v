@@ -5693,6 +5693,66 @@ Proof.
   rewrite (Hr q). rewrite cat_assoc, cat_inv_l, cat_refl_l. refl.
 Defined.
 
+Definition bools : U :=
+  {X : U & trunc (bool = X)}.
+
+Definition bools_path1 : forall x : bools, x = x.
+Proof.
+  reflexivity.
+Defined.
+
+Definition bools_neg :
+  forall x : bools, {y : bools & x <> y}.
+Proof.
+  destruct x as [X p]. revert p. apply trunc_ind.
+    admit.
+    destruct x. esplit with (| bool, trunc' (refl bool) |).
+Abort.
+
+Definition bools_path2 : forall x : bools, x = x.
+Proof.
+  destruct x as [X H].
+  assert (isContr {p : X = X & forall x : X, idtoeqv p x <> x}).
+    revert H. apply trunc_rec.
+      apply isProp_isContr.
+      destruct 1. unfold isContr. esplit. Unshelve.
+        Focus 3. exists (ua negb_equiv). cbn. intro.
+          rewrite transport_ua. destruct x; cbn.
+            apply neq_false_true.
+            intro. apply neq_false_true. rewrite X. reflexivity.
+    destruct y. rewrite subtype_eq_intro_steroids; cbn.
+      destruct (path_bool_bool_char x).
+        assert empty.
+          apply (n true). rewrite e. cbn. reflexivity.
+          destruct X.
+        symmetry. assumption.
+      unfold not. intro. apply isProp_pi. intro. apply isProp_fun, isProp_empty.
+  apply sigma_eq_intro. cbn. esplit with (pr1' (pr1' X0)). apply path.
+Defined.
+
+Definition bools_path_unequal : bools_path1 <> bools_path2.
+Proof.
+  intro.
+  pose (a := (| bool, trunc' (refl bool) |) : bools).
+    cbn.
+Abort.
+
+Lemma bools_eq_char :
+  forall x : bools, (x = x) = (bool = bool).
+Proof.
+  intro. apply ua. unfold equiv. esplit. Unshelve.
+    Focus 2. destruct x.
+
+Lemma isProp_fun_nonempty :
+  forall A B : U,
+    A -> isProp (A -> B) -> isProp B.
+Proof.
+  unfold isProp. intros A B a H x y.
+  specialize (H (fun _ => x) (fun _ => y)).
+  apply (ap (fun f => f a)) in H. cbn in H.
+  assumption.
+Qed.
+
 (* Theorem 4.1.3 *)
 Theorem qinv_is_bad :
   ~ forall (A B : U) (f : A -> B), isProp (qinv f).
@@ -5704,14 +5764,12 @@ Proof.
   rewrite qinv_is_loop in H.
   2: apply qinv_id.
   unfold isProp, A in H.
-  pose (f := fun X : {X : U & trunc (bool = X)} => refl X).
+  pose (f := fun X : A => refl X).
   assert (forall X : {X : U & trunc (bool = X)},
             isProp {p : X = X & p <> refl X}).
-    intros [X p] [q q'] [r r']. apply sigma_eq_intro. cbn.
-
-  assert (isProp (forall X : {X : U & trunc (bool = X)},
-                    {p : X = X & p <> refl X})).
-    intros g h. apply funext.
+    intros [X p]. revert p. apply trunc_ind.
+      intro. apply isProp_isProp.
+      destruct x. intros [q q'] [r r']. apply sigma_eq_intro. cbn.
 Restart.
   intro H.
   pose (X := {A : U & trunc (bool = A)}).
@@ -5732,6 +5790,7 @@ Restart.
     intro. rewrite (subtype_eq_intro_steroids U (fun A => trunc (bool = A))).
       destruct x as [x Hx]. cbn. assumption.
       intro. apply isProp_trunc.
+(*
   assert (forall p q : a = a, cat p q = cat q p).
     intros p r.
     rewrite <- (sigma_eq_uniq _ _ _ _ (cat p r)),
@@ -5742,9 +5801,24 @@ Restart.
       rewrite (subtype_eq_intro_steroids U (fun A => trunc (bool = A))).
         cbn. refl.
         intro. apply isProp_trunc.
-      symmetry in X0. intros.
-Abort.
+      symmetry in X0. intros. cbn in x. 
+*)
+  pose (p := sigma_eq_intro (|refl (pr1' a), refl (pr2' a)|)).
+  assert (p <> q).
+    unfold p, q. intro. apply (ap sigma_eq_elim) in X0. 
+      rewrite !sigma_eq_comp in X0. apply (ap pr1') in X0. cbn in X0.
+      apply negb_not_refl. rewrite X0. reflexivity.
+  specialize (H X X id).
+  rewrite qinv_is_loop in H.
+    2: apply qinv_id.
+    unfold isProp in H.
+Restart.
+  intro H. specialize (H U U id).
+  rewrite qinv_is_loop in H.
+    2: apply qinv_id.
+    unfold isProp in H. 
 
+(* Exercise 4.2 *)
 Goal
   forall A B : U,
     (A ~ B) ~ {R : A -> B -> U &
@@ -5775,5 +5849,5 @@ Proof.
         intros [R [H1 H2]]. apply sigma_eq_intro. cbn. esplit. Unshelve.
           Focus 3. apply funext. intro a. apply funext. intro b.
             destruct (H1 a) as [[b' p] H1']. cbn.
-            
-            
+Abort.
+
