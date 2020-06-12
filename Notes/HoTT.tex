@@ -1,0 +1,189 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsthm, amssymb}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+
+% Technical.
+\renewcommand{\phi}{\varphi}
+\newcommand{\txt}[1]{\texttt{#1}}
+\newcommand{\text}[1]{\texttt{#1}}
+\renewcommand{\(}{\left(}
+\renewcommand{\)}{\right)}
+
+% Definitions.
+\newcommand{\defn}{:\equiv}
+\newcommand{\defp}{:=}
+
+% Universes.
+\newcommand{\U}{\mathcal{U}}
+
+\newcommand{\isContr}{\text{isContr}}
+\newcommand{\isProp}{\text{isProp}}
+\newcommand{\isSet}{\text{isSet}}
+\newcommand{\isGrpd}{\text{isGrpd}}
+
+\newcommand{\Contr}{\text{Contr}}
+\newcommand{\Prop}{\text{Prop}}
+\newcommand{\Set}{\text{Set}}
+\newcommand{\Grpd}{\text{Grpd}}
+%\newcommand{\Type}{\text{Type}}
+
+% Functions.
+\newcommand{\lam}[2]{\lambda #1.#2}
+\newcommand{\apl}[2]{#1\ #2}
+
+\newcommand{\id}{\text{id}}
+\newcommand{\comp}{\circ}
+\newcommand{\finv}[1]{#1^{-1}}
+
+% Paths.
+\newcommand{\eq}[2]{#1 = #2}
+%\newcommand{\refl}[1]{\text{refl}_{#1}}
+\newcommand{\refl}{\txt{refl}}
+
+\newcommand{\inv}[1]{#1^{-1}}
+\newcommand{\sq}{\mathbin{\vcenter{\hbox{\rule{.3ex}{.3ex}}}}}
+
+% Equivalence.
+\newcommand{\hequiv}[2]{#1 \simeq #2}
+
+% Path application and transport.
+\newcommand{\ap}[2]{\text{ap}_{#1}(#2)}
+\newcommand{\apd}[2]{\text{apd}_{#1}(#2)}
+\newcommand{\transport}{\text{transport}}
+
+\newcommand{\qinv}{\text{qinv}}
+\newcommand{\isequiv}{\text{isequiv}}
+
+% Basic types.
+\newcommand{\Empty}{\mathbf{0}}
+\newcommand{\Unit}{\mathbf{1}}
+
+\newcommand{\Bool}{\mathbf{2}}
+\newcommand{\true}{\txt{tt}}
+\newcommand{\false}{\txt{ff}}
+
+\newcommand{\Nat}{\mathbb{N}}
+\newcommand{\dprod}[2]{\prod #1.#2}
+\newcommand{\dsum}[2]{\sum #1.#2}
+
+% Products.
+\newcommand{\prodt}[2]{#1 \times #2}
+\newcommand{\pair}[2]{(#1, #2)}
+\newcommand{\outl}{\text{pr}_1}
+\newcommand{\outr}{\text{pr}_2}
+
+% Sums
+\newcommand{\sumt}[2]{#1 + #2}
+\newcommand{\inl}{\txt{inl}}
+\newcommand{\inr}{\txt{inr}}
+
+% Logic.
+\newcommand{\all}[2]{\forall #1.#2}
+\newcommand{\ex}[2]{\exists #1.#2}
+\newcommand{\conj}[2]{#1 \land #2}
+\newcommand{\disj}[2]{#1 \lor #2}
+\newcommand{\True}{\top}
+\newcommand{\False}{\bot}
+\newcommand{\impl}[2]{#1 \implies #2}
+
+% Rest.
+\newcommand{\happly}{\text{happly}}
+\newcommand{\funext}{\text{funext}}
+
+\newcommand{\idtoeqv}{\text{idtoeqv}}
+\newcommand{\ua}{\text{ua}}
+
+\newcommand{\code}{\text{code}}
+\newcommand{\encode}{\text{encode}}
+\newcommand{\decode}{\text{decode}}
+
+\newcommand{\hS}{\mathbb{S}^1}
+\newcommand{\base}{\text{base}}
+\newcommand{\looop}{\text{loop}}
+
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\IZ}{0_\mathbb{I}}
+\newcommand{\II}{1_\mathbb{I}}
+\newcommand{\seg}{\text{seg}}
+
+\newcommand{\trf}[1]{||#1||}
+\newcommand{\tri}[1]{|#1|}
+
+\title{My HoTT notes}
+\date{12 June 2020 - ongoing}
+
+\begin{document}
+
+\maketitle
+
+\newcommand{\Searchable}{\txt{Searchable}}
+
+\begin{center}
+$\displaystyle \apl{\Searchable}{A} \defn \dprod{p : A \to \Bool}{\(\dsum{x : A}{\apl{p}{x} = \true}\) + \dprod{x : A}{\apl{p}{x} = \false}}$
+\end{center}
+
+In words: the type $A$ is searchable if for every boolean predicate $p$ we can find an element of $A$ that satisfies $p$ or else prove that no element of $A$ satisfies $p$.
+
+\begin{theorem}
+The type $\apl{\Searchable}{A}$ can be of any h-level.
+\end{theorem}
+\begin{proof}
+$\apl{p}{x} = \true$ and $\apl{p}{x} = \false$ are propositions, the summands are disjoint, and dependent products preserve h-level (well, unless the domain is $\Empty$), so the h-level is determined by $A$.
+
+If $A$ is contractible, then $\apl{\Searchable}{A}$ is contractible.
+
+If $A$ is a proposition, then $\apl{\Searchable}{A}$ is a proposition.
+
+If $A$ is of h-level $n$, then so is $\apl{\Searchable}{A}$.
+
+Hope my mental techniques for h-levels work :)
+
+\end{proof}
+
+\newcommand{\MerelySearchable}{\txt{MerelySearchable}}
+\begin{center}
+$\displaystyle \apl{\MerelySearchable}{A} \defn \all{p : A \to \Bool}{\(\ex{x : A}{\apl{p}{x} = \true}\) \lor \all{x : A}{\apl{p}{x} = \false}}$
+\end{center}
+
+\begin{theorem}
+$\apl{\isProp}{(\MerelySearchable{A})}$
+\end{theorem}
+\begin{proof}
+We use the truncated logic.
+\end{proof}
+
+\begin{theorem}
+Searchable types include: $\Empty, \Unit, \Bool$, all finite types and the interval.
+
+If $A$ and $B$ are searchable, so are $\prodt{A}{B}$ and $A + B$.
+
+If $A$ is searchable and $B : A \to \U$ is a family of searchable types, $\displaystyle \dsum{x : A}{\apl{B}{x}}$ is also searchable.
+\end{theorem}
+\begin{proof}
+For finite types: we assume that ``finite'' means ``there is a list of all the elements''. So, use it to check every element, and poof -- done.
+
+The interval is contractible, thus equivalent to $\Unit$, so it's searchable.
+
+To search $A + B$ first search $A$, then search $B$.
+
+To search $\prodt{A}{B}$ and $\dsum{x : A}{\apl{B}{x}}$ search for an $a$, and when looking for it, search for a $b$ that can be paired with it.
+\end{proof}
+
+\begin{theorem}
+Searchability of $\Nat$ is taboo.
+
+In general, preservation of searchability for $\prod, \txt{W}$ and $\txt{M}$ should be taboo.
+\end{theorem}
+\begin{proof}
+$\Nat$ is the primordial searchability taboo -- how can we search infinitely many numbers in a finite time (besides checking every next number twice as fast as the previous one)?
+
+\txt{W} can be used to define $\Nat$, so its searchability should be taboo.
+
+
+
+\end{proof}
+
+\end{document}
