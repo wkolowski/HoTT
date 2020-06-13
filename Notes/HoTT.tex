@@ -66,6 +66,7 @@
 \newcommand{\false}{\txt{ff}}
 
 \newcommand{\Nat}{\mathbb{N}}
+\newcommand{\Conat}{\mathbb{N}_\infty}
 \newcommand{\dprod}[2]{\prod #1.#2}
 \newcommand{\dsum}[2]{\sum #1.#2}
 
@@ -119,6 +120,8 @@
 
 \maketitle
 
+\section{Searchability}
+
 \newcommand{\Searchable}{\txt{Searchable}}
 
 \begin{center}
@@ -148,6 +151,8 @@ Hope my mental techniques for h-levels work :)
 $\displaystyle \apl{\MerelySearchable}{A} \defn \all{p : A \to \Bool}{\(\ex{x : A}{\apl{p}{x} = \true}\) \lor \all{x : A}{\apl{p}{x} = \false}}$
 \end{center}
 
+In words: a type is merely searchable if we can decide whether there merely exists an element that satisfies the given boolean predicate $p$, but in general there is no way to find such an element.
+
 \begin{theorem}
 $\apl{\isProp}{(\MerelySearchable{A})}$
 \end{theorem}
@@ -155,12 +160,17 @@ $\apl{\isProp}{(\MerelySearchable{A})}$
 We use the truncated logic.
 \end{proof}
 
-\begin{theorem}
+\begin{theorem} Some instances of searchable types.
+
 Searchable types include: $\Empty, \Unit, \Bool$, all finite types and the interval.
 
 If $A$ and $B$ are searchable, so are $\prodt{A}{B}$ and $A + B$.
 
 If $A$ is searchable and $B : A \to \U$ is a family of searchable types, $\displaystyle \dsum{x : A}{\apl{B}{x}}$ is also searchable.
+
+If $A$ is searchable and $f : A \to B$, then the image of $f$ is also searchable.
+
+Very importantly, the type $\Conat$ is searchable.
 \end{theorem}
 \begin{proof}
 For finite types: we assume that ``finite'' means ``there is a list of all the elements''. So, use it to check every element, and poof -- done.
@@ -170,20 +180,112 @@ The interval is contractible, thus equivalent to $\Unit$, so it's searchable.
 To search $A + B$ first search $A$, then search $B$.
 
 To search $\prodt{A}{B}$ and $\dsum{x : A}{\apl{B}{x}}$ search for an $a$, and when looking for it, search for a $b$ that can be paired with it.
+
+To search the image of $f : A \to B$ using the predicate $p : B \to \Bool$, search the whole of $A$ using the predicate $fp$ (beware: I write composition of two functions $f$ and $g$ like $fg$!).
+
+The searchability of $\Conat$ was established by Martin Escard\'{o}.
+
 \end{proof}
 
-\begin{theorem}
-Searchability of $\Nat$ is taboo.
+\begin{theorem} Taboos
 
-In general, preservation of searchability for $\prod, \txt{W}$ and $\txt{M}$ should be taboo.
+Searchability of $\Nat$ is taboo. In general, preservation of searchability for $\prod, \txt{W}$ and $\txt{M}$ and $=$ should be taboo.
 \end{theorem}
 \begin{proof}
 $\Nat$ is the primordial searchability taboo -- how can we search infinitely many numbers in a finite time (besides checking every next number twice as fast as the previous one)?
 
 \txt{W} can be used to define $\Nat$, so its searchability should be taboo.
 
+What about \txt{M}? Lists should in general not be searchable, so infinite lists shouldn't be too... but that's a dangerous line of reasoning.
 
+As for $\Pi$, I'd guess that, even though $\Conat$ and $\Bool$ are searchable, the searchability of $\Conat \to \Bool$ is taboo.
 
+TODO: check the two above paragraphs.
 \end{proof}
 
+A good question yet to be answered: does there purely exist a type that is not searchable? At first one might think about the universe $\U$, but at a second glance one may think the universe should satisfy some kind of Rice's theorem, so maybe all boolean predicates on it are constant... and thus the universe should be searchable. To answer this question, let's take a look at some classical axioms.
+
+\newcommand{\LEM}{\txt{LEM}}
+\begin{theorem} Relation to excluded middle
+
+1. $\dprod{A : \U}{\apl{\Searchable}{A} \to A + \neg A}$
+
+2. Conclusion: $\(\dprod{A : \U}{\apl{\Searchable}{A}}\) \to \dprod{A : \U}{A + \neg A}$
+
+3. Conclusion 2: $\neg \dprod{A : \U}{\apl{\Searchable}{A}}$
+
+4. $\hequiv{\LEM}{\dprod{P : \Prop}{\apl{\Searchable}{P}}}$
+
+5. $\hequiv{\LEM}{\dprod{A : \U}{\apl{\MerelySearchable}{A}}}$
+\end{theorem}
+\begin{proof}
+
+1. Set $\apl{p}{_} \defn \true$. Searchability then reduces to $\(\dsum{x : A}{\true = \true}\) + \dprod{x : A}{\false = \true}$, which is equivalent to $A + \neg A$.
+
+2. Trivial.
+
+3. From the contraposition of (2) using the fact that, given univalence, excluded middle for all types does not hold (see chapter 2 of the HoTTbook for this; TODO -- give precise theorem number).
+
+4. Both sides of the equivalence are propositions, so it suffices to give two implications. Right-to-left is the same as in point (2). Left-to-right: for a proposition $P$ the type $\dsum{x : P}{\apl{p}{x} = \true}$ is a proposition, so we can check if it's inhabited using $\LEM$. If it is, we found what we we're looking for. If not, we can dervie $\dprod{x : P}{\apl{p}{x} = \false}$.
+
+5. Both sides are propositions, so we need two implications. Right-to-left: as in (4). Left-to-right: using $\LEM$ we can decide if $\ex{x : A}{\apl{p}{x} = \true}$ and if not, we can conclude $\all{x : A}{\apl{p}{x} = \false}$ using classical logic.
+\end{proof}
+
+Having seen some instances of searchable types, we should be a bit dissatisfied: all types we considered we're sets and all type formers we saw preserved the property of being a set. What about types with more complicated path structure?
+
+\newcommand{\Circle}{\hS}
+\begin{theorem}
+The circle $\Circle$ is searchable.
+\end{theorem}
+\begin{proof}
+We have $p : \Circle \to \Bool$ and we need to find an $x : \Circle$ such that $\apl{p}{x} = \true$ or prove that no $x : \Circle$ satisfies $p$.
+
+Let's check the point $\base$. If $\apl{p}{\base} = \true$, then we found our point. If not, it should be quite obvious that $\dprod{x : \Circle}{\apl{p}{x} = \false}$, because all points are connected to $\base$ with a path. This path is truncated (i.e. $\dprod{x : \Circle}{\trf{x = \base}}$), but this doesn't matter -- we can take it out because we're proving $\apl{p}{x} = \false$ which is a proposition.
+\end{proof}
+
+The above proof looks a bit suspicious: there is nothing particular about the circle in it. It could just as well work for any type that has a point connected to all other points... such types are called connected (HoTTBook, remark 3.11.2).
+
+\newcommand{\Connected}{\txt{Connected}}
+$\apl{\Connected}{A} \defn \dsum{x : A}{\dprod{y : A}{\trf{x = y}}}$
+
+\newcommand{\Sphere}{\mathbb{S}^2}
+\newcommand{\nSphere}[1]{\mathbb{S}^{#1}}
+\newcommand{\Susp}{\Sigma}
+\newcommand{\Z}{\mathbb{Z}}
+\begin{theorem}
+Searchability of connected types.
+
+1. $\dprod{A : \U}{\apl{\Connected}{A} \to \apl{\Searchable}{A}}$
+
+2. Conclusion: the circle $\Circle$, the sphere $\Sphere$, the $n$-sphere $\nSphere{n}$ are searchable.
+
+3. If $A$ is searchable, then it may be the case that the searchability of $x =_A y$ is taboo.
+
+4. If $A$ is inhabited, then the suspension $\apl{\Susp}{A}$ is searchable. If not, then it's also searchable.
+
+\end{theorem}
+\begin{proof}
+1. $A$ is connected so we have $x : A$ and $H : \dprod{y : A}{\trf{x = y}}$. Given a predicate $p : A \to \Bool$, let's check $\apl{p}{x}$. If it's $\true$, then we're done. If not, use the path unpacked from $\apl{H}{y}$ to show that all $y : A$ satisfy $\apl{p}{y} = \apl{p}{x}$ and thus $\apl{p}{y} = \false$.
+
+2. These types are connected.
+
+3. $\Circle$ is searchable, but it's fundamental group is $\Z$, whose searchability is taboo (just like for naturals).
+
+4. If $A$ is inhabited, $\apl{\Susp}{A}$ is connected and thus searchable. If $A$ is empty, then $\hequiv{\apl{\Susp}{A}}{\Bool}$, so it's also searchable.
+\end{proof}
+
+A question: can we prove that the suspension of $A$ is always searchable, no matter what $A$ is? Maybe we can use truncations for that.
+
+\begin{theorem}
+Searchability of truncations.
+
+1. If $A$ is searchable, $\trf{A}$ is searchable.
+
+2. The converse need not hold.
+\end{theorem}
+\begin{proof}
+1. To search $\trf{A}$ with $p : \trf{A} \to \Bool$, search $A$ with the predicate $\apl{q}{x} \defn \apl{p}{\tri{x}}$.
+\end{proof}
+
+2. $\trf{\Nat}$ is trivially searchable, but searchability of $\Nat$ is taboo.
 \end{document}
