@@ -162,28 +162,35 @@ We use the truncated logic.
 
 \begin{theorem} Some instances of searchable types.
 
-Searchable types include: $\Empty, \Unit, \Bool$, all finite types and the interval.
+1. Searchable types include: $\Empty, \Unit, \Bool$, all finite types.
 
-If $A$ and $B$ are searchable, so are $\prodt{A}{B}$ and $A + B$.
+1.5. The interval is searchable.
 
-If $A$ is searchable and $B : A \to \U$ is a family of searchable types, $\displaystyle \dsum{x : A}{\apl{B}{x}}$ is also searchable.
+2. If $A$ and $B$ are searchable, so are $\prodt{A}{B}$ and $A + B$.
 
-If $A$ is searchable and $f : A \to B$, then the image of $f$ is also searchable.
+3. If $A$ is searchable and $B : A \to \U$ is a family of searchable types, $\dsum{x : A}{\apl{B}{x}}$ is also searchable.
 
-Very importantly, the type $\Conat$ is searchable.
+4. If $A$ is searchable and $f : A \to B$, then the image of $f$ is also searchable.
+
+5. Very importantly, the type $\Conat$ is searchable.
+
+6. There are arbitrarily big searchable ordinals.
+
 \end{theorem}
 \begin{proof}
-For finite types: we assume that ``finite'' means ``there is a list of all the elements''. So, use it to check every element, and poof -- done.
+1. For finite types: we assume that ``finite'' means ``there is a list of all the elements''. So, use it to check every element, and poof -- done.
 
-The interval is contractible, thus equivalent to $\Unit$, so it's searchable.
+1.5. The interval is contractible, thus equivalent to $\Unit$, so it's searchable.
 
-To search $A + B$ first search $A$, then search $B$.
+2. To search $A + B$ first search $A$, then search $B$.
 
-To search $\prodt{A}{B}$ and $\dsum{x : A}{\apl{B}{x}}$ search for an $a$, and when looking for it, search for a $b$ that can be paired with it.
+3. To search $\prodt{A}{B}$ and $\dsum{x : A}{\apl{B}{x}}$ search for an $a$, and when looking for it, search for a $b$ that can be paired with it.
 
-To search the image of $f : A \to B$ using the predicate $p : B \to \Bool$, search the whole of $A$ using the predicate $fp$ (beware: I write composition of two functions $f$ and $g$ like $fg$!).
+4. To search the image of $f : A \to B$ using the predicate $p : B \to \Bool$, search the whole of $A$ using the predicate $fp$ (beware: I write composition of two functions $f$ and $g$ like $fg$!).
 
-The searchability of $\Conat$ was established by Martin Escard\'{o}.
+5. The searchability of $\Conat$ was established by Martin Escard\'{o}.
+
+6. Proved by Escard\'{o}.
 
 \end{proof}
 
@@ -204,6 +211,8 @@ TODO: check the two above paragraphs.
 \end{proof}
 
 A good question yet to be answered: does there purely exist a type that is not searchable? At first one might think about the universe $\U$, but at a second glance one may think the universe should satisfy some kind of Rice's theorem, so maybe all boolean predicates on it are constant... and thus the universe should be searchable. To answer this question, let's take a look at some classical axioms.
+
+(Remark by Escard\'{o}: if there is $p : \U \to \Bool$ such that $\apl{p}{X} \neq \apl{p}{Y}$ for some $X, Y : \U$, then WLPO holds)
 
 \newcommand{\LEM}{\txt{LEM}}
 \begin{theorem} Relation to excluded middle
@@ -259,6 +268,8 @@ Searchability of connected types.
 
 2. Conclusion: the circle $\Circle$, the sphere $\Sphere$, the $n$-sphere $\nSphere{n}$ are searchable.
 
+2.5. There is a searchable type that is not connected.
+
 3. If $A$ is searchable, then it may be the case that the searchability of $x =_A y$ is taboo.
 
 4. If $A$ is inhabited, then the suspension $\apl{\Susp}{A}$ is searchable. If not, then it's also searchable.
@@ -268,6 +279,8 @@ Searchability of connected types.
 1. $A$ is connected so we have $x : A$ and $H : \dprod{y : A}{\trf{x = y}}$. Given a predicate $p : A \to \Bool$, let's check $\apl{p}{x}$. If it's $\true$, then we're done. If not, use the path unpacked from $\apl{H}{y}$ to show that all $y : A$ satisfy $\apl{p}{y} = \apl{p}{x}$ and thus $\apl{p}{y} = \false$.
 
 2. These types are connected.
+
+2.5. $\Bool$ is one such type.
 
 3. $\Circle$ is searchable, but it's fundamental group is $\Z$, whose searchability is taboo (just like for naturals).
 
@@ -285,7 +298,84 @@ Searchability of truncations.
 \end{theorem}
 \begin{proof}
 1. To search $\trf{A}$ with $p : \trf{A} \to \Bool$, search $A$ with the predicate $\apl{q}{x} \defn \apl{p}{\tri{x}}$.
-\end{proof}
 
 2. $\trf{\Nat}$ is trivially searchable, but searchability of $\Nat$ is taboo.
+\end{proof}
+
+The proof of theorem 1.8.1 should hint us at an obvious generalization (if the fact that images of searchable types are searchable didn't hint us at it yet).
+
+\newcommand{\isSurjective}{\txt{isSurjective}}
+$\apl{\isSurjective}{f} \defn \all{b : B}{\ex{a : A}{\apl{f}{a} = b}}$
+
+If there's a surjection from $A$ to $B$, it means $A$ has ``more'' points than $B$. More geometrically we could say that the points of $A$ cover the points of $B$.
+
+\begin{theorem} Searchability and surjections
+
+If $A$ is searchable and $f : A \to B$ is surjective, then $B$ is searchable.
+
+\end{theorem}
+\begin{proof}
+
+If we want to search $B$ with $p : B \to \Bool$, we can search $A$ with $\apl{q}{a} \defn \apl{p}{(\apl{f}{a})}$. If we found an $a$, then we know that $\apl{f}{a}$ is the element of $B$ we're looking for. Otherwise for any $b : B$ we have an $a$ such that $\apl{f}{a} = b$, so from $\all{a : A}{\apl{p}{(\apl{f}{a})} = \false}$ we can conclude $\all{b : B}{\apl{p}{b}} = \false$.
+
+\end{proof}
+
+We are now ready to prove that suspension is always searchable.
+
+\begin{theorem} Suspension is searchable
+
+1. There is a surjection $\Bool \to \apl{\Susp}{A}$.
+
+2. $\apl{\Susp}{A}$ is searchable.
+
+\end{theorem}
+\newcommand{\SuspNorth}{\txt{N}}
+\newcommand{\SuspSouth}{\txt{S}}
+\newcommand{\SuspMerid}{\txt{merid}}
+\begin{proof}
+
+1. Let's define a function:
+
+\begin{center}
+\begin{tabular}{l}
+$f : \Bool \to \apl{\Susp}{A}$ \\
+$\apl{f}{\true} = \SuspNorth$ \\
+$\apl{f}{\false} = \SuspSouth$ \\
+\end{tabular}
+\end{center}
+
+It remains to prove that $\all{y : \apl{\Susp}{A}}{\ex{x : \Bool}{\apl{f}{x} = y}}$. We do this by induction on $y$: \\
+If $y$ is $\SuspNorth$, we choose $\true$. \\
+If $y$ is $\SuspSouth$, we choose $\false$. \\
+If $y$ varies along $\apl{\SuspMerid}{a}$ for some $a : A$, we need to give a path between proofs of $\exists$, but that's easy.
+
+2. $\Bool$ is searchable and it covers $\apl{\Susp}{A}$, so $\apl{\Susp}{A}$ is searchable.
+
+\end{proof}
+
+But there's more to it.
+
+\begin{theorem} Pushouts and pullbacks
+
+1. If $A$ and $B$ are searchable, their pushout (for any $f : C \to A$ and $g : C \to B$) is searchable.
+
+2. If $A$ and $B$ are searchable and $C$ has decidable equality, then the pullback of $f: A \to C$ and $g : B \to C$ is searchable.
+\end{theorem}
+\begin{proof}
+
+1. The pushout is covered by the coproduct $A + B$.
+
+2. To search the pushout with the predicate $p$, we may search $\prod{A}{B}$ with the predicate
+
+\begin{center}
+$q : \prodt{A}{B} \to \Bool$ \\
+$\apl{q}{(a, b)} \defn \apl{p}{(a, b)}\ \txt{and}\ \apl{f}{a} = \apl{g}{b}$
+\end{center}
+
+If we find some $(a, b)$, we know it's ok, because if must satisfy $\apl{f}{a} = \apl{g}{b}$. If we didn't find anything, it means all $(a, b)$ with $\apl{f}{a} = \apl{g}{b}$ fail to satisfy $p$, and these are all elements of the pullback.
+
+\end{proof}
+
+\section{Separatedness}
+
 \end{document}
