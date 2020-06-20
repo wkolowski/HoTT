@@ -368,14 +368,82 @@ But there's more to it.
 2. To search the pushout with the predicate $p$, we may search $\prod{A}{B}$ with the predicate
 
 \begin{center}
+\begin{tabular}{l}
 $q : \prodt{A}{B} \to \Bool$ \\
 $\apl{q}{(a, b)} \defn \apl{p}{(a, b)}\ \txt{and}\ \apl{f}{a} = \apl{g}{b}$
+\end{tabular}
 \end{center}
 
 If we find some $(a, b)$, we know it's ok, because if must satisfy $\apl{f}{a} = \apl{g}{b}$. If we didn't find anything, it means all $(a, b)$ with $\apl{f}{a} = \apl{g}{b}$ fail to satisfy $p$, and these are all elements of the pullback.
 
 \end{proof}
 
+As a closing, a trivial remark.
+
+\begin{theorem} Constructive logic
+
+$\dprod{(A : \U)(p : A \to \Bool)}{\neg\neg \(\(\dsum{x : A}{\apl{p}{x} = \true}\) + \dprod{x : A}{\apl{p}{x} = \false}\)}$
+
+\end{theorem}
+\begin{proof}
+Similar to the proof of doubly-negated excluded middle.
+\end{proof}
+
+One research question I was exploring, but that I couldn't answer in any way: how to turn any type $A$ into a searchable type $A'$ such that $A$ embeds in $A'$?
+
 \section{Separatedness}
 
+Homotopy type theory is about paths -- ways in which things can be (considered) ``the same''. But what about ways of differing? These are not a developed, but one manner of capturing them is the notion of separatedness.
+
+\newcommand{\Separated}[1]{#1$-$\txt{Separated}}
+$\displaystyle \apl{\Separated{S}}{A} \defn \dprod{x\ y : A}{\(\dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}}\) \to x = y}$
+
+\begin{theorem} Silly separatedness
+
+1. $\Separated{\Empty} = \isProp$
+
+2. $\Separated{\Unit} = \isProp$
+
+3. $\apl{\isProp}{S} \to \Separated{S} = \isProp$
+
+\end{theorem}
+\begin{proof}
+1. We have $\hequiv{(\apl{p}{x} = \apl{p}{y})}{\Unit}$, therefore $\hequiv{(\dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}})}{\Unit}$, so the premise is irrelevant and what remains is $x = y$.
+
+2. Similar to (1).
+
+3. Similar to (1).
+\end{proof}
+
+The above may look silly, but basically it says that propositions have ``not enough proofs'' to separate anything besides other propositions, which have at most one proof, so there's nothing to be separated\dots
+
+\begin{theorem} Instances
+
+1. If $A$ and $B$ are $\Separated{S}$, then $A + B$ is $\Separated{S}$.
+
+2. If $A$ and $B$ are pointed and $\Separated{S}$, then $\prodt{A}{B}$ is $\Separated{S}$.
+
+3. If $A$ is pointed and $\Separated{S}$ and $B : A \to \U$ is a family of pointed $\Separated{S}$ types, then $\dsum{x : A}{\apl{B}{x}}$ is $\Separated{S}$.
+
+4. If $B : A \to \U$ is a family of $\Separated{S}$ types, then $\dprod{x : A}{\apl{B}{x}}$ is $\Separated{S}$.
+
+\end{theorem}
+\begin{proof}
+1. Assume $x, y : A + B$ and $\dprod{p : A + B \to S}{\apl{p}{x} = \apl{p}{y}}$. We inspect the form of $x$ and $y$. If they are of the form $\apl{\inl}{a}$ and $\apl{\inl}{a'}$, then we can get a path from the separatedness of $A$ (if there was a predicate that can distinguish $a$ and $a'$, we could turn it into a predicate for distinguishing $x$ and $y$, a contradiction). Similarly for $\inr$. If $x$ is $\inl$ and $y$ is $\inr$ (or the other way around), then we get a contradiction, because we can make a predicate that distinguishes them.
+
+2. Assume $x \equiv (a, b) : \prodt{A}{B}$ and $y \equiv (a', b') : \prodt{A}{B}$ and $\dprod{p : \prodt{A}{B} \to S}{\apl{p}{x} = \apl{p}{y}}$. We need to make a path $(a, b) = (a', b')$ for which we need paths $a = a'$ and $b = b'$. We can get $a = a'$ from the separatedness of $A$ using the basepoint of $B$ (and analogously for $B$).
+
+3. Similar to (2).
+
+4. Assume we have $f, g : \dprod{x : A}{\apl{B}{x}}$ and $H : \dprod{p}{\apl{p}{f} = \apl{p}{g}}$. We need to make a path $f = g$ which amounts to $\apl{f}{a} = \apl{g}{a}$ for all $a : A$. We can use the separatedness of $\apl{B}{a}$ for this. It remains to prove that given $p : \apl{B}{a} \to S$, we have $\apl{p}{(\apl{f}{a})} = \apl{p}{(\apl{g}{a})}$. Let's define \\
+
+\begin{center}
+\begin{tabular}{l}
+$q : \(\dprod{x : A}{\apl{B}{x}}\) \to S$ \\
+$\apl{q}{h} \defn \apl{p}{(\apl{h}{a})}$
+\end{tabular}
+\end{center}
+
+Then $\apl{H}{q}$ gives us $\apl{q}{f} = \apl{q}{g}$ which amounts to $\apl{p}{(\apl{f}{a})} = \apl{p}{(\apl{g}{a})}$ -- exactly what we needed to prove.
+\end{proof}
 \end{document}
