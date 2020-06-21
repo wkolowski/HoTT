@@ -393,29 +393,14 @@ One research question I was exploring, but that I couldn't answer in any way: ho
 
 \section{Separatedness}
 
-Homotopy type theory is about paths -- ways in which things can be (considered) ``the same''. But what about ways of differing? These are not a developed, but one manner of capturing them is the notion of separatedness.
+Homotopy type theory is about paths -- ways in which things can be (considered) ``the same''. But what about ways of differing? These are not as developed, but one manner of capturing them is the notion of separatedness.
 
 \newcommand{\Separated}[1]{#1$-$\txt{Separated}}
 $\displaystyle \apl{\Separated{S}}{A} \defn \dprod{x\ y : A}{\(\dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}}\) \to x = y}$
 
-\begin{theorem} Silly separatedness
+In words: the type $A$ is $\Separated{S}$ (or, maybe, more colloquially: $S$ separates the points of $A$) if any two points of $x, y : A$ are connected with a path as soon as they can't be distinguished using any function with codomain $S$.
 
-1. $\Separated{\Empty} = \isProp$
-
-2. $\Separated{\Unit} = \isProp$
-
-3. $\apl{\isProp}{S} \to \Separated{S} = \isProp$
-
-\end{theorem}
-\begin{proof}
-1. We have $\hequiv{(\apl{p}{x} = \apl{p}{y})}{\Unit}$, therefore $\hequiv{(\dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}})}{\Unit}$, so the premise is irrelevant and what remains is $x = y$.
-
-2. Similar to (1).
-
-3. Similar to (1).
-\end{proof}
-
-The above may look silly, but basically it says that propositions have ``not enough proofs'' to separate anything besides other propositions, which have at most one proof, so there's nothing to be separated\dots
+The name ``separated'' comes from the contraposition of this statement: if the points $x, y : A$ are different, then they can be \textbf{separated} by a function with codomain $S$.
 
 \begin{theorem} Instances
 
@@ -445,5 +430,76 @@ $\apl{q}{h} \defn \apl{p}{(\apl{h}{a})}$
 \end{center}
 
 Then $\apl{H}{q}$ gives us $\apl{q}{f} = \apl{q}{g}$ which amounts to $\apl{p}{(\apl{f}{a})} = \apl{p}{(\apl{g}{a})}$ -- exactly what we needed to prove.
+\end{proof}
+
+Having seen these instances we may start to wonder if there are any concrete types that are separable using some other concrete types. First we will establish which types are good for separating and then we'll see some separated types.
+
+\begin{theorem} Silly separatedness
+
+1. $\Separated{\Empty} = \isProp$
+
+2. $\Separated{\Unit} = \isProp$
+
+3. $\apl{\isProp}{S} \to \Separated{S} = \isProp$
+
+\end{theorem}
+\begin{proof}
+1. We have $\hequiv{(\apl{p}{x} = \apl{p}{y})}{\Unit}$, therefore $\hequiv{(\dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}})}{\Unit}$, so the premise is irrelevant and what remains is $x = y$.
+
+2. Similar to (1).
+
+3. Similar to (1).
+\end{proof}
+
+The above may look silly, but basically it says that propositions have ``not enough proofs'' to separate anything besides other propositions, which have at most one proof, so there's nothing to be separated\dots
+
+The first nontrivial separator appears to be the type $\Bool$ of booleans. $\Separated{\Bool}$ types are also called totally separated (or at least Escard\'{o} says so) -- this name comes from topology, where continuous maps into $\Bool$ represent clopen sets. Let's see what we can separate using $\Bool$.
+
+\begin{theorem} $\Separated{\Bool}$ types
+
+1. $\Nat$ is $\Separated{\Bool}$.
+
+2. If $A$ has decidable equality, then it is $\Separated{\Bool}$.
+
+3. $\Conat$ is $\Separated{\Bool}$.
+
+\end{theorem}
+\begin{proof}
+1. We have $x, y : \Nat$ and for all $p : \Nat \to \Bool$ we have $\apl{p}{x} = \apl{p}{y}$. We need to prove that $x = y$. Let's define a $p$:
+
+\begin{center}
+\begin{tabular}{l}
+$p : \Nat \to \Bool$ \\
+$\apl{p}{n} \defn x =? n$
+\end{tabular}
+\end{center}
+
+From our assumption we have $\apl{p}{x} = (x =? x) = \true$ and also $\apl{p}{y} = (x =? y)$, so $(x =? y) = \true$ which means that $x$ and $y$ are equal.
+
+2. Similar to (1).
+
+3. For this one we use Cubical Type Theory/assume that bisimilarity is equality.
+
+We have $n, m : \Conat$ and $\dprod{p : \Conat \to \Bool}{\apl{p}{n} = \apl{p}{m}}$ and we need to construct a proof of bisimilarity $n \sim m$.
+
+We check the predecessors of $n$ and $m$. If one of them is zero and the other is not, they are different and we can find an appropriate $p$ to get a contradiction. If both are zero, they are bisimilar. If both have predecessors, we take a step in the bisimilarity and use our coinduction hypothesis. It remains to prove that $\dprod{p : \Conat \to \Bool}{\apl{p}{n'} = \apl{p}{m'}}$ where $n', m' : \Conat$ are the predecessors of $n$ and $m$. Assume for contradiction that $\apl{p}{n'} \neq \apl{p}{m'}$ (this is constructively ok). This means we can make a predicate that distinguishes their successors $n$ and $m$, so we can use our original assumption $\dprod{p : \Conat \to \Bool}{\apl{p}{n} = \apl{p}{m}}$ to get a contradiction.
+
+\end{proof}
+
+It's quite intuitive that types with decidable equality are $\Separated{\Bool}$ -- we can use an equality test to separate nonequal points and the specification of the equality test gives us a path in case the points are equal.
+
+But it turns out that $\Separated{\Bool}$ is a more general concept than having decidable equality -- $\Conat$ is $\Separated{\Bool}$, but its decidable equality is taboo. Can we somehow constrain which types can be $\Separated{\Bool}$?
+
+\begin{theorem} $\Separated{\Bool}$ types are sets
+
+1. If $A$ is $\Separated{\Bool}$, then $\dprod{x\ y : A}{\neg\neg x = y \to x = y}$.
+
+2. If $A$ is $\Separated{\Bool}$, then $A$ is a set.
+
+\end{theorem}
+\begin{proof}
+1. Assume all the needed stuff. We use hypothesis to get $x = y$, so we only need to prove $\apl{p}{x} = \apl{p}{y}$ for all $p : A \to \Bool$. Assume for contradiction that $\apl{p}{x} \neq \apl{p}{y}$. This gives us $\neg x = y$, because if $x = y$, then $\apl{p}{x} = \apl{p}{y}$ which is a contradiction. We therefore have both $\neg x = y$ and $\neg\neg x = y$, a contradiction.
+
+2. From (1) we know that $\Separated{\Bool}$ $A$ satisfies $\dprod{x\ y : A}{\neg\neg x = y \to x = y}$ and such types are sets by a theorem due to Kraus, Escard\'{o}, Coquand and Altenkirch.
 \end{proof}
 \end{document}
