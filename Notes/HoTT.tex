@@ -412,6 +412,8 @@ The name ``separated'' comes from the contraposition of this statement: if the p
 
 4. If $B : A \to \U$ is a family of $\Separated{S}$ types, then $\dprod{x : A}{\apl{B}{x}}$ is $\Separated{S}$.
 
+5. $A$ is $\Separated{A}$.
+
 \end{theorem}
 \begin{proof}
 1. Assume $x, y : A + B$ and $\dprod{p : A + B \to S}{\apl{p}{x} = \apl{p}{y}}$. We inspect the form of $x$ and $y$. If they are of the form $\apl{\inl}{a}$ and $\apl{\inl}{a'}$, then we can get a path from the separatedness of $A$ (if there was a predicate that can distinguish $a$ and $a'$, we could turn it into a predicate for distinguishing $x$ and $y$, a contradiction). Similarly for $\inr$. If $x$ is $\inl$ and $y$ is $\inr$ (or the other way around), then we get a contradiction, because we can make a predicate that distinguishes them.
@@ -433,6 +435,8 @@ Then $\apl{H}{q}$ gives us $\apl{q}{f} = \apl{q}{g}$ which amounts to $\apl{p}{(
 \end{proof}
 
 Having seen these instances we may start to wonder if there are any concrete types that are separable using some other concrete types. First we will establish which types are good for separating and then we'll see some separated types.
+
+5. Given $x, y : A$ and $H : \dprod{p : A \to A}{\apl{p}{x} = \apl{p}{y}}$, we need $x = y$. We can get it easily using $\apl{H}{\id}$.
 
 \begin{theorem} Silly separatedness
 
@@ -463,6 +467,8 @@ The first nontrivial separator appears to be the type $\Bool$ of booleans. $\Sep
 
 3. $\Conat$ is $\Separated{\Bool}$.
 
+4. There are $\Separated{\Bool}$ types whose decidable equality is taboo.
+
 \end{theorem}
 \begin{proof}
 1. We have $x, y : \Nat$ and for all $p : \Nat \to \Bool$ we have $\apl{p}{x} = \apl{p}{y}$. We need to prove that $x = y$. Let's define a $p$:
@@ -484,6 +490,8 @@ We have $n, m : \Conat$ and $\dprod{p : \Conat \to \Bool}{\apl{p}{n} = \apl{p}{m
 
 We check the predecessors of $n$ and $m$. If one of them is zero and the other is not, they are different and we can find an appropriate $p$ to get a contradiction. If both are zero, they are bisimilar. If both have predecessors, we take a step in the bisimilarity and use our coinduction hypothesis. It remains to prove that $\dprod{p : \Conat \to \Bool}{\apl{p}{n'} = \apl{p}{m'}}$ where $n', m' : \Conat$ are the predecessors of $n$ and $m$. Assume for contradiction that $\apl{p}{n'} \neq \apl{p}{m'}$ (this is constructively ok). This means we can make a predicate that distinguishes their successors $n$ and $m$, so we can use our original assumption $\dprod{p : \Conat \to \Bool}{\apl{p}{n} = \apl{p}{m}}$ to get a contradiction.
 
+4. Conclusion from (3).
+
 \end{proof}
 
 It's quite intuitive that types with decidable equality are $\Separated{\Bool}$ -- we can use an equality test to separate nonequal points and the specification of the equality test gives us a path in case the points are equal.
@@ -496,10 +504,89 @@ But it turns out that $\Separated{\Bool}$ is a more general concept than having 
 
 2. If $A$ is $\Separated{\Bool}$, then $A$ is a set.
 
+3. If we have $\LEM$, then all sets are $\Separated{\Bool}$.
+
 \end{theorem}
 \begin{proof}
+
 1. Assume all the needed stuff. We use hypothesis to get $x = y$, so we only need to prove $\apl{p}{x} = \apl{p}{y}$ for all $p : A \to \Bool$. Assume for contradiction that $\apl{p}{x} \neq \apl{p}{y}$. This gives us $\neg x = y$, because if $x = y$, then $\apl{p}{x} = \apl{p}{y}$ which is a contradiction. We therefore have both $\neg x = y$ and $\neg\neg x = y$, a contradiction.
 
 2. From (1) we know that $\Separated{\Bool}$ $A$ satisfies $\dprod{x\ y : A}{\neg\neg x = y \to x = y}$ and such types are sets by a theorem due to Kraus, Escard\'{o}, Coquand and Altenkirch.
+
+3. With $\LEM$ all sets have decidable equality and all sets satisfy $\dprod{x\ y : A}{\neg\neg x = y \to x = y}$, so all sets are $\Separated{\Bool}$.
 \end{proof}
+
+A question that arises instantly after seeing 2.4.3 is this: if we don't have $\LEM$, what is the type that can separate all sets? If we recall that $\LEM$ is equivalent to saying that $\Prop = \Bool$, we may conjecture that it's $\Prop$ that separates all sets.
+
+\newcommand{\Type}[1]{$#1$-\txt{Type}}
+\begin{theorem} Separation of sets and $n$-types
+
+1. All sets are $\Separated{\Prop}$.
+
+2. Every type $A$ is separated by some universe $\U$.
+
+3. If $A$ is an $\Type{(n + 1)}$, then $A$ is $\Separated{(\Type{n})}$.
+
+4. If $S$ is an $\Type{(n + 1)}$, then $\Separated{S}$ is an $\Type{n}$.
+
+5. If $S$ is an $\Type{(n + 1)}$, then $\dprod{x\ y : A}{\trf{x = y}_n \to \dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}}}$.
+
+\end{theorem}
+\begin{proof}
+
+1. Assume that $A$ is a set. Given $x, y : A$ and $H : \dprod{P : A \to \Prop}{\apl{P}{x} = \apl{P}{y}}$ we need to prove $x = y$. Let's define $\apl{P}{a} \defn (x = a)$. From $H$ we get $(x = x) = (x = y)$, and from this using $\apl{\refl}{x}$ we can get $x = y$.
+
+2. Just like (1).
+
+3. From (2) using the fact that if $A$ is $\Type{(n + 1)}$ then each of its identity types is an $\Type{n}$.
+
+4. This should be more than obvious.
+
+5. $\apl{p}{x} = \apl{p}{y}$ is an $\Type{n}$, so we can unpack $\trf{x = y}_n$ and use it.
+
+\end{proof}
+
+\newcommand{\nonterm}[1]{#1_\bot}
+
+Knowing this, we can now ask ourselves more questions: is $\Prop$ needed to separate sets, or can we do better (using something less ``massive'')? It should be obvious that we need a type with at least two elements, since one element won't be enough, and that without $\LEM$, $\Bool$ is not enough. Are there any other $2$-element types that could be of any help?
+
+Well, there is -- the type $\nonterm{\Unit}$ of partial elements of unit. Functions of type $A \to \nonterm{B}$ represent partial functions from $A$ to $B$, i.e. things that take an element of $A$ and may compute an element of $B$, but may also diverge (fail to terminate). The type $\nonterm{\Unit}$ has two elements, one of which represents pure termination that doesn't carry any information, the other represents pure nontermination that also does not carry any other information.
+
+(Fun fact: the type $\nonterm{\Unit}$ is sometimes called the Sierpiński space, and functions $A \to \nonterm{\Unit}$ represent the open sets of $A$, if we think of $A$ as a topological space).
+
+This type was described in the paper ``Partiality revisited: The Partiality Monad as a Quotient Inductive-Inductive Type''. I won't cover it in much more detail because I didn't think about it yet.
+
+Let's try to get some profits from the facts relating separatedness to h-levels.
+
+\begin{theorem} $\Circle$ and $\Bool$
+
+1. $\Circle$ is not $\Separated{\Bool}$.
+
+2. $\Bool$ is $\Separated{\Circle}$
+\end{theorem}
+\begin{proof}
+
+1. $\Separated{\Bool}$ types are necessarily sets, but $\Circle$ is not a set.
+
+2. Given $x, y : \Bool$ and $H : \dprod{p : \Bool \to \Circle}{\apl{p}{x} = \apl{p}{y}}$ we need $x = y$. We do case analysis. If both $x$ and $y$ are $\true$ (or $\false$), then we're done. If they are different, we can prove $\dprod{s\ t : \Circle}{s = t}$ by defining \\
+
+\begin{center}
+\begin{tabular}{l}
+$p : \Bool \to \Circle$ \\
+$\apl{p}{\true} = s$ \\
+$\apl{p}{\false} = t$
+\end{tabular}
+\end{center}
+
+and then $\apl{H}{p} : s = t$. This is a contradiction, because we have just proved that $\Circle$ is a proposition, and it is not.
+
+We have covered all four cases of $x$ and $y$, so we're done.
+
+\end{proof}
+
+We see that the notion of separatedness is weirder than we could have previously thought. $\Circle$ can separate the points of $\Bool$, but not because functions with codomain $\Circle$ can distinguish the points of $\Bool$ -- rather it's just because the hypothesis $\dprod{p : \Bool \to \Circle}{\apl{p}{x} = \apl{p}{y}}$ in some cases implies that $\Circle$ is a proposition.
+
+\newcommand{\MTS}[1]{\txt{Merely}$-$#1$-$\txt{Separated}}
+$\displaystyle \apl{\MTS{S}}{A} \defn \dprod{x\ y : A}{\(\dprod{p : A \to S}{\trf{\apl{p}{x} = \apl{p}{y}}}\) \to \trf{x = y}}$
+
 \end{document}
