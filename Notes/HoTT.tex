@@ -113,7 +113,7 @@
 \newcommand{\trf}[1]{||#1||}
 \newcommand{\tri}[1]{|#1|}
 
-\title{My HoTT notes}
+\title{My HoTT research}
 \date{12 June 2020 - ongoing}
 
 \begin{document}
@@ -584,9 +584,94 @@ We have covered all four cases of $x$ and $y$, so we're done.
 
 \end{proof}
 
-We see that the notion of separatedness is weirder than we could have previously thought. $\Circle$ can separate the points of $\Bool$, but not because functions with codomain $\Circle$ can distinguish the points of $\Bool$ -- rather it's just because the hypothesis $\dprod{p : \Bool \to \Circle}{\apl{p}{x} = \apl{p}{y}}$ in some cases implies that $\Circle$ is a proposition.
+We see that the notion of separatedness is weirder than we could have previously thought. $\Circle$ can separate the points of $\Bool$, but not because functions with codomain $\Circle$ can distinguish the points of $\Bool$ -- rather it's just because the hypothesis $\dprod{p : \Bool \to \Circle}{\apl{p}{x} = \apl{p}{y}}$ in some cases implies that $\Circle$ is a proposition. To avoid such peculiarities, we could try to formulate an alternative notion of separatedness, that uses trunction somewhere and then check how it behaves for $\Bool$ and $\Circle$.
 
-\newcommand{\MTS}[1]{\txt{Merely}$-$#1$-$\txt{Separated}}
-$\displaystyle \apl{\MTS{S}}{A} \defn \dprod{x\ y : A}{\(\dprod{p : A \to S}{\trf{\apl{p}{x} = \apl{p}{y}}}\) \to \trf{x = y}}$
+\newcommand{\MS}[1]{\txt{Merely}$-$#1$-$\txt{Separated}}
+$\displaystyle \apl{\MS{S}}{A} \defn \dprod{x\ y : A}{\(\dprod{p : A \to S}{\trf{\apl{p}{x} = \apl{p}{y}}}\) \to \trf{x = y}}$
+
+In words: $A$ is $\MS{S}$ when mere equality of points of $A$ follows from the fact that they can't be separated using functions into $S$ (again, using mere equality).
+
+\renewcommand{\hequiv}{\simeq}
+\begin{theorem} Basic facts about $\MS{S}$
+
+1. $\Bool$ is not $\MS{\Circle}$
+
+2. $\Circle$ is $\MS{\Bool}$
+
+3. If $A$ is connected, then $A$ is $\MS{S}$ for all $S : \U$.
+
+4. If $A$ is a proposition, then $A$ is $\MS{S}$ for all $S : \U$.
+
+\end{theorem}
+\begin{proof}
+
+1. We have $\(\dprod{p : \Bool \to \Circle}{\trf{\apl{p}{x} = \apl{p}{y}}}\) \hequiv \Unit$ and therefore $\apl{\MS{\Circle}}{\Bool} \hequiv \(\dprod{x\ y : \Bool}{\trf{x = y}}\) \hequiv \Empty$, because $\Bool$ is not a proposition.
+
+2. We have $\dprod{x\ y : \Circle}{\trf{x = y}}$, so an additional hypothesis certainly can't hurt us.
+
+3. Like (2).
+
+4. $A$ is a proposition, so we have $\dprod{x\ y : A}{x = y}$, which we need to truncate inside, disregarding the additional hypothesis.
+
+\end{proof}
+
+So far so good. The weird proof that $\Bool$ is $\Separated{\Circle}$ doesn't go through this time. On the other hand, $\Circle$ is $\MS{\Bool}$, similar to before, but this time it's only because the circle is connceted.
+
+How does this relate to h-levels? Because of $\Circle$ there are $\MS{\Bool}$ types which are not sets, but how far can we go with this?
+
+Not sure, so let's have one more random theorem.
+
+\begin{theorem} Separatedness and retractions
+
+1. If $A$ is $\Separated{S}$ and $f: S \to T$ has a postinverse $g : T \to S$, then $A$ is $\Separated{T}$.
+
+\end{theorem}
+\begin{proof}
+
+1. We have $x, y : A$ and $H : \dprod{p : A \to T}{\apl{p}{x} = \apl{p}{y}}$ and we need to prove that $x = y$. We can use our hypothesis, so that given $p : A \to S$ we need to prove $\apl{p}{x} = \apl{p}{y}$. From $H$ we have $\apl{f}{(\apl{p}{x})} = \apl{f}{(\apl{p}{y})}$ and using $g$ to cancel $f$ we get $\apl{p}{x} = \apl{p}{y}$ as needed.
+
+\end{proof}
+
+The moral of the above story: if we can separate the points of $A$ using $S$, we can also do this using a more complicated space $T$!
+
+\section{Some definitions}
+
+\newcommand{\Stable}{\txt{Stable}}
+\newcommand{\nStable}[1]{#1$-$\txt{Stable}}
+
+\newcommand{\Decidable}{\txt{Decidable}}
+\newcommand{\nDecidable}[1]{#1$-$\txt{Decidable}}
+
+\newcommand{\hStable}{\txt{h}$-$\txt{Stable}}
+\newcommand{\nhStable}[1]{#1$-$\txt{hStable}}
+
+\newcommand{\Collapsible}{\txt{Collapsible}}
+\newcommand{\nCollapsible}[1]{#1$-$\txt{Collapsible}}
+
+\newcommand{\path}{\txt{path}}
+
+These come mostly from the paper of Kraus et al. on notions of anonymous existence in MLTT and HoTT. I added the generic $\path$ combinator so we can easily derive their versions that apply to path types of the given type.
+
+$\apl{\Stable}{X} \defn \neg\neg X \to X$ \\
+
+$\apl{\hStable}{X} \defn \trf{X} \to X$ \\
+
+$\apl{\Decidable}{X} \defn X + \neg X$ \\
+
+$\apl{\Collapsible}{A} \defn \dsum{f : A \to A}{\dprod{x\ y : A}{\apl{f}{x} = \apl{f}{y}}}$ \\
+
+$\apl{\isContr}{A} \defn \dsum{c : A}{\dprod{x : A}{c = x}}$
+
+\begin{center}
+\begin{tabular}{l}
+$\path : \Nat \to (\U \to \U) \to (\U \to \U)$ \\
+$\path\ 0\ P\ X \defn \apl{P}{X}$ \\
+$\path\ (n + 1)\ P\ X \defn \dprod{x\ y : A}{\path\ n\ P\ (x = y)}$
+\end{tabular}
+\end{center}
+
+Next ideas: how to create a more homotopical notion of decidable equality?
+
+Ideas not described here: one-point compactification of a type (turns out it doesn't work), $\Separated{S}$ reflection of a type (Escard\'{o} constructed one for the type $\Bool$).
 
 \end{document}
