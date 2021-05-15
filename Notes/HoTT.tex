@@ -229,7 +229,7 @@ A good question yet to be answered: does there purely exist a type that is not s
 \end{theorem}
 \begin{proof}
 
-1. Set $\apl{p}{_} \defn \true$. Searchability then reduces to $\(\dsum{x : A}{\true = \true}\) + \dprod{x : A}{\false = \true}$, which is equivalent to $A + \neg A$.
+1. Set $\apl{p}{\_} \defn \true$. Searchability then reduces to $\(\dsum{x : A}{\true = \true}\) + \dprod{x : A}{\false = \true}$, which is equivalent to $A + \neg A$.
 
 2. Trivial.
 
@@ -365,7 +365,7 @@ But there's more to it.
 
 1. The pushout is covered by the coproduct $A + B$.
 
-2. To search the pushout with the predicate $p$, we may search $\prod{A}{B}$ with the predicate
+2. To search the pullback with the predicate $p$, we may search $\prodt{A}{B}$ with the predicate
 
 \begin{center}
 \begin{tabular}{l}
@@ -432,11 +432,11 @@ $\apl{q}{h} \defn \apl{p}{(\apl{h}{a})}$
 \end{center}
 
 Then $\apl{H}{q}$ gives us $\apl{q}{f} = \apl{q}{g}$ which amounts to $\apl{p}{(\apl{f}{a})} = \apl{p}{(\apl{g}{a})}$ -- exactly what we needed to prove.
+
+5. Given $x, y : A$ and $H : \dprod{p : A \to A}{\apl{p}{x} = \apl{p}{y}}$, we need $x = y$. We can get it easily using $\apl{H}{\id}$.
 \end{proof}
 
 Having seen these instances we may start to wonder if there are any concrete types that are separable using some other concrete types. First we will establish which types are good for separating and then we'll see some separated types.
-
-5. Given $x, y : A$ and $H : \dprod{p : A \to A}{\apl{p}{x} = \apl{p}{y}}$, we need $x = y$. We can get it easily using $\apl{H}{\id}$.
 
 \begin{theorem} Silly separatedness
 
