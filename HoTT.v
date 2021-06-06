@@ -1,6 +1,6 @@
 (* Required in 8.8.1 to make Ltac work with the -noinit option. *)
 Declare ML Module "ltac_plugin".
-Local Set Default Proof Mode "Classic".
+Set Default Proof Mode "Classic".
 
 Set Universe Polymorphism.
 
@@ -493,7 +493,7 @@ Lemma coprod'_ind_inl' :
     (A B : U) (P : coprod' A B -> U)
     (f : forall a : A, P (| true, a |)) (g : forall b : B, P (| false, b |))
     (a : A),
-      coprod'_ind f g (inl' a) = f a.
+      @coprod'_ind _ _ P f g (inl' a) = f a.
 Proof. refl. Defined.
 
 Lemma coprod'_ind_inr' :
@@ -501,7 +501,7 @@ Lemma coprod'_ind_inr' :
     (A B : U) (P : coprod' A B -> U)
     (f : forall a : A, P (| true, a |)) (g : forall b : B, P (| false, b |))
     (b : B),
-      coprod'_ind f g (inr' b) = g b.
+      @coprod'_ind _ _ P f g (inr' b) = g b.
 Proof. refl. Defined.
 
 (** **** Ex. 1.6 MOVED *)
@@ -956,9 +956,6 @@ Lemma whisker_l_cat :
     {A : U} {a b c : A} {p : a = a} {q : a = a} (alfa : p = q), U.
 Proof.
   intros.
-Check      whisker_r alfa (cat p q).
-
-Check whisker_r (whisker_r alfa q) p.
 Abort.
 
 End Eckmann_Hilton.
@@ -1456,6 +1453,7 @@ Proof.
   destruct x. cbn. refl.
 Defined.
 
+Fail (* TODO *)
 Lemma inv_sigma :
   forall (A : U) (B : A -> U) (x y : {a : A & B a}) (p : x = y),
     inv p =
@@ -1464,10 +1462,12 @@ Lemma inv_sigma :
                           | refl _ => refl (pr2' x)
                       end
                     |).
-Proof.
+(* Proof.
   destruct p, x. cbn. refl.
 Defined.
+ *)
 
+Fail (* TODO *)
 Lemma cat_sigma :
   forall (A : U) (B : A -> U) (x y z : {a : A & B a})
   (p : x = y) (q : y = z),
@@ -1481,9 +1481,10 @@ Lemma cat_sigma :
                  end
          end
       |).
-Proof.
+(* Proof.
   destruct p, q, x. cbn. refl.
 Defined.
+ *)
 
 (** ** 2.8 The unit type *)
 
@@ -1781,11 +1782,6 @@ Unshelve.
     apply (cat (inv (H2 x)) (cat (ap g X) (H2 y))).
   unfold homotopy, comp, id in *. split; intros.
     Focus 2. destruct x0. generalize (H2 x). destruct e. cbn. refl.
-    Check ap_cat.
-    Check ap_inv.
-    Check ap_ap.
-    Check ap_id.
-    Check homotopy_natural.
     (* This is doable. *)
 Admitted.
 
@@ -2339,11 +2335,6 @@ match n with
     | S n' => npath n' (x = y)
 end.
 
-Compute npath 0 N.
-Compute npath 1 N.
-Compute npath (S 1) N.
-Compute npath (S (S 1)) N.
-
 (** **** Ex. 2.5 *)
 
 Definition def_2_3_6
@@ -2432,13 +2423,11 @@ Theorem ap_sigma_eq_intro :
 Proof.
   intros.
   intros.
-    Check ap f (sigma_eq_intro (| p, q |)).
-    Check @sigma_eq_intro _ _ (f x) (f y).
     assert ({p : pr1' (f x) = pr1' (f y) &
                  transport B' p (pr2' (f x)) = pr2' (f y)}).
       exists (ap pr1' (ap f (sigma_eq_intro (| p, q |)))).
       generalize (sigma_eq_intro (| p, q |)).
-      destruct e. cbn. refl. Show Proof.
+      destruct e. cbn. refl.
 Abort.
 
 Theorem ap_sigma_eq_intro :
@@ -2446,16 +2435,11 @@ Theorem ap_sigma_eq_intro :
   (p : pr1' x = pr1' y) (q : transport _ p (pr2' x) = pr2' y)
   (f : A -> A') (g : forall x : A, B x -> B' (f x)), U.
 Proof.
-  intros. Check @fpair. Check @fpair_dep.
-    Check ap (fpair_dep f g) (sigma_eq_intro (| p, q |)).
-    Check @sigma_eq_intro _ _ (fpair_dep f g x) (fpair_dep f g y).
-    Eval cbn in pr1' (fpair_dep f g x).
-    Eval cbn in pr2' (fpair_dep f g x).
-    Eval cbn in pr2' (fpair_dep f g y).
+  intros.
     assert ({p : pr1' (fpair_dep f g x) = pr1' (fpair_dep f g y) &
                  transport B' p (g (pr1' x) (pr2' x)) = g (pr1' y) (pr2' y)}).
       exists (ap f p).
-      rewrite <- q. Search transport.
+      rewrite <- q.
       rewrite <- (transport_family _ _ _ g _ _ p (pr2' x)).
       rewrite <- (transport_ap _ _ B' f _ _ p).
       refl.
@@ -2467,10 +2451,6 @@ Theorem ap_prod_eq_intro' :
   (f : A -> A') (g : B -> B'), U.
 Proof.
   intros.
-  Check ap (fpair f g) (prod_eq_intro (p, q)).
-  Eval cbn in @prod_eq_intro _ _ (fpair f g x) (fpair f g y).
-  Eval cbn in pr1 (fpair f g x). Check ap f p. Check (ap f p, ap g q).
-  Check ap f p.
 Proof.
 Abort.
 
@@ -2999,7 +2979,7 @@ Lemma path_bool_bool_char :
 Proof.
   intro. destruct (equiv_bool_bool_char (idtoeqv p)); apply (ap ua) in e.
     left. rewrite <- ua_idtoeqv in e.
-      rewrite e. Search ua. rewrite ua_id. refl.
+      rewrite e. rewrite ua_id. refl.
     right. rewrite <- ua_idtoeqv in e. rewrite e. refl.
 Defined.
 
@@ -3142,8 +3122,6 @@ Unshelve.
       end)) = funext (fun x => inv (prod_uniq _ _ x))).
     apply ap. apply funext. intros [a b]. cbn. refl.
   rewrite X.
-  Check funext (fun x : A * B => inv (prod_uniq A B x)).
-  Check happly (refl _).
   unfold id.
   apply prod_eq_intro. cbn. split.
 Abort.
@@ -3240,7 +3218,7 @@ Lemma isSet_prod :
   forall A B : U,
     isSet A -> isSet B -> isSet (A * B).
 Proof.
-  unfold isSet. intros. Search prod.
+  unfold isSet. intros.
   rewrite (prod_eq_uniq p), (prod_eq_uniq q).
   rewrite (X _ _ (ap pr1 p) (ap pr1 q)),
           (X0 _ _ (ap pr2 p) (ap pr2 q)).
@@ -3558,7 +3536,7 @@ Defined.
 Lemma isProp_sum_not :
   ~ forall A B : U, isProp A -> isProp B -> isProp (A + B).
 Proof.
-  unfold isProp. intro H. Search isProp.
+  unfold isProp. intro H.
   specialize (H unit unit isProp_unit isProp_unit (inl tt) (inr tt)).
   apply code_char in H. cbn in H. assumption.
 Defined.
@@ -3762,7 +3740,7 @@ Proof.
   pose (x := (| bool, trunc' (refl bool) |) : {X : U & trunc (bool = X)}).
   exists (fun y => x = y).
   assert (forall x0 : {X : U & trunc (bool = X)}, isSet (x = x0)).
-    destruct x0 as (A & p). Search isSet. assert (isSet A).
+    destruct x0 as (A & p). assert (isSet A).
       revert p. apply trunc_rec.
         apply isProp_isSet'.
         intros []. apply isSet_bool.
@@ -4865,12 +4843,6 @@ Defined.
 (** And again *)
 
 Definition code_option_eq' {A : U} {x y : option A} (p q : x = y) : U :=
-(*
-Proof.
-  destruct x, y.
-    exact unit.
-    1-2: exact empty.
-    Check @ap _ _. (@encode_option A (Some a) (Some a0)). _ _ p. q.*)
 match x, y with
     | None, None => unit
     | Some _, Some _ => encode_option p = encode_option q
@@ -4912,7 +4884,6 @@ Proof.
           intro. assert (q = refl (Some a)).
             rewrite <- (decode_encode_option q), <- x. cbn. refl.
             cbn. symmetry in X. destruct X. cbn.
-            Check internal_eq_rew.
 Abort.
 
 Definition encode_option_eq_aux'
@@ -5150,7 +5121,6 @@ Restart.
   esplit.
 Unshelve.
   Focus 2. intro p. apply (ap encode_sum) in p.
-    Check encode_decode_sum.
     rewrite 2!encode_decode_sum in p. assumption.
   unfold homotopy, comp, id; split.
     destruct w, w'; cbn in *; intros.
@@ -5248,8 +5218,6 @@ Proof.
     apply prod_eq_uniq.
   pose (t := r).
   rewrite X0 in t. rewrite prod_eq_comp_1 in t.
-  Check @prod_eq_uniq.
-  Check @prod_eq_comp.
 Abort.
 
 Goal
@@ -5270,16 +5238,15 @@ Proof.
   intros.
   pose (p := prod_eq_intro (p1, p2)).
   pose (q := prod_eq_intro (q1, q2)).
-  Check @prod_eq_eq_intro A B w w' p q.
   assert (r' : ap pr1 p = ap pr1 q).
-    unfold p, q. rewrite 2!prod_eq_comp_1. assumption. Show Proof.
+    unfold p, q. rewrite 2!prod_eq_comp_1. assumption.
   pose (X' := internal_eq_rew_r (pr1 w = pr1 w') (ap pr1 (prod_eq_intro (p1, p2))) p1
      (fun e : pr1 w = pr1 w' => e = ap pr1 (prod_eq_intro (q1, q2)))
      (internal_eq_rew_r (pr1 w = pr1 w') (ap pr1 (prod_eq_intro (q1, q2)))
         q1 (fun e : pr1 w = pr1 w' => p1 = e) r
         (prod_eq_comp_1 A B w w' q1 q2)) (prod_eq_comp_1 A B w w' p1 p2)).
   assert (s' : ap pr2 p = ap pr2 q).
-    unfold p, q. rewrite 2!prod_eq_comp_2. assumption. Show Proof.
+    unfold p, q. rewrite 2!prod_eq_comp_2. assumption.
   pose (X'' := internal_eq_rew_r (pr2 w = pr2 w') (ap pr2 (prod_eq_intro (p1, p2))) p2
      (fun e : pr2 w = pr2 w' => e = ap pr2 (prod_eq_intro (q1, q2)))
      (internal_eq_rew_r (pr2 w = pr2 w') (ap pr2 (prod_eq_intro (q1, q2)))
@@ -5336,14 +5303,10 @@ Proof.
       rewrite !ap_cat, !ap_ap, !ap_inv.
       rewrite !cat_pi. rewrite !happly_funext.
       rewrite (@happly_funext _ _ _ _ (fun x0 : A => cat _ _)).
-      Search ap.
       assert (p = q).
         apply funext in h. apply (ap funext) in h.
         rewrite <- 2!funext_happly in h. assumption.
       destruct X.
-      Check @funext_happly.
-      Check happly_funext.
-      
 Abort.
 
 (** ** My own stuff *)
@@ -5737,12 +5700,6 @@ Proof.
     cbn.
 Abort.
 
-Lemma bools_eq_char :
-  forall x : bools, (x = x) = (bool = bool).
-Proof.
-  intro. apply ua. unfold equiv. esplit. Unshelve.
-    Focus 2. destruct x.
-
 Lemma isProp_fun_nonempty :
   forall A B : U,
     A -> isProp (A -> B) -> isProp B.
@@ -5816,7 +5773,8 @@ Restart.
   intro H. specialize (H U U id).
   rewrite qinv_is_loop in H.
     2: apply qinv_id.
-    unfold isProp in H. 
+    unfold isProp in H.
+Abort.
 
 (* Exercise 4.2 *)
 Goal
@@ -5826,9 +5784,11 @@ Goal
                (forall b : B, isContr {a : A & R a b})}.
 Proof.
   intros. unfold equiv. esplit. Unshelve.
-    Focus 2. intros [e H]. esplit with (fun a b => e a = b). split.
-      intro. apply isContr_single_ended_path.
-      intro. admit.
+    2: {
+      intros [e H]. esplit with (fun a b => e a = b). split.
+        intro. apply isContr_single_ended_path.
+        intro. admit.
+    }
     apply qinv_isequiv. unfold qinv. cbn. esplit. Unshelve.
       Focus 2. intros (R & H1 & H2).
         esplit with (fun a => pr1' (pr1' (H1 a))).
@@ -5850,4 +5810,3 @@ Proof.
           Focus 3. apply funext. intro a. apply funext. intro b.
             destruct (H1 a) as [[b' p] H1']. cbn.
 Abort.
-

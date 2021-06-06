@@ -1,6 +1,5 @@
 Require Export HoTT.
 
-Declare ML Module "ltac_plugin".
 Local Set Default Proof Mode "Classic".
 
 Set Universe Polymorphism.
@@ -19,7 +18,7 @@ Set Universe Polymorphism.
 (** * 2 Preliminaries *)
 
 (* Definition 1 *)
-Print decidable_equality.
+(* Print decidable_equality. *)
 (* ===> fun A : U => forall x y : A, (x = y) + (x <> y) : U -> U *)
 
 Definition const {A B : U} (f : A -> B) : U :=
@@ -174,7 +173,7 @@ Proof.
 Defined.
 
 (* Definition 3 *)
-Print trunc_rec.
+(* Print trunc_rec. *)
 (* ===> forall A B : U, isProp B -> (A -> B) -> trunc A -> B *)
 
 Lemma isProp_pCont :
@@ -366,8 +365,6 @@ Lemma wut :
       isSet B -> trunc A -> B.
 Proof.
   unfold const, isSet. intros LEM A B f c SA ta.
-  
-  Search isSet. Print collapsible. Print separated.
   apply isSet_hseparated in SA.
   unfold hseparated in SA.
 Abort.
@@ -398,7 +395,6 @@ Abort.
 Lemma not_everything_collapsible :
   ~ forall A : U, collapsible A.
 Proof.
-  Check not_Prop_making_functor trunc.
   intro H.
   assert (forall A : U, hstable A).
     intro. apply collapsible_hstable. apply H.
@@ -494,14 +490,12 @@ Proof.
     assumption.
 Defined.
 
-Print Assumptions populated_spec.
-
 (** * 7 Taboos and Counter-Models *)
 
-Check @trunc'.
+(* Check @trunc'. *)
 (* ===> @trunc' : forall A : U, A -> trunc A *)
 
-Check trunc_populated.
+(* Check trunc_populated. *)
 (* ===> trunc_populated : forall A : U, trunc A -> populated A *)
 
 Lemma populated_dbl_neg :
@@ -655,5 +649,3 @@ Unshelve.
     apply isProp_fun, isProp_empty.
     intro. destruct X. destruct (n p).
 Defined.
-
-Print Assumptions dbl_neg_populated_LEM.
