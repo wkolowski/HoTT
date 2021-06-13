@@ -38,14 +38,14 @@ Lemma decidable_equality_path_collapsible :
     decidable_equality A -> path_collapsible A.
 Proof.
   unfold decidable_equality, path_collapsible, collapsible.
-  intros A DE x y. esplit.
-Unshelve.
-  Focus 2. intro p. destruct (DE x y) as [q | q].
-    exact q.
-    destruct (q p).
-  unfold const. intros p q. destruct (DE x y).
-    refl.
-    destruct (n p).
+  intros A DE x y.
+  esplit. Unshelve. all: cycle 1.
+    intro p. destruct (DE x y) as [q | q].
+      exact q.
+      destruct (q p).
+    unfold const. intros p q. destruct (DE x y).
+      refl.
+      destruct (n p).
 Defined.
 
 (* Lemma 2 *)
@@ -97,24 +97,22 @@ Proof.
   apply neq_false_true. exact (inv (happly p true)).
 Defined.
 
-(*
-Lemma isProp_path_collapsible :
+(* TODO *) Lemma isProp_path_collapsible :
   forall A : U,
     isProp (path_collapsible A).
 Proof.
   unfold isProp, path_collapsible, collapsible, const.
   intros A f g.
   apply funext. intro x. apply funext. intro y.
-  apply sigma_eq_intro. esplit.
-Unshelve.
-  Focus 2. destruct (f x y) as [f' cf], (g x y) as [g' cg]. cbn.
-    apply funext. intro p. apply path_collapsible_isSet. exact f.
-  repeat (apply funext; intro).
-  destruct (f x y), (g x y). cbn.
-    rewrite transport_pi.
-  apply path_collapsible_isSet. apply f.
+  apply sigma_eq_intro.
+  esplit. Unshelve. all: cycle 1.
+    destruct (f x y) as [f' cf], (g x y) as [g' cg]. cbn.
+      apply funext. intro p. apply path_collapsible_isSet. exact f.
+    repeat (apply funext; intro). destruct (f x y), (g x y). cbn.
+      rewrite transport_pi. apply path_collapsible_isSet.
+Abort.
 
-Lemma equiv_path_collapsible_isSet :
+(* TODO *) Lemma equiv_path_collapsible_isSet :
   path_collapsible = isSet.
 Proof.
   apply funext. intro A. apply ua. unfold equiv.
@@ -125,12 +123,10 @@ Proof.
     intro SA. repeat (apply funext; intro). apply isSet_type1. assumption.
     unfold path_collapsible, collapsible, const, isSet_path_collapsible,
       path_collapsible_isSet.
-      intros. repeat (apply funext; intro).
-      apply sigma_eq_intro. esplit. Unshelve.
-        Focus 2. cbn. destruct (x x0 x1) as [f c]. unfold id. apply funext.
-          intro y. cbn. destruct y.
+      {
+        intros. repeat (apply funext; intro).
+        apply sigma_eq_intro.
 Abort.
-*)
 
 (* Definition 2 *)
 Definition stable (A : U) : U :=
@@ -158,10 +154,10 @@ Lemma separated_path_collapsible :
     separated A -> path_collapsible A.
 Proof.
   unfold separated, path_collapsible, collapsible, const.
-  intros A s x y. esplit.
-Unshelve.
-  Focus 2. intro p. apply s. intro. destruct (X p).
-  intros p q. cbn. apply ap. apply funext. intro. destruct (x0 p).
+  intros A s x y.
+  esplit. Unshelve. all: cycle 1.
+    intro p. apply s. intro. destruct (X p).
+    intros p q. cbn. apply ap. apply funext. intro. destruct (x0 p).
 Defined.
 
 (* Lemma 3 *)
@@ -371,7 +367,6 @@ Abort.
 
 (** * 5 Global Collapsibility implies Decidable Equality *)
 
-(*
 Goal
   hstable = collapsible.
 Proof.
@@ -381,16 +376,17 @@ Proof.
   apply qinv_isequiv. unfold qinv.
   exists collapsible_hstable.
   unfold homotopy, comp, id, hstable, collapsible, const; split.
-    Focus 2. intro f. apply funext. intro x.
+    2: {
+      intro f. apply funext. intro x.
       compute. destruct (trunc_rec _). rewrite e. apply ap, path.
-    intros [f c]. apply sigma_eq_intro. esplit. Unshelve.
-      Focus 2. apply funext. intro x. cbn. destruct (trunc_rec _).
+    }
+    intros [f c]. apply sigma_eq_intro. esplit. Unshelve. all: cycle 1.
+      apply funext. intro x. cbn. destruct (trunc_rec _).
         cbn. rewrite e. apply c.
       rewrite transport_pi. cbn.
         apply funext. intro x. apply funext. intro y.
         rewrite transport_pi. rewrite transport_eq_fun.
 Abort.
-*)
 
 Lemma not_everything_collapsible :
   ~ forall A : U, collapsible A.
@@ -542,20 +538,20 @@ Lemma populated_hstable :
     populated (hstable A).
 Proof.
   unfold populated, const, fixpoint, hstable.
-  intros A f c. esplit.
-Unshelve.
-  Focus 2. intro ta. assert (fixpoint f).
-    unfold fixpoint. revert ta. apply trunc_rec.
-      apply isProp_fixpoint. exact c.
-      intro a. exists (fun _ => f (fun _ => a) (trunc' a)).
-        apply funext. intro x.
-        rewrite <- (c (fun _ => a) (fun _ => f (fun _ => a) (trunc' a))).
-        apply ap, path.
-    exact (pr1' X ta).
-  apply funext. intro ta. destruct (trunc_rec _). cbn. rewrite e.
-    apply ap2. apply funext. intro. destruct (trunc_rec _).
-      cbn. rewrite e, e0. rewrite (c x x1). refl.
-      refl.
+  intros A f c.
+  esplit. Unshelve. all: cycle 1.
+    intro ta. assert (fixpoint f).
+      unfold fixpoint. revert ta. apply trunc_rec.
+        apply isProp_fixpoint. exact c.
+        intro a. exists (fun _ => f (fun _ => a) (trunc' a)).
+          apply funext. intro x.
+          rewrite <- (c (fun _ => a) (fun _ => f (fun _ => a) (trunc' a))).
+          apply ap, path.
+      exact (pr1' X ta).
+    apply funext. intro ta. destruct (trunc_rec _). cbn. rewrite e.
+      apply ap2. apply funext. intro. destruct (trunc_rec _).
+        cbn. rewrite e, e0. rewrite (c x x1). refl.
+        refl.
 Defined.
 
 Lemma not_all_populated_trunc :
@@ -594,22 +590,24 @@ Proof.
     intro H. apply trunc_rec.
       apply isProp_trunc.
       intro f. unfold populated, const, fixpoint in H.
-        apply trunc'. eapply (pr1' (H (fun x : A => f (trunc' x)) _)).
-        Unshelve. Focus 2. intros. cbn. apply ap, path.
-    unfold populated, const, fixpoint. intros H f c.
-    assert (trunc (trunc A -> A)).
-      apply trunc'. intro ta. assert (trunc (trunc A -> A)).
-        revert ta. apply trunc_rec.
-          apply isProp_trunc.
-          intro x. apply trunc'. intros _. exact x.
-      assert (fixpoint f).
-        unfold fixpoint. revert X. apply trunc_rec.
-          apply isProp_fixpoint. assumption.
-          intro g. exists (f (g ta)). apply c.
-        exact (pr1' X0).
-    specialize (H X). revert H. apply trunc_rec.
-      apply isProp_fixpoint. assumption.
-      intro x. exists (f x). apply c.
+        apply trunc'. eapply (pr1' (H (fun x : A => f (trunc' x)) _)). Unshelve. all: cycle 1.
+          intros. cbn. apply ap, path.
+    {
+      unfold populated, const, fixpoint. intros H f c.
+      assert (trunc (trunc A -> A)).
+        apply trunc'. intro ta. assert (trunc (trunc A -> A)).
+          revert ta. apply trunc_rec.
+            apply isProp_trunc.
+            intro x. apply trunc'. intros _. exact x.
+        assert (fixpoint f).
+          unfold fixpoint. revert X. apply trunc_rec.
+            apply isProp_fixpoint. assumption.
+            intro g. exists (f (g ta)). apply c.
+          exact (pr1' X0).
+      specialize (H X). revert H. apply trunc_rec.
+        apply isProp_fixpoint. assumption.
+        intro x. exists (f x). apply c.
+    }
 Defined.
 
 Lemma conclusion_of_theorem_6_is_propositional_axiom_of_choice :
@@ -620,9 +618,6 @@ Proof.
   apply isProp_iff_eq.
     apply isProp_pi. intro. apply isProp_trunc.
     repeat (apply isProp_pi; intro). apply isProp_trunc.
-    Focus 2. intros H A.
-      specialize (H (trunc A) (fun _ => A) (isProp_trunc A)).
-      cbn in H. apply H. exact id.
     intros H P Y PP f. specialize (H (forall p : P, Y p)).
       revert H. apply trunc_rec.
         apply isProp_trunc.
@@ -630,6 +625,9 @@ Proof.
           specialize (f p). revert f. apply trunc_rec.
             apply isProp_trunc.
             intro. apply trunc'. intro. rewrite (PP p0 p). assumption.
+    intros H A.
+      specialize (H (trunc A) (fun _ => A) (isProp_trunc A)).
+      cbn in H. apply H. exact id.
 Defined.
 
 (** ** 7.3 Populated and Non-Empty *)
@@ -640,12 +638,11 @@ Lemma dbl_neg_populated_LEM :
 Proof.
   unfold populated, const, fixpoint, LEM.
   intros H P PP.
-  eapply (pr1' (H _ _ _ _)).
-Unshelve.
-  intro. apply X. right. intro. apply X. left. assumption.
-  exact id.
-  intros. apply ex_3_7.
-    assumption.
-    apply isProp_fun, isProp_empty.
-    intro. destruct X. destruct (n p).
+  eapply (pr1' (H _ _ _ _)). Unshelve.
+    intro. apply X. right. intro. apply X. left. assumption.
+    exact id.
+    intros. apply ex_3_7.
+      assumption.
+      apply isProp_fun, isProp_empty.
+      intro. destruct X. destruct (n p).
 Defined.
