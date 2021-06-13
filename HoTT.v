@@ -1094,7 +1094,8 @@ Lemma homotopy_sym :
   forall (A : U) (P : A -> U) (f g : forall x : A, P x),
     homotopy f g -> homotopy g f.
 Proof.
-  unfold homotopy. intros. rewrite X. refl.
+  unfold homotopy.
+  intros A P f g H x. exact (inv (H x)).
 Defined.
 
 (* Lemma 2.4.2.3 *)
@@ -1107,7 +1108,7 @@ Defined.
 
 (* Lemma 2.4.3 *)
 Lemma homotopy_natural :
-  forall (A B : U) (f g : A -> B) (H : homotopy f g) (x y : A) (p : x = y),
+  forall {A B : U} {f g : A -> B} (H : homotopy f g) {x y : A} (p : x = y),
     cat (H x) (ap g p) = cat (ap f p) (H y).
 Proof.
   unfold homotopy. destruct p. cbn. destruct (H x). cbn. refl.
@@ -1121,7 +1122,7 @@ Proof.
   intros.
   assert (cat (cat (H (f x)) (H x)) (inv (H x)) =
           cat (cat (ap f (H x)) (H x)) (inv (H x))).
-    pose (e := homotopy_natural A A f id H (f x) x (H x)).
+    pose (e := @homotopy_natural A A f id H (f x) x (H x)).
       rewrite ap_id in e. rewrite e. refl.
     rewrite <- !cat_assoc, !cat_inv_r, !cat_refl_r in X. apply X.
 Defined.
@@ -1202,12 +1203,12 @@ Lemma isequiv_qinv :
     isequiv f -> qinv f.
 Proof.
   destruct 1 as [[g α] [h β]].
-  unfold qinv. esplit.
-Unshelve.
-  Focus 2. exact (comp g (comp f h)).
-  cbn. split; compute in *; intros.
-    rewrite β, α. refl.
-    rewrite α, β. refl.
+  unfold qinv.
+  esplit. Unshelve. all: revgoals.
+    exact (comp g (comp f h)).
+    cbn. split; compute in *; intros.
+      rewrite β, α. refl.
+      rewrite α, β. refl.
 Defined.
 
 (* Definition 2.4.11 *)
@@ -1767,23 +1768,83 @@ Defined.
 
 (* Theorem 2.11.1 *)
 
-(*
 Infix "^" := cat (at level 60, right associativity).
-*)
+
+Lemma homotopy_natural_corollary :
+  forall {A : U} {f : A -> A} (H : homotopy f id) {x y : A} (p : x = y),
+    cat (H x) p =
+    cat (ap f p) (H y).
+Proof.
+  intros.
+  rewrite <- (homotopy_natural H), ap_id.
+  reflexivity.
+Defined.
+
+Lemma homotopy_natural_corollary' :
+  forall {A : U} {f : A -> A} (H : homotopy f id) {x y : A} (p : x = y),
+    cat (inv (H x)) (ap f p) =
+    cat p (inv (H y)).
+Proof.
+  intros.
+  pose (homotopy_natural (homotopy_sym _ _ _ _ H) p).
+  unfold homotopy_sym in e.
+  rewrite ap_id in e.
+  assumption.
+Defined.
+
 Theorem ap_isequiv :
   forall (A B : U) (f : A -> B) (x y : A),
     isequiv f -> isequiv (@ap A B f x y).
 Proof.
   intros. apply qinv_isequiv. apply isequiv_qinv in X.
-  unfold qinv in *. destruct X as [g [H1 H2]].
-  esplit.
-Unshelve.
-  Focus 2. intros. compute in *.
-    apply (cat (inv (H2 x)) (cat (ap g X) (H2 y))).
-  unfold homotopy, comp, id in *. split; intros.
-    Focus 2. destruct x0. generalize (H2 x). destruct e. cbn. refl.
-    (* This is doable. *)
-Admitted.
+  unfold qinv in *. destruct X as [g [α β]].
+  esplit. Unshelve. all: cycle 1.
+    intro q. compute in *. exact (cat (inv (β x)) (cat (ap g q) (β y))).
+    unfold homotopy, comp, id in *. split.
+      2: { destruct x0. rewrite ap_refl, cat_refl_l, cat_inv_l. reflexivity. }
+      {
+        intro q.
+        assert (eq : comp g f = id).
+          apply funext. assumption.
+        pose (q0 := inv (α (f x)) ^ ap f (ap g q) ^ α (f y)).
+        assert (q = q0).
+          unfold q0.
+          rewrite ap_ap, cat_assoc.
+          epose (homotopy_natural_corollary' α q).
+          unfold comp, id in *; rewrite e; clear e.
+          rewrite <- cat_assoc, cat_inv_l, cat_refl_r.
+          reflexivity.
+        pose (q1 := inv (α (f x)) ^ ap f (β x ^ inv (β x) ^ ap g q ^ β y ^ inv (β y)) ^ α (f y)).
+        assert (q0 = q1).
+          unfold q1.
+          rewrite cat_inv_r, cat_refl_r, !cat_assoc, cat_inv_r, cat_refl_l, <- cat_assoc.
+          reflexivity.
+        pose (q2 := inv (α (f x)) ^ ap f (ap g (ap f (inv (β x) ^ ap g q ^ β y))) ^ α (f y)).
+        assert (q1 = q2).
+          unfold q1, q2.
+          pose (e2 := homotopy_natural_corollary β (inv (β x) ^ ap g q ^ β y)).
+          unfold id in e2. rewrite (cat_assoc _ _ _ _ _ _ _ (inv (β y))).
+          assert (inv (α (f x)) ^ ap f (β x ^ inv (β x) ^ (ap g q ^ β y) ^ inv (β y)) ^ α (f y) =
+                  inv (α (f x)) ^ ap f ((β x ^ inv (β x) ^ ap g q ^ β y) ^ inv (β y)) ^ α (f y)).
+            rewrite !cat_assoc. reflexivity.
+          rewrite X1, e2, <- !cat_assoc, cat_inv_r, cat_refl_r, (ap_ap _ _ _ f).
+          unfold comp. reflexivity.
+        pose (q3 := inv (α (f x)) ^ α (f x) ^ ap f (inv (β x) ^ ap g q ^ β y) ^ inv (α (f y)) ^ α (f y)).
+        assert (q2 = q3).
+          unfold q2, q3.
+          rewrite ap_ap.
+          pose (e0 := homotopy_natural_corollary α (ap f (inv (β x) ^ ap g q ^ β y))).
+          unfold id in e0. unfold comp. rewrite <- e0.
+          rewrite !cat_assoc, !cat_inv_l, !cat_refl_l, <- !cat_assoc, !cat_inv_l, cat_refl_r.
+          reflexivity.
+        cut (ap f (inv (β x) ^ ap g q ^ β y) = q0).
+          intro. rewrite X3. symmetry. assumption.
+        rewrite X0, X1, X2.
+        unfold q3.
+        rewrite !cat_assoc, !cat_inv_l, !cat_refl_l, <- !cat_assoc, !cat_inv_l, cat_refl_r.
+        reflexivity.
+      }
+Defined.
 
 (* Lemma 2.11.2.1 *)
 Lemma transport_eq_l :
