@@ -1169,11 +1169,11 @@ Lemma qinv_transport :
   forall (A : U) (P : A -> U) (x y : A) (p : x = y),
     qinv (@transport A P x y p).
 Proof.
-  intros. eapply (| @transport A P y x (inv p), _ |).
-Unshelve.
-  cbn. hsplit.
-    destruct p. compute. refl.
-    destruct p. compute. refl.
+  intros. esplit. Unshelve. all: cycle 1.
+    exact (transport P (inv p)).
+    split.
+      destruct p. compute. refl.
+      destruct p. compute. refl.
 Defined.
 
 (* Definition 2.4.10 *)
@@ -1204,7 +1204,7 @@ Lemma isequiv_qinv :
 Proof.
   destruct 1 as [[g α] [h β]].
   unfold qinv.
-  esplit. Unshelve. all: revgoals.
+  esplit. Unshelve. all: cycle 1.
     exact (comp g (comp f h)).
     cbn. split; compute in *; intros.
       rewrite β, α. refl.
@@ -1221,12 +1221,13 @@ Notation "A ~ B" := (equiv A B) (at level 50).
 Lemma equiv_refl :
   forall A : U, equiv A A.
 Proof.
-  unfold equiv. intros.
-  eapply (| id, _ |).
-Unshelve.
-  cbn. apply qinv_isequiv. compute. eapply (| id, _ |).
-Unshelve.
-  compute. hsplit; refl.
+  intro.
+  unfold equiv.
+  exists id.
+  apply qinv_isequiv.
+  unfold qinv.
+  exists id.
+  split; compute; refl.
 Defined.
 
 (* Lemma 2.4.12 ii) *)
@@ -1235,11 +1236,10 @@ Lemma equiv_sym :
 Proof.
   unfold equiv. destruct 1 as [f H].
   apply isequiv_qinv in H. destruct H as [g [α β]].
-  eapply (| g, _ |).
-Unshelve.
-  cbn. apply qinv_isequiv. eapply (| f, _ |).
-Unshelve.
-  compute in *. hsplit; intros; rewrite ?α, ?β; refl.
+  exists g.
+  red. split.
+    exists f. assumption.
+    exists f. assumption.
 Restart.
   destruct 1 as [f [[f1 H1] [f2 H2]]].
   unfold equiv, homotopy, comp, id in *.
@@ -1267,13 +1267,12 @@ Restart.
   unfold equiv.
   destruct 1 as (f & (f1 & Hf1) & (f2 & Hf2)).
   destruct 1 as (g & (g1 & Hg1) & (g2 & Hg2)).
-  compute in *. exists (comp f g). split.
+  compute in *. exists (comp f g).
+  split.
     exists (comp g1 f1). intro. compute.
-      specialize (Hf1 (g1 x)). apply (ap g) in Hf1.
-        exact (cat Hf1 (Hg1 x)).
-    exists (comp g2 f2). compute. intro.
-      specialize (Hg2 (f x)). apply (ap f2) in Hg2.
-        exact (cat Hg2 (Hf2 x)).
+      exact (cat (ap g (Hf1 (g1 x))) (Hg1 x)).
+    exists (comp g2 f2). intro. compute.
+      exact (cat (ap f2 (Hg2 (f x))) (Hf2 x)).
 Defined.
 
 (** ** 2.6 Cartesian product types *)
@@ -1516,12 +1515,13 @@ Theorem unit_eq_equiv :
   forall x y : unit,
     isequiv (unit_eq_intro x y).
 Proof.
-  intros. apply qinv_isequiv.
-  unfold qinv. eapply (| @unit_eq_elim x y, _ |).
-Unshelve.
-  cbn. hsplit; compute.
-    destruct x0, x. refl.
-    destruct x0. refl.
+  intros.
+  apply qinv_isequiv. unfold qinv.
+  esplit. Unshelve. all: cycle 1.
+    exact (@unit_eq_elim x y).
+    split; compute.
+      destruct x0, x. refl.
+      destruct x0. refl.
 Defined.
 
 (* Theorem 2.8.1 *)
@@ -1568,12 +1568,12 @@ Theorem funext_isequiv :
   forall (A : U) (B : A -> U) (f g : forall x : A, B x),
     isequiv (@funext A B f g).
 Proof.
-  intros. apply qinv_isequiv. unfold qinv.
-  eapply (| happly, _ |).
-Unshelve.
-  cbn. unfold homotopy, comp. hsplit; intros.
-    rewrite <- funext_happly. refl.
-    rewrite happly_funext. refl.
+  intros.
+  apply qinv_isequiv. unfold qinv.
+  exists happly.
+  unfold homotopy, comp. split; intros.
+    exact (inv (funext_happly x)).
+    apply happly_funext.
 Defined.
 
 Lemma refl_pi :
@@ -1635,18 +1635,8 @@ Lemma lemma_2_9_6 :
       (forall a : A x, transport _ p (f a) = g (transport _ p a)).
 Proof.
   destruct p. cbn. intros.
-  unfold equiv. eapply (| happly, _ |).
-Unshelve.
-  cbn. apply qinv_isequiv. unfold qinv. eapply (| funext, _ |).
-Unshelve.
-  cbn. unfold homotopy, comp. hsplit; intros.
-    apply happly_funext.
-    destruct x0. compute. rewrite funext_happly. cbn. refl.
-Restart.
-  destruct p. cbn. intros.
-  apply equiv_sym. unfold equiv. eapply (| funext, _ |).
-Unshelve.
-  cbn. apply funext_isequiv.
+  apply equiv_sym. unfold equiv.
+  exists funext. apply funext_isequiv.
 Defined.
 
 (* Lemma 2.9.7 *)
@@ -1665,9 +1655,8 @@ Lemma lemma_2_9_7 :
         = g (transport _ p a)).
 Proof.
   destruct p. cbn. intros.
-  apply equiv_sym. unfold equiv. eapply (| funext, _ |).
-Unshelve.
-  cbn. apply funext_isequiv.
+  apply equiv_sym. unfold equiv.
+  exists funext. apply funext_isequiv.
 Defined.
 
 (** ** 2.10 Universes and the univalence axiom *)
@@ -2099,62 +2088,103 @@ Defined.
 (** ** 2.14 Example: equality of structures *)
 
 (* Definition 2.14.1.1 *)
-Definition SemigroupStr (A : U) : U :=
-  {m : A -> A -> A & forall x y z : A, m x (m y z) = m (m x y) z}.
+Record SemigroupStr (A : U) : U :=
+{
+    op : A -> A -> A;
+    op_assoc : forall x y z : A, op x (op y z) = op (op x y) z;
+}.
+
+Arguments op {A _} _ _.
+Arguments op_assoc {A _} _ _.
 
 (* Definition 2.14.1.2 *)
-Definition Semigroup : U :=
-  {A : U & SemigroupStr A}.
+Record Semigroup : U :=
+{
+    carrier :> U;
+    str :> SemigroupStr carrier;
+}.
+
+Definition U2T : U -> Type := id.
+
+Coercion U2T : U >-> Sortclass.
 
 (* 2.14.1 Lifting equivalences *)
-Lemma transport_SemigroupStr_pr1' :
+Lemma transport_SemigroupStr :
+  forall
+    (A B : U) (p : A = B)
+    (m : A -> A -> A)
+    (a : forall x y z : A, m x (m y z) = m (m x y) z),
+      @op _ (transport SemigroupStr p {| op := m; op_assoc := a; |}) =
+      fun b1 b2 : B =>
+        idtoeqv p (m (idtoeqv (inv p) b1) (idtoeqv (inv p) b2)).
+Proof.
+  intros.
+  apply funext. intro b1.
+  apply funext. intro b2.
+  destruct p.
+  cbn. reflexivity.
+Defined.
+
+Lemma op_transport_SemigroupStr :
   forall
     (A B : U) (e : A ~ B)
     (m : A -> A -> A)
     (a : forall x y z : A, m x (m y z) = m (m x y) z),
-      let f := pr1' (isequiv_qinv _ _ e (pr2' e)) in
-        pr1' (transport SemigroupStr (ua e) (| m, a |)) =
+      let f := equiv_sym _ _ e in
+        @op _ (transport SemigroupStr (ua e) {| op := m; op_assoc := a; |}) =
         fun b1 b2 : B =>
           e (m (f b1) (f b2)).
 Proof.
-  intros. apply funext. intro b1. apply funext. intro b2.
-  unfold SemigroupStr.
-  rewrite (
-    transport_sigma U (fun A => A -> A -> A)
-      (fun '(| A, m |) => forall x y z : A, m x (m y z) = m (m x y) z)
-      A B (ua e) m a); cbn.
-  rewrite 2!transport_fun, transport_ua.
-  apply ap. unfold f. rewrite <- (idtoeqv_ua' e).
-  generalize (ua e). destruct e0. rewrite <- ua_idtoeqv.
-  compute. refl.
+  intros.
+  rewrite transport_SemigroupStr.
+  apply funext. intro b1.
+  apply funext. intro b2.
+  rewrite !inv_ua, !idtoeqv_ua.
+  reflexivity.
 Defined.
 
-Goal
+Record SemigroupEq (A B : Semigroup) : Type :=
+{
+    SE_e : A -> B;
+    SE_isequiv : isequiv SE_e;
+    SE_m : forall x y : A, SE_e (@op _ A x y) = @op _ B (SE_e x) (SE_e y);
+}.
+
+Record SemigroupEq' (A B : Semigroup) : Type :=
+{
+    SE_p : @carrier A = @carrier B;
+    SE_m' : forall x y : A, transport id SE_p (@op _ A x y) = @op _ B (transport _ SE_p x) (transport _ SE_p y);
+}.
+
+Lemma SemigroupEq'_path :
   forall
     (A B : Semigroup)
-    (SA : forall (x y : pr1' A) (p q : x = y), p = q),
-      let m := pr1' (pr2' A) in
-      let m' := pr1' (pr2' B) in
-        (A = B) =
-        {e : pr1' A ~ pr1' B &
-             forall x y : pr1' A, e (m x y) = m' (e x) (e y)}.
+    (SA : forall (x y : A) (p q : x = y), p = q),
+      SemigroupEq' A B -> A = B.
 Proof.
-  intros. apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
-    intro p. exists (idtoeqv (ap pr1' p)). intros.
-      destruct p. refl.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
-      intros [e H]. apply sigma_eq_intro.
-        exists (ua e).
-        apply sigma_eq_intro. esplit. Unshelve. all: cycle 2.
-          {
-            destruct A as [A [ma a]], B as [B [mb b]]. cbn in *.
-            rewrite transport_SemigroupStr_pr1'.
-            apply funext. intro b1. apply funext. intro b2.
-            rewrite H. rewrite <- (idtoeqv_ua' e).
-            generalize (ua e). destruct e0. cbn; unfold id. refl.
-          }
-Admitted.
+  intros [A [opA opA_assoc]] [B [opB opB_assoc]] SA []. cbn in *.
+  destruct SE_p0. cbn in *.
+  pose (xd := funext (fun x => funext (fun y => SE_m'0 x y)) : opA = opB).
+  destruct xd.
+  assert (opA_assoc = opB_assoc).
+    apply funext. intro x. apply funext. intro y. apply funext. intro z. apply SA.
+  destruct X.
+  reflexivity.
+Defined.
+
+Lemma SemigroupEq_path :
+  forall
+    (A B : Semigroup)
+    (SA : forall (x y : A) (p q : x = y), p = q),
+      SemigroupEq A B -> A = B.
+Proof.
+  intros.
+  apply SemigroupEq'_path.
+    assumption.
+    destruct X. esplit. Unshelve. all: cycle 1.
+      apply ua. exists SE_e0. assumption.
+      intros. rewrite !transport_ua. cbn. apply SE_m0.
+Defined.
 
 (** ** 2.15 Universal properties *)
 
@@ -4906,9 +4936,8 @@ Lemma wut1 :
     code_option_eq p q -> code_option_eq' p q.
 Proof.
   destruct x, y; cbn; intros.
-    exact tt.
-    1-2: assumption.
-     apply ap. assumption.
+    1-3: assumption.
+    apply ap. assumption.
 Defined.
 
 Lemma wut2 :
@@ -4916,16 +4945,27 @@ Lemma wut2 :
     code_option_eq' p q -> code_option_eq p q.
 Proof.
   destruct x, y; cbn; intros.
-    exact tt.
-    1-2: assumption.
-     rewrite <- decode_encode_option, <- X, decode_encode_option. refl.
+    1-3: assumption.
+    exact (inv (decode_encode_option p)  ^ ap (@decode_option A (Some a) (Some a0)) X ^ decode_encode_option q).
 Defined.
 
 Goal
   @code_option_eq' = @code_option_eq.
 Proof.
-  apply funext. intro A. apply funext. intro x. apply funext. intro y.
-  apply funext. intro p. apply funext. intro q.
+  apply funext. intro A.
+  apply funext. intro x.
+  apply funext. intro y.
+  apply funext. intro p.
+  apply funext. intro q.
+  apply ua.
+  exists (@wut2 A x y p q).
+  apply qinv_isequiv. red.
+  exists (@wut1 A x y p q).
+  split.
+    destruct x, y.
+      1-3: compute; reflexivity.
+      destruct p. compute.
+(* 
   destruct x, y; cbn.
     1-3: reflexivity.
     apply ua. unfold equiv. esplit. Unshelve. all: cycle 1.
@@ -4933,9 +4973,9 @@ Proof.
       apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
         intro. exact (ap encode_option X).
         unfold homotopy, comp, id; split.
-          intro. epose (homotopy_natural_corollary decode_encode_option x).
-            rewrite ap_ap. unfold id in e. unfold comp. rewrite <- e, cat_assoc, cat_inv_l, cat_refl_l. refl.
-          admit. (* TODO *)
+          destruct x, p. cbn. reflexivity.
+          intro. rewrite !ap_cat, !ap_inv, !ap_ap.
+ *)
 Admitted.
 
 Definition encode_option_eq_aux'
@@ -5065,11 +5105,6 @@ Proof.
   destruct p, x.
     exact (refl a = encode_sum q).
     exact (refl b = encode_sum q).
-(*Restart.
-  destruct x, y; cbn in *.
-    destruct (encode_sum p). exact (encode_sum p = encode_sum q).
-    1-2: exact empty.
-    destruct (encode_sum p). exact (encode_sum p = encode_sum q).*)
 Defined.
 
 Definition encode_sum_eq_aux'
@@ -5087,46 +5122,6 @@ Definition decode_sum_eq'
 Proof.
   destruct p, x; cbn in c.
 Abort.
-(*    exact (cat (@ap _ _ (@decode_sum A B (inl a) (inl a)) _ _ c)
-               (decode_encode_sum q)).*)
-(*    assumption.
-    exact (cat (@ap _ _ (@decode_sum A B (inr b) (inr b)) _ _ c)
-               (decode_encode_sum q)).
-*)
-(*
-    rewrite <- decode_encode_sum, <- c. cbn. refl.
-    rewrite <- decode_encode_sum, <- c. cbn. refl.
-*)
-(*
-  destruct x, y; cbn in *.
-    exact (cat (inv (decode_encode_sum p))
-            (cat (ap (@decode_sum _ _ (inl a) (inl a0)) c)
-              (decode_encode_sum q))).
-    1-2: destruct c.
-    exact (cat (inv (decode_encode_sum p))
-            (cat (ap (@decode_sum _ _ (inr b) (inr b0)) c)
-              (decode_encode_sum q))).*)
-
-(*
-Lemma encode_decode_sum_eq' :
-  forall {A B : U} {x y : A + B} (p q : x = y) (c : code_sum_eq' p q),
-    encode_sum_eq' (decode_sum_eq' c) = c.
-Proof.
-  destruct p, x; cbn; intros.
-    assert (q = ap inl (refl a)).
-      rewrite <- (decode_encode_sum q), <- c. cbn. refl.
-    symmetry in X. destruct X. cbn. rewrite cat_refl_r.
-      unfold encode_sum_eq'. cbn. unfold code_sum_eq'.
-      rewrite transport_eq_fun. rewrite cat_refl_l.
-      replace (fun _ => refl a) with (fun p : inl a = inl a => encode_sum p).
-    rewrite <- (decode_encode_sum q).
-  destruct x, y, c; cbn; refl.
-    2-3: destruct c.
-    rewrite (sum_eq_char A B).
-Defined.
-*)
-
-(* wut *)
 
 Lemma sum_eq2_elim' :
   forall {A B : U} {w w' : A + B} {c c' : code_sum w w'},
@@ -5150,29 +5145,6 @@ Proof.
   destruct H, w, w', c; cbn in *; refl.
 Defined.
 
-Goal
-  forall {A B : U} {w w' : A + B} {c c' : code_sum w w'},
-    (c = c') = (decode_sum c = decode_sum c').
-Proof.
-  intros. apply ua. unfold equiv.
-  exists (ap decode_sum).
-  apply qinv_isequiv. unfold qinv.
-  esplit. Unshelve. all: cycle 1.
-    intro p. apply (ap encode_sum) in p.
-      rewrite 2!encode_decode_sum in p. assumption.
-    unfold homotopy, comp, id; split.
-      destruct w, w'; cbn in *; intros.
-        destruct (internal_eq_rew _). destruct c. cbn. admit.
-        destruct c.
-        destruct c.
-        destruct (internal_eq_rew _). destruct c. cbn. admit.
-      destruct x, w, w'; cbn in *.
-        destruct c. cbn. refl.
-        destruct c.
-        destruct c.
-        destruct c. cbn. refl.
-Abort.
-
 Lemma sum_eq2_intro :
   forall {A B : U} {w w' : A + B} {p q : w = w'},
     encode_sum p = encode_sum q -> p = q.
@@ -5187,17 +5159,6 @@ Lemma sum_eq2_elim :
 Proof.
   intros * []. refl.
 Defined.
-
-Goal
-  forall {A B : U} {w w' : A + B} {p q : w = w'},
-    (p = q) = (encode_sum p = encode_sum q).
-Proof.
-  intros. apply ua. unfold equiv.
-  exists sum_eq2_elim.
-  apply qinv_isequiv. unfold qinv.
-  exists sum_eq2_intro.
-  unfold homotopy, comp, id; split.
-Abort.
 
 (** **** Products *)
 
