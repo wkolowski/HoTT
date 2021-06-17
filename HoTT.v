@@ -937,7 +937,7 @@ Lemma horizontal_comps :
     (alfa : p = q) (beta : r = s),
       horizontal_comp alfa beta = horizontal_comp' alfa beta.
 Proof.
-  destruct alfa, beta. destruct p, r. compute. refl.
+  destruct alfa, beta, p, r. cbn. refl.
 Defined.
 
 Lemma Eckmann_Hilton :
@@ -947,16 +947,8 @@ Proof.
   intros.
   rewrite <- horizontal_comp_spec.
   rewrite <- horizontal_comp'_spec.
-  rewrite horizontal_comps. refl.
+  exact (horizontal_comps alfa beta).
 Defined.
-
-(* TODO *)
-Lemma whisker_l_cat :
-  forall
-    {A : U} {a b c : A} {p : a = a} {q : a = a} (alfa : p = q), U.
-Proof.
-  intros.
-Abort.
 
 End Eckmann_Hilton.
 
@@ -1059,8 +1051,8 @@ Defined.
 
 (* Lemma 2.3.10 *)
 Lemma transport_ap :
-  forall (A B : U) (P : B -> U) (f : A -> B)
-    (x y : A) (p : x = y) (u : P (f x)),
+  forall {A B : U} {P : B -> U} (f : A -> B)
+    {x y : A} (p : x = y) (u : P (f x)),
       @transport A (comp f P) x y p u = transport P (ap f p) u.
 Proof.
   destruct p. cbn. refl.
@@ -1389,10 +1381,6 @@ Proof.
   destruct p. cbn. exists (ap pr1' (refl x)). cbn. refl.
 Defined.
 
-Definition sigma_eq_elim_1
-  {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y) : pr1' x = pr1' y :=
-    pr1' (sigma_eq_elim p).
-
 Lemma sigma_eq_comp :
   forall (A : U) (B : A -> U) (x y : {a : A & B a})
   (p : pr1' x = pr1' y) (q : transport B p (pr2' x) = pr2' y),
@@ -1408,18 +1396,40 @@ Proof.
   destruct p, x. cbn. refl.
 Defined.
 
+Definition sigma_eq_elim'
+  {A : U} {B : A -> U} {x y : {x : A & B x}} (p : x = y)
+  : {p : pr1' x = pr1' y & transport B p (pr2' x) = pr2' y}.
+Proof.
+  exists (ap pr1' p).
+  exact (cat (inv (transport_ap pr1' p (pr2' x))) (apd pr2' p)).
+Defined.
+
+Lemma sigma_eq_comp' :
+  forall (A : U) (B : A -> U) (x y : {a : A & B a})
+  (p : {p : pr1' x = pr1' y & transport B p (pr2' x) = pr2' y}),
+    sigma_eq_elim' (sigma_eq_intro p) = p.
+Proof.
+  destruct x, y, p. cbn in *. destruct x1, e. compute. refl.
+Defined.
+
+Lemma sigma_eq_uniq' :
+  forall (A : U) (B : A -> U) (x y : {a : A & B a}) (p : x = y),
+    sigma_eq_intro (sigma_eq_elim' p) = p.
+Proof.
+  destruct p, x. cbn. refl.
+Defined.
+
 (* Theorem 2.7.2 *)
 Theorem sigma_eq_elim_equiv :
   forall (A : U) (B : A -> U) (x y : {a : A & B a}),
-    isequiv (@sigma_eq_elim A B x y).
+    isequiv (@sigma_eq_elim' A B x y).
 Proof.
-  intros. apply qinv_isequiv. unfold qinv.
+  intros.
+  apply qinv_isequiv. unfold qinv.
   exists sigma_eq_intro.
-  unfold homotopy, comp, id.
   split.
-    destruct x0, x, y. cbn in *. destruct x0. cbn in e. destruct e.
-      cbn. refl.
-    destruct x0. destruct x. compute. refl.
+    red. apply sigma_eq_comp'.
+    red. apply sigma_eq_uniq'.
 Defined.
 
 (* Corollary 2.7.3 *)
@@ -1427,7 +1437,7 @@ Lemma sigma_uniq :
   forall (A : U) (B : A -> U) (z : {a : A & B a}),
     z = (| pr1' z, pr2' z |).
 Proof.
-  intros. apply sigma_eq_intro. cbn. exists (ap pr1' (refl z)). cbn. refl.
+  intros. apply sigma_eq_intro. cbn. exists (refl (pr1' z)). cbn. refl.
 Defined.
 
 (* Theorem 2.7.4 *)
@@ -1453,38 +1463,22 @@ Proof.
   destruct x. cbn. refl.
 Defined.
 
-Fail (* TODO *)
 Lemma inv_sigma :
   forall (A : U) (B : A -> U) (x y : {a : A & B a}) (p : x = y),
-    inv p =
-    sigma_eq_intro (| inv (ap pr1' p),
-                      match p with
-                          | refl _ => refl (pr2' x)
-                      end
-                    |).
-(* Proof.
-  destruct p, x. cbn. refl.
+    inv p = sigma_eq_intro (sigma_eq_elim' (inv p)).
+Proof.
+  destruct p, x. compute. refl.
 Defined.
- *)
 
-Fail (* TODO *)
 Lemma cat_sigma :
   forall (A : U) (B : A -> U) (x y z : {a : A & B a})
   (p : x = y) (q : y = z),
-    cat p q =
-    sigma_eq_intro
-      (| cat (ap pr1' p) (ap pr1' q),
-         match q with
-             | refl _ =>
-                 match p with
-                     | refl _ => refl (pr2' x)
-                 end
-         end
-      |).
-(* Proof.
-  destruct p, q, x. cbn. refl.
+    cat p q = sigma_eq_intro (sigma_eq_elim' (cat p q)).
+Proof.
+  intros.
+  unfold sigma_eq_elim'.
+  destruct p, q, x. compute. refl.
 Defined.
- *)
 
 (** ** 2.8 The unit type *)
 
@@ -1964,13 +1958,8 @@ Proof.
   intros. rewrite coprod_eq_char. cbn. refl.
 Defined.
 
-(* Not immediately provable with this approach. *)
-Lemma inr_eq_char :
-  forall (A B : U) (x y : B),
-    (@inr A B x = @inr A B y) = (x = y).
-Proof.
-  intros.
-Abort.
+(** A lemma similar to [inl_eq_char] (Corollary 2.12.1) is not immediately
+    provable with the approach based on unary [code]. *)
 
 Lemma inl_inr_eq_char :
   forall (A B : U) (x : A) (y : B),
@@ -2497,62 +2486,6 @@ Defined.
 
 (** **** Ex. 2.7 TODO *)
 
-Definition fpair_dep
-  {A A' : U} {B : A -> U} {B' : A' -> U}
-  (f : A -> A') (g : forall x : A, B x -> B' (f x)) (p : {x : A & B x})
-  : {x : A' & B' x} := (| f (pr1' p), g (pr1' p) (pr2' p) |).
-
-(* TODO: remove, this is a copy *)
-Theorem ap_prod_eq_intro' :
-  forall (A A' B B' : U) (x y : A * B)
-  (p : pr1 x = pr1 y) (q : pr2 x = pr2 y)
-  (f : A -> A') (g : B -> B'),
-    ap (fpair f g) (prod_eq_intro (p, q)) =
-    @prod_eq_intro _ _ (fpair f g x) (fpair f g y) (ap f p, ap g q).
-Proof.
-  intros A A' B B' [] []. cbn. intros [] [] **. compute. refl.
-Defined.
-
-(* TODO: finish *)
-Theorem ap_sigma_eq_intro :
-  forall (A A' : U) (B : A -> U) (B' : A' -> U) (x y : {a : A & B a})
-  (f : A -> A')
-  (g : forall x : A, B x -> B' (f x))
-  (p : pr1' x = pr1' y) (q : transport B p (pr2' x) = pr2' y),
-    U.
-Proof.
-  intros.
-
-  Check ap (fpair_dep f g) (sigma_eq_intro (| p, q |)).
-
-  Check @sigma_eq_intro _ _ (fpair_dep f g x) (fpair_dep f g y) (| ap f p, _ |).
-
-  assert ({p : pr1' (fpair_dep f g x) = pr1' (fpair_dep f g y) &
-           transport B' p (g (pr1' x) (pr2' x)) = g (pr1' y) (pr2' y)}).
-
-    cbn. exists (ap f p).
-Check ap (fun f => f (pr2' y)) (@apd _ _ g (pr1' x) (pr1' y) p).
-    rewrite <- (@apd _ _ g (pr1' x) (pr1' y) p).
-Check transport_fun.
-    rewrite transport_fun. destruct x, y. cbn in *. destruct p. cbn in *. destruct q. reflexivity.
-
-Abort.
-
-Theorem ap_sigma_eq_intro :
-  forall (A A' : U) (B : A -> U) (B' : A' -> U) (x y : {a : A & B a})
-  (p : pr1' x = pr1' y) (q : transport _ p (pr2' x) = pr2' y)
-  (f : A -> A') (g : forall x : A, B x -> B' (f x)), U.
-Proof.
-  intros.
-    assert ({p : pr1' (fpair_dep f g x) = pr1' (fpair_dep f g y) &
-                 transport B' p (g (pr1' x) (pr2' x)) = g (pr1' y) (pr2' y)}).
-      exists (ap f p).
-      rewrite <- q.
-      rewrite <- (transport_family _ _ _ g _ _ p (pr2' x)).
-      rewrite <- (transport_ap _ _ B' f _ _ p).
-      refl.
-Abort.
-
 (** **** Ex. 2.8 *)
 
 Definition code_sum {A B : U} (x y : A + B) : U :=
@@ -2841,12 +2774,13 @@ Lemma ex_2_12 :
         is_commutative_square cd bd ac ab =
         is_commutative_square ef (comp bd df) (comp ac ce) ab.
 Proof.
-  unfold is_commutative_square, comp.
-  intros * H. apply ua. unfold equiv. esplit. Unshelve. all: cycle 1.
-    intro H'. apply funext. intro. rewrite (happly H (ac0 x)). apply ap. apply (happly H').
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
-      intro H'. apply funext. intro. apply (fun H => happly H (ac0 x)) in H. cbn in H.
-        apply (fun H' => happly H' x) in H'. cbn in H'.
+  intros * H.
+  unfold is_commutative_square, comp in *.
+  apply ua. esplit. Unshelve. all: cycle 1.
+    intro H'. apply funext. intro.
+      exact (cat (ap (fun f => f (ac0 x)) H) (ap (fun f => df (f x)) H')).
+    apply qinv_isequiv. red. esplit. Unshelve. all: cycle 1.
+      intro H'.
 Abort.
 
 End ex_2_12.
@@ -3129,7 +3063,9 @@ Lemma ex_2_17_1_1 :
   forall {A A' B B' : U} (ea : A ~ A') (eb : B ~ B'),
     A * B ~ A' * B'.
 Proof.
-  intros. apply ua in ea. apply ua in eb. destruct ea, eb.
+  intros.
+  apply ua in ea; apply ua in eb.
+  destruct ea, eb.
   apply idtoeqv. refl.
 Defined.
 
@@ -3137,20 +3073,16 @@ Lemma ex_2_17_1_2 :
   forall {A A' B B' : U} (ea : A ~ A') (eb : B ~ B'),
     A * B ~ A' * B'.
 Proof.
-  destruct 1 as [f ef], 1 as [g eg].
-  apply isequiv_qinv in ef. destruct ef as [f' [Hf1 Hf2]].
-  apply isequiv_qinv in eg. destruct eg as [g' [Hg1 Hg2]].
+  intros A A' B B' [f ef] [g eg].
+  apply isequiv_qinv in ef; destruct ef as [f' [Hf1 Hf2]].
+  apply isequiv_qinv in eg; destruct eg as [g' [Hg1 Hg2]].
   unfold equiv.
-(*  exists (fun '(a, b) => (f a, g b)).
-  apply qinv_isequiv. unfold qinv.
-  exists (fun '(a', b') => (f' a', g' b')).
-*)
   exists (fun x => (f (pr1 x), g (pr2 x))).
   apply qinv_isequiv. unfold qinv.
   exists (fun x => (f' (pr1 x), g' (pr2 x))).
   split; unfold homotopy, comp, id in *; destruct x; cbn.
-    rewrite Hf1, Hg1. refl.
-    rewrite Hf2, Hg2. refl.
+    apply prod_eq_intro. cbn. split; [apply Hf1 | apply Hg1].
+    apply prod_eq_intro. cbn. split; [apply Hf2 | apply Hg2].
 Defined.
 
 Lemma ex_2_17_1_2' :
@@ -3160,30 +3092,12 @@ Proof.
   destruct 1 as [f [[f1 Hf1] [f2 Hf2]]],
            1 as [g [[g1 Hg1] [g2 Hg2]]].
   unfold equiv.
-(*  exists (fun '(a, b) => (f a, g b)).
-  apply qinv_isequiv. unfold qinv.
-  exists (fun '(a', b') => (f' a', g' b')).
-*)
   exists (fun x => (f (pr1 x), g (pr2 x))).
   unfold isequiv. split.
     exists (fun x => (f1 (pr1 x), g1 (pr2 x))).
       compute in *. destruct x. rewrite Hf1, Hg1. refl.
     exists (fun x => (f2 (pr1 x), g2 (pr2 x))).
       compute in *. destruct x. rewrite Hf2, Hg2. refl.
-(*
-Restart.
-  intros * f g. unfold equiv.
-  exists (fun x => (pr1' f (pr1 x), pr1' g (pr2 x))).
-  unfold isequiv. split.
-    exists (fun x => (pr1' (pr1 (pr2' f)) (pr1 x), pr1' (pr1 (pr2' g)) (pr2 x))).
-      compute. destruct x, f as [f [[f1 Hf1] [f2 Hf2]]],
-                           g as [g [[g1 Hg1] [g2 Hg2]]].
-        compute in *. rewrite Hf1, Hg1. refl.
-    exists (fun x => (pr1' (pr2 (pr2' f)) (pr1 x), pr1' (pr2 (pr2' g)) (pr2 x))).
-      compute. destruct x, f as [f [[f1 Hf1] [f2 Hf2]]],
-                           g as [g [[g1 Hg1] [g2 Hg2]]].
-        compute in *. rewrite Hf2, Hg2. refl.
-*)
 Defined.
 
 Lemma aux : 
@@ -3198,25 +3112,29 @@ Proof.
     split; compute; intro; apply funext; destruct x0; refl.
 Defined.
 
+(*
+Lemma transport_funext :
+  forall {A : U} {B : A -> U} (f g : forall x : A, B x) (H : forall x : A, f x = g x)
+    (P : (forall x : A, B x) -> U) (x : P f) (y : P g),
+      transport P (funext H) x = y.
+Proof.
+  intros.
+  rewrite transportconst.
+Abort.
+*)
+
 Lemma ex_2_17_2 :
   forall (A A' B B' : U) (ea : A ~ A') (eb : B ~ B'),
-    ex_2_17_1_1 ea eb = ex_2_17_1_2 ea eb.
+    ex_2_17_1_1 ea eb = ex_2_17_1_2' ea eb.
 Proof.
   intros.
   rewrite <- (idtoeqv_ua' ea), <- (idtoeqv_ua' eb).
-  generalize (ua ea), (ua eb). destruct e, e.
-  unfold ex_2_17_1_1. rewrite 2!ua_id.
-  apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 1.
-    unfold id. apply funext. intros [a b]. cbn. refl.
-    assert ((funext
-       (fun x : A * B =>
-        match x as p return (p = (pr1 p, pr2 p)) with
-        | (a, b) => refl (a, b)
-        end)) = funext (fun x => inv (prod_uniq _ _ x))).
-      apply ap. apply funext. intros [a b]. cbn. refl.
-      rewrite X.
-      unfold id.
-      apply prod_eq_intro. cbn. split.
+  unfold ex_2_17_1_1.
+  rewrite <- !ua_idtoeqv.
+  destruct (ua ea), (ua eb).
+  apply sigma_eq_intro.
+  esplit. Unshelve. all: cycle 1.
+    cbn. apply funext. intro. apply prod_eq_intro. cbn. split; refl.
 Abort.
 
 Lemma sum_pres_equiv :
@@ -3227,16 +3145,24 @@ Proof.
   apply idtoeqv. refl.
 Defined.
 
+Lemma ua_equiv_sym' :
+  forall {A B : U} (p : A = B),
+    inv p = ua (equiv_sym _ _ (idtoeqv p)).
+Proof.
+  destruct p. cbn.
+  rewrite <- ua_id.
+  apply ap.
+  compute. refl.
+Defined.
+
 Lemma ua_equiv_sym :
   forall (A B : U) (e : A ~ B),
     ua (equiv_sym _ _ e) = inv (ua e).
 Proof.
-  intros. unfold inv. destruct (ua e).
-  rewrite ua_idtoeqv.
-  apply ap. 
-  destruct e as [f [[f1 H1] [f2 H2]]].
-  compute. apply sigma_eq_intro. esplit.
-Abort.
+  intros.
+  rewrite ua_equiv_sym', idtoeqv_ua'.
+  refl.
+Defined.
 
 Lemma sigma_pres_equiv :
   forall (A A' : U) (B : A -> U) (B' : A' -> U)
@@ -4965,17 +4891,6 @@ Proof.
     destruct x, y.
       1-3: compute; reflexivity.
       destruct p. compute.
-(* 
-  destruct x, y; cbn.
-    1-3: reflexivity.
-    apply ua. unfold equiv. esplit. Unshelve. all: cycle 1.
-      intro. exact (inv (decode_encode_option p)  ^ ap (@decode_option A (Some a) (Some a0)) X ^ decode_encode_option q).
-      apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
-        intro. exact (ap encode_option X).
-        unfold homotopy, comp, id; split.
-          destruct x, p. cbn. reflexivity.
-          intro. rewrite !ap_cat, !ap_inv, !ap_ap.
- *)
 Admitted.
 
 Definition encode_option_eq_aux'
@@ -5120,8 +5035,10 @@ Definition encode_sum_eq'
 Definition decode_sum_eq'
   {A B : U} {x y : A + B} {p q : x = y} (c : code_sum_eq' p q) : p = q.
 Proof.
-  destruct p, x; cbn in c.
-Abort.
+  destruct p, x; cbn in c. Search decode_sum encode_sum.
+    rewrite <- decode_encode_sum, <- c. cbn. reflexivity.
+    rewrite <- decode_encode_sum, <- c. cbn. reflexivity.
+Defined.
 
 Lemma sum_eq2_elim' :
   forall {A B : U} {w w' : A + B} {c c' : code_sum w w'},
@@ -5203,6 +5120,7 @@ Goal
     (r : ap pr1 p = ap pr1 q) (s : ap pr2 p = ap pr2 q),
       ap (ap pr1) (prod_eq_eq_intro (r, s)) = r.
 Proof.
+  intros.
   intros. unfold prod_eq_eq_intro.
   rewrite !ap_cat, !ap_ap, !ap_inv.
   assert (comp prod_eq_intro (ap pr1) = @pr1 (pr1 w = pr1 w') _).
@@ -5222,35 +5140,6 @@ Proof.
  destruct r, p, w. cbn.
 Abort.
 
-(*
-Goal
-  forall (A B : U) (w w' : A * B)
-  (p1 q1 : pr1 w = pr1 w') (p2 q2 : pr2 w = pr2 w')
-  (r : p1 = q1) (s : p2 = q2), U.
-Proof.
-  intros.
-  pose (p := prod_eq_intro (p1, p2)).
-  pose (q := prod_eq_intro (q1, q2)).
-  assert (r' : ap pr1 p = ap pr1 q).
-    unfold p, q. rewrite 2!prod_eq_comp_1. assumption.
-  pose (X' := internal_eq_rew_r (pr1 w = pr1 w') (ap pr1 (prod_eq_intro (p1, p2))) p1
-     (fun e : pr1 w = pr1 w' => e = ap pr1 (prod_eq_intro (q1, q2)))
-     (internal_eq_rew_r (pr1 w = pr1 w') (ap pr1 (prod_eq_intro (q1, q2)))
-        q1 (fun e : pr1 w = pr1 w' => p1 = e) r
-        (prod_eq_comp_1 A B w w' q1 q2)) (prod_eq_comp_1 A B w w' p1 p2)).
-  assert (s' : ap pr2 p = ap pr2 q).
-    unfold p, q. rewrite 2!prod_eq_comp_2. assumption.
-  pose (X'' := internal_eq_rew_r (pr2 w = pr2 w') (ap pr2 (prod_eq_intro (p1, p2))) p2
-     (fun e : pr2 w = pr2 w' => e = ap pr2 (prod_eq_intro (q1, q2)))
-     (internal_eq_rew_r (pr2 w = pr2 w') (ap pr2 (prod_eq_intro (q1, q2)))
-        q2 (fun e : pr2 w = pr2 w' => p2 = e) s
-        (prod_eq_comp_2 A B w w' q1 q2)) (prod_eq_comp_2 A B w w' p1 p2)).
-  assert ( 
-      ap (ap pr1) (prod_eq_eq_intro (r', s')) = r').
-    destruct w, w'. cbn in *. destruct r, s, p1, p2. cbn in *.
-Abort.
-*)
-
 Goal
   forall (A B : U) (w w' : A * B) (p q : w = w'),
     (p = q) = (ap pr1 p = ap pr1 q) * (ap pr2 p = ap pr2 q).
@@ -5260,6 +5149,7 @@ Proof.
   apply qinv_isequiv. unfold qinv.
   exists prod_eq_eq_intro.
   unfold homotopy, comp, id; split.
+    destruct x. cbn. destruct p, w. cbn in *.
 Abort.
 
 Lemma pi_eq_eq_intro :
@@ -5413,6 +5303,7 @@ Proof.
   induction t1; destruct t2; intro c; try (destruct c; fail).
     cbn in c. destruct c. cbn. refl.
     cbn in c. apply funext. intro v. specialize (X v (t0 v) (c v)).
+      simpl.
 Abort.
 
 Lemma term_isSet :
