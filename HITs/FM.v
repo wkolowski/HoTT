@@ -147,10 +147,10 @@ Axiom FM_ind_op_assoc :
 
 End FreeMon.
 
+Import FreeMon.
+
 Require Import List.
 Import ListNotations.
-
-Import FreeMon.
 
 Lemma f :
   forall {A : Type} (x : FM A), list A.
@@ -162,6 +162,54 @@ Proof.
           []
           _ _ _ x).
     cbn. refl.
+    induction x0; cbn.
+      refl.
+      apply ap. assumption.
+    induction x0; cbn.
+      refl.
+      intros. apply ap. apply IHx0.
+Defined.
+
+Fixpoint g {A : Type} (l : list A) : FM A :=
+match l with
+    | nil => id
+    | cons h t => op (i h) (g t)
+end.
+
+Lemma g_app :
+  forall {A : Type} (l1 l2 : list A),
+    g (app l1 l2) = op (g l1) (g l2).
+Proof.
+  induction l1 as [| h1 t1]; cbn; intros.
+    apply inv. apply op_id_l.
+    rewrite op_assoc. apply ap. apply IHt1.
+Defined.
+
+Definition ap2 {A B C : Type} (f : A -> B -> C) {a a' : A} {b b' : B} (p : a = a') (q : b = b') : f a b = f a' b' :=
+match p, q with
+    | refl _, refl _ => refl _
+end.
+
+Lemma fg :
+  forall {A : Type} (x : FM A),
+    g (f x) = x.
+Proof.
+  intro.
+  refine (FM_ind _ _ _ _ _ _).
+  Unshelve. 2-6: cycle 3.
+    cbn. intros. apply op_id_r.
+    intros. change (f (op x y)) with (app (f x) (f y)).
+      exact (cat (g_app (f x) (f y)) (ap2 op X X0)).
+    cbn. refl.
+    2: { intros. rewrite transport_eq_fun_dep. admit. }
     admit.
     admit.
 Admitted.
+
+Lemma gf :
+  forall {A : Type} (l : list A),
+    f (g l) = l.
+Proof.
+  induction l as [| h t].
+    refl.
+    change (app (f (i h)) (f (g t)) = cons h t).
