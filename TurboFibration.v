@@ -1,3 +1,4 @@
+(*
 Require Export HoTT.
 
 Local Set Default Proof Mode "Classic".
@@ -113,3 +114,4 @@ Proof.
       cbn. reflexivity.
     }
 Defined.
+*)

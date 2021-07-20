@@ -213,3 +213,4 @@ Proof.
   induction l as [| h t].
     refl.
     change (app (f (i h)) (f (g t)) = cons h t).
+Abort.
