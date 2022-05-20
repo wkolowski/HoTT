@@ -16,7 +16,7 @@ Class Codomain (B : U) : U :=
     Cf : CE -> B;
 }.
 
-#[refine]
+#[refine, export]
 Instance f {B : U} (P : B -> U) : Codomain B :=
 {|
     CE := {b : B & P b};
