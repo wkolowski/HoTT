@@ -406,7 +406,7 @@ The name ``separated'' comes from the contraposition of this statement: if the p
 
 1. If $A$ and $B$ are $\Separated{S}$, then $A + B$ is $\Separated{S}$.
 
-2. If $A$ and $B$ are pointed and $\Separated{S}$, then $\prodt{A}{B}$ is $\Separated{S}$.
+2. If $A$ and $B$ are $\Separated{S}$, then $\prodt{A}{B}$ is $\Separated{S}$.
 
 3. If $A$ is pointed and $\Separated{S}$ and $B : A \to \U$ is a family of pointed $\Separated{S}$ types, then $\dsum{x : A}{\apl{B}{x}}$ is $\Separated{S}$.
 
@@ -414,11 +414,17 @@ The name ``separated'' comes from the contraposition of this statement: if the p
 
 5. $A$ is $\Separated{A}$.
 
+6. If $A + B$ is $\Separated{S}$, then $A$ and $B$ are $\Separated{S}$.
+
+7. If $\prodt{A}{B}$ is $\Separated{S}$ and $B$ is pointed, then $A$ is $\Separated{S}$.
+
+7'. If $\prodt{A}{B}$ is $\Separated{S}$ and $A$ is pointed, then $B$ is $\Separated{S}$.
+
 \end{theorem}
 \begin{proof}
 1. Assume $x, y : A + B$ and $\dprod{p : A + B \to S}{\apl{p}{x} = \apl{p}{y}}$. We inspect the form of $x$ and $y$. If they are of the form $\apl{\inl}{a}$ and $\apl{\inl}{a'}$, then we can get a path from the separatedness of $A$ (if there was a predicate that can distinguish $a$ and $a'$, we could turn it into a predicate for distinguishing $x$ and $y$, a contradiction). Similarly for $\inr$. If $x$ is $\inl$ and $y$ is $\inr$ (or the other way around), then we get a contradiction, because we can make a predicate that distinguishes them.
 
-2. Assume $x \equiv (a, b) : \prodt{A}{B}$ and $y \equiv (a', b') : \prodt{A}{B}$ and $\dprod{p : \prodt{A}{B} \to S}{\apl{p}{x} = \apl{p}{y}}$. We need to make a path $(a, b) = (a', b')$ for which we need paths $a = a'$ and $b = b'$. We can get $a = a'$ from the separatedness of $A$ using the basepoint of $B$ (and analogously for $B$).
+2. We are given $(a, b) : \prodt{A}{B}$ and $(a', b') : \prodt{A}{B}$ and $H : \dprod{p : \prodt{A}{B} \to S}{\apl{p}{(a, b)} = \apl{p}{(a', b')}}$ and we need to construct a path $(a, b) = (a', b')$. It suffices to construct paths $a = a'$ and $b = b'$. To construct $a = a'$, we use the $\Separated{S}$ness of $A$. We are given $p : A \to S$ and we need to prove $\apl{p}{a} = \apl{p}{a'}$. We define $\apl{q}{(x, \_)} \defn \apl{p}{x}$. We have $\apl{H}{q} : \apl{q}{(a, b)} = \apl{q}{(a', b')}$ which computes to $\apl{p}{a} = \apl{p}{a'}$ as desired. Analogous reasoning shows that $b = b'$. Thus $(a, b) = (a', b')$ and $\prodt{A}{B}$ indeed is $\Separated{S}$.
 
 3. Similar to (2).
 
@@ -437,6 +443,12 @@ Then $\apl{H}{q}$ gives us $\apl{q}{f} = \apl{q}{g}$ which amounts to $\apl{p}{(
 \end{proof}
 
 Having seen these instances we may start to wonder if there are any concrete types that are separable using some other concrete types. First we will establish which types are good for separating and then we'll see some separated types.
+
+6. Assume that $\sumt{A}{B}$ is $\Separated{S}$. We are given $x, y : A$ and $H : \dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}}$ and we need to construct a path $x = y$. It suffices to show $\apl{inl}{x} = \apl{inl}{y}$. We can get that from the $\Separated{S}$-ness of $A$. Now we are given $p : \sumt{A}{B} \to S$ and we need to show that $\apl{p}{(\apl{inl}{x})} = \apl{p}{(\apl{inl}{y})}$. Let $\apl{q}{x} \defn \apl{p}{(\apl{inl}{x})}$. We have $\apl{H}{q} : \apl{q}{x} = \apl{q}{y}$ which computes to $\apl{p}{(\apl{inl}{x})} = \apl{p}{(\apl{inl}{y})}$ as desired. Therefore $A$ is indeed $\Separated{S}$. An analogous reasoning applies for $B$.
+
+7. Assume that $\prodt{A}{B}$ is $\Separated{S}$ and $B$ is pointed. We are given $x, y : A$ and $H : \dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}}$ and we need to construct a path $x = y$. It suffices to prove $(x, b) = (y, b)$, where $b$ is the basepoint of $B$. We can use the $\Separated{S}$-ness of $\prodt{A}{B}$ for that. Now we are given $p : \prodt{A}{B} \to S$ and we need to prove $\apl{p}{(x, b)} = \apl{p}{(y, b)}$. Let $\apl{q}{x} \defn \apl{p}{(x, b)}$. We have $\apl{H}{q} : \apl{q}{x} = \apl{q}{y}$ which computes to $\apl{p}{(x, b)} = \apl{p}{(y, b)}$ as desired. Therefore $A$ indeed is $\Separated{S}$.
+
+7'. Analogous to (7).
 
 \begin{theorem} Silly separatedness
 
