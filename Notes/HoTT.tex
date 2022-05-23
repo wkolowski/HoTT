@@ -154,7 +154,7 @@ $\displaystyle \apl{\MerelySearchable}{A} \defn \all{p : A \to \Bool}{\(\ex{x : 
 In words: a type is merely searchable if we can decide whether there merely exists an element that satisfies the given boolean predicate $p$, but in general there is no way to find such an element.
 
 \begin{theorem}
-$\apl{\isProp}{(\MerelySearchable{A})}$
+$\apl{\isProp}{(\apl{\MerelySearchable}{A})}$
 \end{theorem}
 \begin{proof}
 We use the truncated logic.
@@ -408,17 +408,15 @@ The name ``separated'' comes from the contraposition of this statement: if the p
 
 2. If $A$ and $B$ are $\Separated{S}$, then $\prodt{A}{B}$ is $\Separated{S}$.
 
-3. If $A$ is pointed and $\Separated{S}$ and $B : A \to \U$ is a family of pointed $\Separated{S}$ types, then $\dsum{x : A}{\apl{B}{x}}$ is $\Separated{S}$.
+3. If $B : A \to \U$ is a family of $\Separated{S}$ types, then $\dprod{x : A}{\apl{B}{x}}$ is $\Separated{S}$.
 
-4. If $B : A \to \U$ is a family of $\Separated{S}$ types, then $\dprod{x : A}{\apl{B}{x}}$ is $\Separated{S}$.
+4. $A$ is $\Separated{A}$.
 
-5. $A$ is $\Separated{A}$.
+5. If $A + B$ is $\Separated{S}$, then $A$ and $B$ are $\Separated{S}$.
 
-6. If $A + B$ is $\Separated{S}$, then $A$ and $B$ are $\Separated{S}$.
+6. If $\prodt{A}{B}$ is $\Separated{S}$ and $B$ is pointed, then $A$ is $\Separated{S}$.
 
-7. If $\prodt{A}{B}$ is $\Separated{S}$ and $B$ is pointed, then $A$ is $\Separated{S}$.
-
-7'. If $\prodt{A}{B}$ is $\Separated{S}$ and $A$ is pointed, then $B$ is $\Separated{S}$.
+6'. If $\prodt{A}{B}$ is $\Separated{S}$ and $A$ is pointed, then $B$ is $\Separated{S}$.
 
 \end{theorem}
 \begin{proof}
@@ -426,9 +424,7 @@ The name ``separated'' comes from the contraposition of this statement: if the p
 
 2. We are given $(a, b) : \prodt{A}{B}$ and $(a', b') : \prodt{A}{B}$ and $H : \dprod{p : \prodt{A}{B} \to S}{\apl{p}{(a, b)} = \apl{p}{(a', b')}}$ and we need to construct a path $(a, b) = (a', b')$. It suffices to construct paths $a = a'$ and $b = b'$. To construct $a = a'$, we use the $\Separated{S}$ness of $A$. We are given $p : A \to S$ and we need to prove $\apl{p}{a} = \apl{p}{a'}$. We define $\apl{q}{(x, \_)} \defn \apl{p}{x}$. We have $\apl{H}{q} : \apl{q}{(a, b)} = \apl{q}{(a', b')}$ which computes to $\apl{p}{a} = \apl{p}{a'}$ as desired. Analogous reasoning shows that $b = b'$. Thus $(a, b) = (a', b')$ and $\prodt{A}{B}$ indeed is $\Separated{S}$.
 
-3. Similar to (2).
-
-4. Assume we have $f, g : \dprod{x : A}{\apl{B}{x}}$ and $H : \dprod{p}{\apl{p}{f} = \apl{p}{g}}$. We need to make a path $f = g$ which amounts to $\apl{f}{a} = \apl{g}{a}$ for all $a : A$. We can use the separatedness of $\apl{B}{a}$ for this. It remains to prove that given $p : \apl{B}{a} \to S$, we have $\apl{p}{(\apl{f}{a})} = \apl{p}{(\apl{g}{a})}$. Let's define \\
+3. Assume we have $f, g : \dprod{x : A}{\apl{B}{x}}$ and $H : \dprod{p}{\apl{p}{f} = \apl{p}{g}}$. We need to make a path $f = g$ which amounts to $\apl{f}{a} = \apl{g}{a}$ for all $a : A$. We can use the separatedness of $\apl{B}{a}$ for this. It remains to prove that given $p : \apl{B}{a} \to S$, we have $\apl{p}{(\apl{f}{a})} = \apl{p}{(\apl{g}{a})}$. Let's define \\
 
 \begin{center}
 \begin{tabular}{l}
@@ -439,16 +435,16 @@ $\apl{q}{h} \defn \apl{p}{(\apl{h}{a})}$
 
 Then $\apl{H}{q}$ gives us $\apl{q}{f} = \apl{q}{g}$ which amounts to $\apl{p}{(\apl{f}{a})} = \apl{p}{(\apl{g}{a})}$ -- exactly what we needed to prove.
 
-5. Given $x, y : A$ and $H : \dprod{p : A \to A}{\apl{p}{x} = \apl{p}{y}}$, we need $x = y$. We can get it easily using $\apl{H}{\id}$.
+4. Given $x, y : A$ and $H : \dprod{p : A \to A}{\apl{p}{x} = \apl{p}{y}}$, we need $x = y$. We can get it easily using $\apl{H}{\id}$.
 \end{proof}
 
 Having seen these instances we may start to wonder if there are any concrete types that are separable using some other concrete types. First we will establish which types are good for separating and then we'll see some separated types.
 
-6. Assume that $\sumt{A}{B}$ is $\Separated{S}$. We are given $x, y : A$ and $H : \dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}}$ and we need to construct a path $x = y$. It suffices to show $\apl{inl}{x} = \apl{inl}{y}$. We can get that from the $\Separated{S}$-ness of $A$. Now we are given $p : \sumt{A}{B} \to S$ and we need to show that $\apl{p}{(\apl{inl}{x})} = \apl{p}{(\apl{inl}{y})}$. Let $\apl{q}{x} \defn \apl{p}{(\apl{inl}{x})}$. We have $\apl{H}{q} : \apl{q}{x} = \apl{q}{y}$ which computes to $\apl{p}{(\apl{inl}{x})} = \apl{p}{(\apl{inl}{y})}$ as desired. Therefore $A$ is indeed $\Separated{S}$. An analogous reasoning applies for $B$.
+5. Assume that $\sumt{A}{B}$ is $\Separated{S}$. We are given $x, y : A$ and $H : \dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}}$ and we need to construct a path $x = y$. It suffices to show $\apl{inl}{x} = \apl{inl}{y}$. We can get that from the $\Separated{S}$-ness of $A$. Now we are given $p : \sumt{A}{B} \to S$ and we need to show that $\apl{p}{(\apl{inl}{x})} = \apl{p}{(\apl{inl}{y})}$. Let $\apl{q}{x} \defn \apl{p}{(\apl{inl}{x})}$. We have $\apl{H}{q} : \apl{q}{x} = \apl{q}{y}$ which computes to $\apl{p}{(\apl{inl}{x})} = \apl{p}{(\apl{inl}{y})}$ as desired. Therefore $A$ is indeed $\Separated{S}$. An analogous reasoning applies for $B$.
 
-7. Assume that $\prodt{A}{B}$ is $\Separated{S}$ and $B$ is pointed. We are given $x, y : A$ and $H : \dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}}$ and we need to construct a path $x = y$. It suffices to prove $(x, b) = (y, b)$, where $b$ is the basepoint of $B$. We can use the $\Separated{S}$-ness of $\prodt{A}{B}$ for that. Now we are given $p : \prodt{A}{B} \to S$ and we need to prove $\apl{p}{(x, b)} = \apl{p}{(y, b)}$. Let $\apl{q}{x} \defn \apl{p}{(x, b)}$. We have $\apl{H}{q} : \apl{q}{x} = \apl{q}{y}$ which computes to $\apl{p}{(x, b)} = \apl{p}{(y, b)}$ as desired. Therefore $A$ indeed is $\Separated{S}$.
+6. Assume that $\prodt{A}{B}$ is $\Separated{S}$ and $B$ is pointed. We are given $x, y : A$ and $H : \dprod{p : A \to S}{\apl{p}{x} = \apl{p}{y}}$ and we need to construct a path $x = y$. It suffices to prove $(x, b) = (y, b)$, where $b$ is the basepoint of $B$. We can use the $\Separated{S}$-ness of $\prodt{A}{B}$ for that. Now we are given $p : \prodt{A}{B} \to S$ and we need to prove $\apl{p}{(x, b)} = \apl{p}{(y, b)}$. Let $\apl{q}{x} \defn \apl{p}{(x, b)}$. We have $\apl{H}{q} : \apl{q}{x} = \apl{q}{y}$ which computes to $\apl{p}{(x, b)} = \apl{p}{(y, b)}$ as desired. Therefore $A$ indeed is $\Separated{S}$.
 
-7'. Analogous to (7).
+6'. Analogous to (7).
 
 \begin{theorem} Silly separatedness
 
