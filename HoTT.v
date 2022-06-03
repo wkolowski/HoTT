@@ -1,4 +1,4 @@
-(* Required in 8.8.1 to make Ltac work with the -noinit option. *)
+(* We run CoqIDe with the -noinit option, so we need to enable [Ltac] manually. *)
 Declare ML Module "ltac_plugin".
 Set Default Proof Mode "Classic".
 

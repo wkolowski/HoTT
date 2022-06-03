@@ -1,4 +1,4 @@
-Require Export HoTT.
+From HoTT Require Export HoTT.
 
 Local Set Default Proof Mode "Classic".
 

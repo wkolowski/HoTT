@@ -1,5 +1,4 @@
-(*
-Require Export HoTT.
+From HoTT Require Export HoTT.
 
 Local Set Default Proof Mode "Classic".
 
@@ -17,6 +16,7 @@ Arguments domp {A B f b} _.
 Definition fiber {A B : U} (f : A -> B) (b : B) : U :=
   {a : A & f a = b}.
 
+(*
 Class Codomain (B : U) (P : U -> U) : U :=
 {
     E : U;

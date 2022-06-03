@@ -1,4 +1,7 @@
-Require Export HoTT.
+Require Import List.
+Import ListNotations.
+
+From HoTT Require Export HoTT.
 
 Local Set Default Proof Mode "Classic".
 
@@ -148,9 +151,6 @@ Axiom FM_ind_op_assoc :
 End FreeMon.
 
 Import FreeMon.
-
-Require Import List.
-Import ListNotations.
 
 Lemma f :
   forall {A : Type} (x : FM A), list A.
