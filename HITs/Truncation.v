@@ -7,7 +7,7 @@ Set Universe Polymorphism.
 Module Tr.
 
 Private Inductive Tr (A : Type) : Type :=
-    | tr : A -> Tr A.
+| tr : A -> Tr A.
 
 Axiom isProp_Tr : forall {A : Type} (x y : Tr A), x = y.
 
@@ -15,7 +15,7 @@ Arguments tr {A} _.
 
 Definition Tr_rec {A B : Type} (f : A -> B) (p : forall x y : A, f x = f y) (t : Tr A) :=
 match t with
-    | tr a => f a
+| tr a => f a
 end.
 
 Axiom Tr_rec_comp :
@@ -28,7 +28,7 @@ Definition Tr_ind
   (p : forall x y : A, transport _ (isProp_Tr (tr x) (tr y)) (f x) = f y)
   (t : Tr A) : B t :=
 match t with
-    | tr a => f a
+| tr a => f a
 end.
 
 Axiom Tr_ind_comp :

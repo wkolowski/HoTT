@@ -7,7 +7,7 @@ Set Universe Polymorphism.
 Module Circle.
 
 Private Inductive Circle : Type :=
-    | base : Circle.
+| base : Circle.
 
 Axiom loop : base = base.
 
@@ -24,7 +24,7 @@ Definition Circle_ind
   (b : P base) (l : transport _ loop b = b)
   (c : Circle) : P c :=
 match c with
-    | base => b
+| base => b
 end.
 
 Axiom Circle_ind_loop :
@@ -36,8 +36,8 @@ End Circle.
 Module WeirdCircle.
 
 Private Inductive WeirdCircle : Type :=
-    | N : WeirdCircle
-    | S : WeirdCircle.
+| N : WeirdCircle
+| S : WeirdCircle.
 
 Axiom NS : N = S.
 Axiom SN : S = N.
@@ -45,8 +45,8 @@ Axiom SN : S = N.
 Definition WeirdCircle_rec
   {P : Type} (n s : P) (ns : n = s) (sn : s = n) (c : WeirdCircle) : P :=
 match c with
-    | N => n
-    | S => s
+| N => n
+| S => s
 end.
 
 Axiom WeirdCircle_rec_NS :
@@ -63,8 +63,8 @@ Definition WeirdCircle_ind
   (ns : transport _ NS n = s) (sn : transport _ SN s = n)
   (c : WeirdCircle) : P c :=
 match c with
-    | N => n
-    | S => s
+| N => n
+| S => s
 end.
 
 Axiom WeirdCircle_ind_NS :

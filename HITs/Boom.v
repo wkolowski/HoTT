@@ -7,10 +7,10 @@ Local Set Default Proof Mode "Classic".
 Set Universe Polymorphism.
 
 Inductive Law : Type :=
-    | Id
-    | Assoc
-    | Comm
-    | Idem.
+| Id
+| Assoc
+| Comm
+| Idem.
 
 Definition Laws : Type := Law -> bool.
 
@@ -30,9 +30,9 @@ Definition CommutativeMonoid (f : Law -> bool) : bool :=
 Module Boom.
 
 Private Inductive Boom (A : Type) (f : Law -> bool) : Type :=
-    | i  : A -> Boom A f
-    | op : Boom A f -> Boom A f -> Boom A f
-    | id : Squash (f Id = true) -> Boom A f.
+| i  : A -> Boom A f
+| op : Boom A f -> Boom A f -> Boom A f
+| id : Squash (f Id = true) -> Boom A f.
 
 Arguments i  {A f} _.
 Arguments op {A f} _ _.
@@ -77,10 +77,10 @@ Fixpoint Boom_rec
   (idem'  : forall (s : Squash (f Idem  = true)) (x     : P), op' x x = x)
   (x : Boom A f) : P :=
 match x with
-    | i a => i' a
-    | op a b => op' (Boom_rec i' op' id' idl' idr' assoc' comm' idem' a)
-                    (Boom_rec i' op' id' idl' idr' assoc' comm' idem' b)
-    | id s => id' s
+| i a => i' a
+| op a b => op' (Boom_rec i' op' id' idl' idr' assoc' comm' idem' a)
+                (Boom_rec i' op' id' idl' idr' assoc' comm' idem' b)
+| id s => id' s
 end.
 
 Axiom Boom_rec_idl :
@@ -192,10 +192,10 @@ Fixpoint Boom_ind
               transport _ (idem s x) (op' px px) = px)
   (x : Boom A f) : P x :=
 match x with
-    | i a    => i' a
-    | op a b => op' (Boom_ind i' (@op') id' idl' idr' assoc' comm' idem' a)
-                    (Boom_ind i' (@op') id' idl' idr' assoc' comm' idem' b)
-    | id s   => id' s
+| i a    => i' a
+| op a b => op' (Boom_ind i' (@op') id' idl' idr' assoc' comm' idem' a)
+                (Boom_ind i' (@op') id' idl' idr' assoc' comm' idem' b)
+| id s   => id' s
 end.
 
 Axiom Boom_ind_idl :

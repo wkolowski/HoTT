@@ -6,20 +6,20 @@ Set Universe Polymorphism.
 
 Record fiber {A B : U} (f : A -> B) (b : B) : U :=
 {
-    aa : A;
-    f_aa : f aa = b;
+  aa : A;
+  f_aa : f aa = b;
 }.
 
 Class Codomain (B : U) : U :=
 {
-    CE : U;
-    Cf : CE -> B;
+  CE : U;
+  Cf : CE -> B;
 }.
 
 #[refine, export]
 Instance f {B : U} (P : B -> U) : Codomain B :=
 {|
-    CE := {b : B & P b};
+  CE := {b : B & P b};
 |}.
 Proof.
   destruct 1 as [b _]. exact b.
@@ -34,10 +34,10 @@ Defined.
 
 Record Iso (A B : U) : U :=
 {
-    coe   : A -> B;
-    uncoe : B -> A;
-    coe_uncoe : forall a : A, uncoe (coe a) = a;
-    uncoe_coe : forall b : B, coe (uncoe b) = b;
+  coe   : A -> B;
+  uncoe : B -> A;
+  coe_uncoe : forall a : A, uncoe (coe a) = a;
+  uncoe_coe : forall b : B, coe (uncoe b) = b;
 }.
 
 Axiom funext : forall {A B : U} (f g : A -> B), (forall x : A, f x = g x) -> f = g.

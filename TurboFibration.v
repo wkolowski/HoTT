@@ -6,8 +6,8 @@ Set Universe Polymorphism.
 
 (* Record fiber {A B : U} (f : A -> B) (b : B) : U :=
 {
-    domp : A;
-    domp_spec : f domp = b;
+  domp : A;
+  domp_spec : f domp = b;
 }.
 
 Arguments domp {A B f b} _.
@@ -19,16 +19,15 @@ Definition fiber {A B : U} (f : A -> B) (b : B) : U :=
 (*
 Class Codomain (B : U) (P : U -> U) : U :=
 {
-    E : U;
-    pr : E -> B;
-    spec : forall b : B, fiber (comp pr b);
+  E : U;
+  pr : E -> B;
+  spec : forall b : B, fiber (comp pr b);
 }.
 
 #[refine]
 Instance wut {B : Type} (P : Type -> Type) (f : B -> {A : Type & P A}) : Codomain B P :=
 {|
-(*     E := {b : B & P (pr1' (f b))}; *)
-    E := {x : {A : Type  & P A} & fiber f x};
+  E := {x : {A : Type  & P A} & fiber f x};
 |}.
 Proof.
   intro x. exact (pr1' (pr2' x)).
@@ -51,10 +50,10 @@ Defined.
 
 Record Iso (A B : U) : U :=
 {
-    coe   : A -> B;
-    uncoe : B -> A;
-    coe_uncoe : forall a : A, uncoe (coe a) = a;
-    uncoe_coe : forall b : B, coe (uncoe b) = b;
+  coe   : A -> B;
+  uncoe : B -> A;
+  coe_uncoe : forall a : A, uncoe (coe a) = a;
+  uncoe_coe : forall b : B, coe (uncoe b) = b;
 }.
 
 Axiom funext : forall {A B : U} (f g : A -> B), (forall x : A, f x = g x) -> f = g.

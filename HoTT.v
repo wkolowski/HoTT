@@ -26,7 +26,7 @@ Definition swap {A B C : U} (f : A -> B -> C) : B -> A -> C :=
 (** ** 1.12 Identity types *)
 
 Inductive eq {A : U} (x : A) : A -> U :=
-    | refl : eq x x.
+| refl : eq x x.
 
 Arguments refl {A} _.
 
@@ -37,7 +37,7 @@ Ltac refl := intros; apply refl.
 (** ** 1.5 Product types *)
 
 Inductive prod (A B : U) : U :=
-    | pair : A -> B -> prod A B.
+| pair : A -> B -> prod A B.
 
 Arguments pair {A B} _ _.
 
@@ -48,24 +48,24 @@ Notation "( x , y , .. , z )" := (pair .. (pair x y) .. z).
 
 Ltac hsplit :=
 match goal with
-    | |- ?A * ?B =>
+| |- ?A * ?B =>
         assert (a : A); [idtac |  assert (b : B); [idtac | apply (a, b)]]
 end.
 
 Definition pr1 {A B : U} (x : A * B) : A :=
 match x with
-    | (a, _) => a
+| (a, _) => a
 end.
 
 Definition pr2 {A B : U} (x : A * B) : B :=
 match x with
-    | (_, b) => b
+| (_, b) => b
 end.
 
 Definition prod_rec' {A B C : U}
   (f : A -> B -> C) (p : A * B) : C :=
 match p with
-    | (a, b) => f a b
+| (a, b) => f a b
 end.
 
 Definition pr1_rec {A B : U} (x : A * B) : A :=
@@ -84,22 +84,22 @@ Defined.
 Definition prod_ind' {A B : U} {C : A * B -> U}
   (f : forall (a : A) (b : B), C (a, b)) (x : A * B) : C x :=
 match x with
-    | (a, b) => f a b
+| (a, b) => f a b
 end.
 
 (** *** [unit] *)
 
 Inductive unit : U :=
-    | tt : unit.
+| tt : unit.
 
 Definition unit_rec' {C : U} (c : C) (u : unit) : C :=
 match u with
-    | tt => c
+| tt => c
 end.
 
 Definition unit_ind' {C : unit -> U} (c : C tt) (u : unit) : C u :=
 match u with
-    | tt => c
+| tt => c
 end.
 
 Lemma unit_uniq :
@@ -111,7 +111,7 @@ Defined.
 (** ** 1.6 Dependent pair types (Σ-types) *)
 
 Inductive sigma {A : U} (B : A -> U) : U :=
-    | dpair : forall x : A, B x -> sigma B.
+| dpair : forall x : A, B x -> sigma B.
 
 Arguments dpair {A B} _ _.
 
@@ -127,26 +127,26 @@ Notation "(| x , y , .. , z |)" := (dpair .. (dpair x y) .. z).
 
 Definition pr1' {A : U} {B : A -> U} (x : {a : A & B a}) : A :=
 match x with
-    | (|a, _|) => a
+| (|a, _|) => a
 end.
 
 Definition pr2' {A : U} {B : A -> U} (x : {a : A & B a}) : B (pr1' x) :=
 match x with
-    | (|_, b|) => b
+| (|_, b|) => b
 end.
 
 Definition sigma_rec'
   {A : U} {B : A -> U} {C : U}
   (f : forall x : A, B x -> C) (x : {a : A & B a}) : C :=
 match x with
-    | (|a, b|) => f a b
+| (|a, b|) => f a b
 end.
 
 Definition sigma_ind'
   {A : U} {B : A -> U} {C : {a : A & B a} -> U}
   (f : forall (a : A) (b : B a), C (|a, b|)) (x : {a : A & B a}) : C x :=
 match x with
-    | (|a, b|) => f a b
+| (|a, b|) => f a b
 end.
 
 Lemma ac :
@@ -168,8 +168,8 @@ Definition PointedMagma : U :=
 (** ** 1.7 Coproduct types *)
 
 Inductive coprod (A B : U) : U :=
-    | inl : A -> coprod A B
-    | inr : B -> coprod A B.
+| inl : A -> coprod A B
+| inr : B -> coprod A B.
 
 Arguments inl {A B} _.
 Arguments inr {A B} _.
@@ -179,8 +179,8 @@ Notation "A + B" := (coprod A B) (at level 50, left associativity).
 Definition coprod_rec'
   {A B C : U} (f : A -> C) (g : B -> C) (x : A + B) : C :=
 match x with
-    | inl a => f a
-    | inr b => g b
+| inl a => f a
+| inr b => g b
 end.
 
 Definition coprod_ind'
@@ -189,8 +189,8 @@ Definition coprod_ind'
   (g : forall b : B, C (inr b))
   (x : A + B) : C x :=
 match x with
-    | inl a => f a
-    | inr b => g b
+| inl a => f a
+| inr b => g b
 end.
 
 (** *** [empty] *)
@@ -206,8 +206,8 @@ Definition empty_ind' {C : empty -> U} (x : empty) : C x :=
 (** ** 1.8 The type of booleans *)
 
 Inductive bool : U :=
-    | true : bool
-    | false : bool.
+| true : bool
+| false : bool.
 
 Definition bool_rec'
   {C : U} (c1 c2 : C) (b : bool) : C :=
@@ -216,8 +216,8 @@ Definition bool_rec'
 Definition bool_ind'
   {C : bool -> U} (ct : C true) (cf : C false) (b : bool) : C b :=
 match b with
-    | true => ct
-    | false => cf
+| true => ct
+| false => cf
 end.
 
 Lemma bool_dec :
@@ -237,27 +237,27 @@ Defined.
 (** ** 1.9 The natural numbers *)
 
 Inductive N : U :=
-    | O : N
-    | S : N -> N.
+| O : N
+| S : N -> N.
 
 Notation "0" := O.
 
 Fixpoint double (n : N) : N :=
 match n with
-    | 0 => 0
-    | S n' => S (S (double n'))
+| 0 => 0
+| S n' => S (S (double n'))
 end.
 
 Fixpoint add (n m : N) : N :=
 match n with
-    | 0 => m
-    | S n' => S (add n' m)
+| 0 => m
+| S n' => S (add n' m)
 end.
 
 Fixpoint N_rec' {C : U} (c0 : C) (cS : N -> C -> C) (n : N) : C :=
 match n with
-    | 0 => c0
-    | S n' => cS n' (N_rec' c0 cS n')
+| 0 => c0
+| S n' => cS n' (N_rec' c0 cS n')
 end.
 
 Fixpoint N_ind'
@@ -265,8 +265,8 @@ Fixpoint N_ind'
   (cS : forall n : N, C n -> C (S n))
   (n : N) : C n :=
 match n with
-    | 0 => c0
-    | S n' => cS n' (N_ind' C c0 cS n')
+| 0 => c0
+| S n' => cS n' (N_ind' C c0 cS n')
 end.
 
 Lemma double_rec :
@@ -335,14 +335,14 @@ Definition lt (n m : N) : U :=
 Definition indiscernability
   {A : U} {C : A -> U} {x y : A} (p : x = y) (cx : C x) : C y :=
 match p with
-    | refl _ => cx
+| refl _ => cx
 end.
 
 Definition path_ind
   {A : U} {C : forall x y : A, x = y -> U}
   (c : forall x : A, C x x (refl x)) (x y : A) (p : x = y) : C x y p :=
 match p with
-    | refl _ => c x
+| refl _ => c x
 end.
 
 Notation "'J'" := path_ind (only parsing).
@@ -351,7 +351,7 @@ Definition based_path_ind
   {A : U} {a : A} {C : forall x : A, a = x -> U}
   (c : C a (refl a)) (x : A) (p : a = x) : C x p :=
 match p with
-    | refl _ => c
+| refl _ => c
 end.
 
 Lemma mystery :
@@ -440,14 +440,14 @@ Proof. refl. Defined.
 (** **** Ex. 1.4 *)
 Fixpoint iter (C : U) (c0 : C) (cs : C -> C) (n : N) : C :=
 match n with
-    | 0 => c0
-    | S n' => cs (iter C c0 cs n')
+| 0 => c0
+| S n' => cs (iter C c0 cs n')
 end.
 
 Definition pred (n : N) : N :=
 match n with
-    | 0 => 0
-    | S n' => n'
+| 0 => 0
+| S n' => n'
 end.
 
 Definition rec (C : U) (c0 : C) (cs : N -> C -> C) (n : N) : C :=
@@ -647,8 +647,8 @@ Lemma exp_0_l :
   forall n : N,
     exp 0 n =
     match n with
-        | 0 => 1
-        | _ => 0
+    | 0 => 1
+    | _ => 0
     end.
 Proof.
   destruct n; cbn.
@@ -687,13 +687,13 @@ Defined.
 
 (** **** Ex. 1.9 *)
 Inductive Fin : N -> U :=
-    | Fin_1 : Fin (S 0)
-    | Fin_SS : forall n : N, Fin (S n) -> Fin (S (S n)).
+| Fin_1 : Fin (S 0)
+| Fin_SS : forall n : N, Fin (S n) -> Fin (S (S n)).
 
 Fixpoint fmax (n : N) : Fin (S n) :=
 match n with
-    | 0 => Fin_1
-    | S n' => Fin_SS n' (fmax n')
+| 0 => Fin_1
+| S n' => Fin_SS n' (fmax n')
 end.
 
 Notation "1" := (S 0).
@@ -711,11 +711,11 @@ Definition ack : N -> N -> N :=
 
 Fixpoint ack' (m : N) : N -> N :=
 match m with
-    | 0 => S
-    | S m' => fix f (n : N) : N :=
+| 0 => S
+| S m' => fix f (n : N) : N :=
         match n with
-            | 0 => ack' m' 1
-            | S n' => ack' m' (f n')
+        | 0 => ack' m' 1
+        | S n' => ack' m' (f n')
         end
 end.
 
@@ -790,13 +790,13 @@ Defined.
 (* Lemma 2.1.1 *)
 Definition inv {A : U} {x y : A} (p : x = y) : y = x :=
 match p with
-    | refl _ => refl x
+| refl _ => refl x
 end.
 
 (* Lemma 2.1.2 *)
 Definition cat {A : U} {x y z : A} (p : x = y) (q : y = z) : x = z :=
 match p, q with
-    | refl _, refl _ => refl x
+| refl _, refl _ => refl x
 end.
 
 (* Lemma 2.1.4 *)
@@ -859,15 +859,15 @@ Definition Pointed : U := {A : U & A}.
 
 Definition loopspace (A : Pointed) : Pointed :=
 match A with
-    | (| _, a |) => (| a = a, refl a |)
+| (| _, a |) => (| a = a, refl a |)
 end.
 
 Definition loopspace (A : U) (a : A) : U := a = a.
 
 Fixpoint nfold_loopspace (n : N) (A : U) (a : A) : U :=
 match n with
-    | 0 => loopspace A a
-    | S n' => nfold_loopspace n' (loopspace A a) (refl a)
+| 0 => loopspace A a
+| S n' => nfold_loopspace n' (loopspace A a) (refl a)
 end.
 *)
 
@@ -906,7 +906,7 @@ Definition horizontal_comp'
 Lemma wut :
   forall (A : U) (x y : A) (p q : x = y) (alfa : p = q),
     match alfa in (_ = q) return (p = q) with
-        | refl _ => refl p
+    | refl _ => refl p
     end
     = alfa.
 Proof.
@@ -957,7 +957,7 @@ End Eckmann_Hilton.
 (* Lemma 2.2.1 *)
 Definition ap {A B : U} (f : A -> B) {x y : A} (p : x = y) : f x = f y :=
 match p with
-    | refl _ => refl (f x)
+| refl _ => refl (f x)
 end.
 
 (* Lemma 2.2.2 i) *)
@@ -998,7 +998,7 @@ Defined.
 Definition transport {A : U} (P : A -> U) {x y : A}
   (p : x = y) : P x -> P y :=
 match p with
-    | refl _ => id
+| refl _ => id
 end.
 
 Notation "p *" := (transport p) (at level 50, only parsing).
@@ -1023,7 +1023,7 @@ Definition apd
   {A : U} {P : A -> U} (f : forall x : A, P x) {x y : A} (p : x = y)
   : transport P p (f x) = (f y) :=
 match p with
-    | refl _ => refl (f x)
+| refl _ => refl (f x)
 end.
 
 (* Lemma 2.3.5 *)
@@ -1175,7 +1175,7 @@ Definition isequiv {A B : U} (f : A -> B) : U :=
 
 Ltac ex :=
 match goal with
-    | |- {a : ?A & ?B} =>
+| |- {a : ?A & ?B} =>
         let a := fresh "a" in
         assert (a : A); [idtac | assert (b : B); [idtac | apply (| a, b |)]]
 end.
@@ -1485,7 +1485,7 @@ Defined.
 Definition unit_eq_intro
   (x y : unit) (u : unit) : x = y :=
 match x, y with
-    | tt, tt => refl tt
+| tt, tt => refl tt
 end.
 
 Definition unit_eq_elim
@@ -1538,7 +1538,7 @@ Definition happly {A : U} {B : A -> U}
   {f g : forall x : A, B x} (p : f = g) : forall x : A, f x = g x :=
   fun x : A =>
 match p with
-    | refl _ => refl _
+| refl _ => refl _
 end.
 
 (* Axiom 2.9.3.1 *)
@@ -1888,8 +1888,8 @@ Defined.
 
 Definition code {A B : U} (a : A) (x : A + B) : U :=
 match x with
-    | inl a' => a = a'
-    | inr b => empty
+| inl a' => a = a'
+| inr b => empty
 end.
 
 Lemma code_char :
@@ -1988,16 +1988,16 @@ Defined.
 
 Fixpoint code_N (n m : N) : U :=
 match n, m with
-    | 0, 0 => unit
-    | 0, _ => empty
-    | _, 0 => empty
-    | S n', S m' => code_N n' m'
+| 0, 0 => unit
+| 0, _ => empty
+| _, 0 => empty
+| S n', S m' => code_N n' m'
 end.
 
 Fixpoint encode_N_aux (n : N) : code_N n n :=
 match n with
-    | 0 => tt
-    | S n' => encode_N_aux n'
+| 0 => tt
+| S n' => encode_N_aux n'
 end.
 
 Definition encode_N {n m : N} (p : n = m) : code_N n m :=
@@ -2306,8 +2306,8 @@ Definition prod' (A B : U) : U :=
 Definition pair' {A B : U} (a : A) (b : B) : prod' A B :=
   fun x : bool =>
 match x with
-    | true => a
-    | false => b
+| true => a
+| false => b
 end.
 Definition p1 {A B : U} (p : prod' A B) : A := p true.
 Definition p2 {A B : U} (p : prod' A B) : B := p false.
@@ -2406,8 +2406,8 @@ Defined.
 Fixpoint npath (n : N) (A : U) : U :=
   forall x y : A,
 match n with
-    | 0 => x = y
-    | S n' => npath n' (x = y)
+| 0 => x = y
+| S n' => npath n' (x = y)
 end.
 
 (** **** Ex. 2.5 *)
@@ -2490,17 +2490,17 @@ Defined.
 
 Definition code_sum {A B : U} (x y : A + B) : U :=
 match x, y with
-    | inl a, inl a' => a = a'
-    | inl _, inr _ => empty
-    | inr _, inl _ => empty
-    | inr b, inr b' => b = b'
+| inl a, inl a' => a = a'
+| inl _, inr _ => empty
+| inr _, inl _ => empty
+| inr b, inr b' => b = b'
 end.
 
 Definition encode_sum_aux
   {A B : U} (x : A + B) : code_sum x x :=
 match x with
-    | inl a => refl a
-    | inr b => refl b
+| inl a => refl a
+| inr b => refl b
 end.
 
 Definition encode_sum
@@ -2547,8 +2547,8 @@ Definition copair
   {A A' B B' : U} (f : A -> A') (g : B -> B') : A + B -> A' + B' :=
     fun x : A + B =>
     match x with
-        | inl a => inl (f a)
-        | inr b => inr (g b)
+    | inl a => inl (f a)
+    | inr b => inr (g b)
     end.
 
 Definition ap_code
@@ -2591,8 +2591,8 @@ Proof.
   apply qinv_isequiv. unfold qinv.
   exists (fun '(f, g) x =>
           match x with
-              | inl a => f a
-              | inr b => g b
+          | inl a => f a
+          | inr b => g b
           end).
   split.
     compute. destruct x as [f g]. refl.
@@ -2795,7 +2795,7 @@ Definition encode_unit {x y : unit} (p : x = y) : code_unit x y := tt.
 
 Definition decode_unit {x y : unit} (c : code_unit x y) : x = y :=
 match x, y with
-    | tt, tt => refl tt
+| tt, tt => refl tt
 end.
 
 Lemma decode_encode_unit :
@@ -2861,16 +2861,16 @@ Defined.
 
 Definition code_bool (b1 b2 : bool) : U :=
 match b1, b2 with
-    | false, false => unit
-    | false, true => empty
-    | true, false => empty
-    | true, true => unit
+| false, false => unit
+| false, true => empty
+| true, false => empty
+| true, true => unit
 end.
 
 Definition encode_bool_aux (b : bool) : code_bool b b :=
 match b with
-    | true => tt
-    | false => tt
+| true => tt
+| false => tt
 end.
 
 Definition encode_bool {b1 b2 : bool} (p : b1 = b2) : code_bool b1 b2 :=
@@ -2910,8 +2910,8 @@ Defined.
 
 Definition negb (b : bool : U) : bool : U :=
 match b with
-    | false => true
-    | true => false
+| false => true
+| true => false
 end.
 
 Lemma isequiv_negb : isequiv negb.
@@ -4457,8 +4457,8 @@ Defined.
 
 Fixpoint Fin' (n : N) : U :=
 match n with
-    | 0 => empty
-    | S n' => unit + Fin' n'
+| 0 => empty
+| S n' => unit + Fin' n'
 end.
 
 Definition AC_Fin' : U :=
@@ -4496,16 +4496,16 @@ Defined.
 (** **** Ex. 3.23 *)
 
 Inductive le : N -> N -> U :=
-    | le_0 : forall n : N, le 0 n
-    | le_S_S : forall n m : N, le n m -> le (S n) (S m).
+| le_0 : forall n : N, le 0 n
+| le_S_S : forall n m : N, le n m -> le (S n) (S m).
 
 Infix "<=" := le (at level 50).
 
 Fixpoint code_le (n m : N) : U :=
 match n, m with
-    | 0, _ => unit
-    | S _, 0 => empty
-    | S n', S m' => code_le n' m'
+| 0, _ => unit
+| S _, 0 => empty
+| S n', S m' => code_le n' m'
 end.
 
 Lemma encode_le :
@@ -4518,9 +4518,9 @@ Defined.
 
 Fixpoint decode_le {n m : N} : code_le n m -> n <= m :=
 match n, m with
-    | 0, _ => fun _ => le_0 m
-    | S _ , 0 => fun c => match c with end
-    | S n', S m' => fun c => le_S_S n' m' (@decode_le n' m' c)
+| 0, _ => fun _ => le_0 m
+| S _ , 0 => fun c => match c with end
+| S n', S m' => fun c => le_S_S n' m' (@decode_le n' m' c)
 end.
 
 Lemma decode_encode_le :
@@ -4704,24 +4704,24 @@ Proof.
 Defined.
 
 Inductive option (A : U) : U :=
-    | None : option A
-    | Some : A -> option A.
+| None : option A
+| Some : A -> option A.
 
 Arguments None {A}.
 Arguments Some {A}.
 
 Definition code_option {A : U} (x y : option A) : U :=
 match x, y with
-    | None, None => unit
-    | Some x, Some y => x = y
-    | _, _ => empty
+| None, None => unit
+| Some x, Some y => x = y
+| _, _ => empty
 end.
 
 Definition code_option_aux
   {A : U} (x : option A) : code_option x x :=
 match x with
-    | None => tt
-    | Some _ => refl _
+| None => tt
+| Some _ => refl _
 end.
 
 Definition encode_option
@@ -4800,9 +4800,9 @@ Defined.
 
 Definition code_option_eq {A : U} {x y : option A} (p q : x = y) : U :=
 match x, y with
-    | None, None => unit
-    | Some x, Some y => p = q
-    | _, _ => empty
+| None, None => unit
+| Some x, Some y => p = q
+| _, _ => empty
 end.
 
 Definition encode_option_eq_aux
@@ -4864,9 +4864,9 @@ Defined.
 
 Definition code_sum_eq {A B : U} {x y : A + B} (p q : x = y) : U :=
 match x, y with
-    | inl _, inl _ => p = q
-    | inr _, inr _ => p = q
-    | _, _ => empty
+| inl _, inl _ => p = q
+| inr _, inr _ => p = q
+| _, _ => empty
 end.
 
 Definition encode_sum_eq_aux
@@ -5046,9 +5046,9 @@ Defined.
 Module term1.
 
 Inductive term (Var : U) : U :=
-    | Var : Var -> term Var
-    | Lam : (Var -> term Var) -> term Var
-    | App : term Var -> term Var -> term Var.
+| Var : Var -> term Var
+| Lam : (Var -> term Var) -> term Var
+| App : term Var -> term Var -> term Var.
 
 Arguments Var {Var} _.
 Arguments Lam {Var} _.
@@ -5056,10 +5056,10 @@ Arguments App {Var} _ _.
 
 Fixpoint code_term {Var : U} (t1 t2 : term Var) : U :=
 match t1, t2 with
-    | Var v1, Var v2 => v1 = v2
-    | Lam f, Lam g => forall v : Var, code_term (f v) (g v)
-    | App t11 t12, App t21 t22 => code_term t11 t21 * code_term t12 t22
-    | _, _ => empty
+| Var v1, Var v2 => v1 = v2
+| Lam f, Lam g => forall v : Var, code_term (f v) (g v)
+| App t11 t12, App t21 t22 => code_term t11 t21 * code_term t12 t22
+| _, _ => empty
 end.
 
 Lemma isProp_code_term :
@@ -5085,9 +5085,9 @@ Defined.
 Fixpoint encode_term_aux
   {Var : U} (t : term Var) : code_term t t :=
 match t with
-    | Var v => refl v
-    | Lam f => fun v => encode_term_aux (f v)
-    | App t1 t2 => (encode_term_aux t1, encode_term_aux t2)
+| Var v => refl v
+| Lam f => fun v => encode_term_aux (f v)
+| App t1 t2 => (encode_term_aux t1, encode_term_aux t2)
 end.
 
 Definition encode_term

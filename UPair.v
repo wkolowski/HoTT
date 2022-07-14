@@ -47,7 +47,7 @@ Proof.
   - apply prod_eq_intro. split.
     + cbn. apply path.
     + cbn. apply funext. intros [a [[] | []]]. cbn.
-      * admit.
+      * destruct (transport _). cbn. admit.
       * admit.
 Admitted.
 

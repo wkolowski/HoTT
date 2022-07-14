@@ -10,9 +10,9 @@ Set Universe Polymorphism.
 Module FreeMon.
 
 Private Inductive FM (A : Type) : Type :=
-    | i  : A -> FM A
-    | op : FM A -> FM A -> FM A
-    | id : FM A.
+| i  : A -> FM A
+| op : FM A -> FM A -> FM A
+| id : FM A.
 
 Arguments i  {A} _.
 Arguments op {A} _ _.
@@ -32,10 +32,10 @@ Fixpoint FM_rec
   (op_assoc' : forall x y z : P, op' (op' x y) z = op' x (op' y z))
   (x : FM A) : P :=
 match x with
-    | i a => i' a
-    | op a b => op' (FM_rec i' op' id' op_id_l' op_id_r' op_assoc' a)
-                    (FM_rec i' op' id' op_id_l' op_id_r' op_assoc' b)
-    | id => id'
+| i a => i' a
+| op a b => op' (FM_rec i' op' id' op_id_l' op_id_r' op_assoc' a)
+                (FM_rec i' op' id' op_id_l' op_id_r' op_assoc' b)
+| id => id'
 end.
 
 Axiom FM_rec_op_id_l :
@@ -94,10 +94,10 @@ Fixpoint FM_ind
                  transport _ (op_assoc x y z) (op' (op' px py) pz) = op' px (op' py pz))
   (x : FM A) : P x :=
 match x with
-    | i a    => i' a
-    | op a b => op' (FM_ind i' (@op') id' (@op_id_l') (@op_id_r') (@op_assoc') a)
-                    (FM_ind i' (@op') id' (@op_id_l') (@op_id_r') (@op_assoc') b)
-    | id    => id'
+| i a    => i' a
+| op a b => op' (FM_ind i' (@op') id' (@op_id_l') (@op_id_r') (@op_assoc') a)
+                (FM_ind i' (@op') id' (@op_id_l') (@op_id_r') (@op_assoc') b)
+| id    => id'
 end.
 
 Axiom FM_ind_op_id_l :
@@ -172,8 +172,8 @@ Defined.
 
 Fixpoint g {A : Type} (l : list A) : FM A :=
 match l with
-    | nil => id
-    | cons h t => op (i h) (g t)
+| nil => id
+| cons h t => op (i h) (g t)
 end.
 
 Lemma g_app :
@@ -187,7 +187,7 @@ Defined.
 
 Definition ap2 {A B C : Type} (f : A -> B -> C) {a a' : A} {b b' : B} (p : a = a') (q : b = b') : f a b = f a' b' :=
 match p, q with
-    | refl _, refl _ => refl _
+| refl _, refl _ => refl _
 end.
 
 Lemma fg :
