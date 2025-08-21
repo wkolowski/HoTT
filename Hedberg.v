@@ -4,15 +4,18 @@ Local Set Default Proof Mode "Classic".
 
 Set Universe Polymorphism.
 
-(** This file is based on the paper "Generalizations of Hedberg's Theorem"
-    by Kraus, Escardó, Coquand and Altenkirch. *)
+(**
+  This file is based on the paper "Generalizations of Hedberg's Theorem"
+  by Kraus, Escardó, Coquand and Altenkirch.
+*)
 
-(** TODO:
-    1. bool -> nat is separated
-    2. funext -> separated -> isSet
-    3. isSet <-> || x = y || -> x = y
-    4. ||X|| -> X <-> constant endomap
-    5. fix f is prop
+(**
+  TODO:
+  1. bool -> nat is separated
+  2. funext -> separated -> isSet
+  3. isSet <-> || x = y || -> x = y
+  4. ||X|| -> X <-> constant endomap
+  5. fix f is prop
 *)
 
 (** * 2 Preliminaries *)
@@ -39,7 +42,7 @@ Lemma decidable_equality_path_collapsible :
 Proof.
   unfold decidable_equality, path_collapsible, collapsible.
   intros A DE x y.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intro p. destruct (DE x y) as [q | q].
       exact q.
       destruct (q p).
@@ -105,7 +108,7 @@ Proof.
   intros A f g.
   apply funext. intro x. apply funext. intro y.
   apply sigma_eq_intro.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     destruct (f x y) as [f' cf], (g x y) as [g' cg]. cbn.
       apply funext. intro p. apply path_collapsible_isSet. exact f.
     repeat (apply funext; intro). destruct (f x y), (g x y). cbn.
@@ -155,7 +158,7 @@ Lemma separated_path_collapsible :
 Proof.
   unfold separated, path_collapsible, collapsible, const.
   intros A s x y.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intro p. apply s. intro. destruct (X p).
     intros p q. cbn. apply ap. apply funext. intro. destruct (x0 p).
 Defined.
@@ -380,7 +383,7 @@ Proof.
       intro f. apply funext. intro x.
       compute. destruct (trunc_rec _). rewrite e. apply ap, path.
     }
-    intros [f c]. apply sigma_eq_intro. esplit. Unshelve. all: cycle 1.
+    intros [f c]. apply sigma_eq_intro. unshelve esplit.
       apply funext. intro x. cbn. destruct (trunc_rec _).
         cbn. rewrite e. apply c.
       rewrite transport_pi. cbn.
@@ -539,7 +542,7 @@ Lemma populated_hstable :
 Proof.
   unfold populated, const, fixpoint, hstable.
   intros A f c.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intro ta. assert (fixpoint f).
       unfold fixpoint. revert ta. apply trunc_rec.
         apply isProp_fixpoint. exact c.
@@ -574,9 +577,8 @@ Proof.
       specialize (H A). revert H. apply trunc_rec.
         apply isProp_trunc.
         intro f. unfold populated, const, fixpoint in PA.
-        apply trunc'. eapply (pr1' (PA (fun x : A => f (trunc' x)) _)).
-Unshelve.
-  intros. cbn. apply ap, path.
+        apply trunc'. unshelve eapply (pr1' (PA (fun x : A => f (trunc' x)) _)).
+          intros. cbn. apply ap, path.
 Defined.
 
 Lemma populated_spec' :
@@ -590,7 +592,7 @@ Proof.
     intro H. apply trunc_rec.
       apply isProp_trunc.
       intro f. unfold populated, const, fixpoint in H.
-        apply trunc'. eapply (pr1' (H (fun x : A => f (trunc' x)) _)). Unshelve. all: cycle 1.
+        apply trunc'. unshelve eapply (pr1' (H (fun x : A => f (trunc' x)) _)).
           intros. cbn. apply ap, path.
     {
       unfold populated, const, fixpoint. intros H f c.
@@ -638,7 +640,7 @@ Lemma dbl_neg_populated_LEM :
 Proof.
   unfold populated, const, fixpoint, LEM.
   intros H P PP.
-  eapply (pr1' (H _ _ _ _)). Unshelve.
+  unshelve eapply (pr1' (H _ _ _ _)).
     intro. apply X. right. intro. apply X. left. assumption.
     exact id.
     intros. apply ex_3_7.

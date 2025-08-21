@@ -195,15 +195,14 @@ Lemma fg :
     g (f x) = x.
 Proof.
   intro.
-  refine (FM_ind _ _ _ _ _ _).
-  Unshelve. 2-6: cycle 3.
-    cbn. intros. apply op_id_r.
+  unshelve refine (FM_ind _ _ _ _ _ _).
     intros. change (f (op x y)) with (app (f x) (f y)).
       exact (cat (g_app (f x) (f y)) (ap2 op X X0)).
     cbn. refl.
-    2: { intros. rewrite transport_eq_fun_dep. admit. }
-    admit.
-    admit.
+    cbn. intros. apply op_id_r.
+    intros. rewrite transport_eq_fun_dep. cbn. admit.
+    intros. rewrite transport_eq_fun_dep. cbn. admit.
+    intros. rewrite transport_eq_fun_dep. cbn. admit.
 Admitted.
 
 Lemma gf :

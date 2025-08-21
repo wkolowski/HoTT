@@ -229,9 +229,10 @@ Proof.
     apply (inr (refl false)).
 Defined.
 
-(** We could have done:
-    - A + B := {x : bool & bool_rec' A B x}
-    - A * B := forall x : bool, bool_rec' A B x
+(**
+  We could have done:
+  - A + B := {x : bool & bool_rec' A B x}
+  - A * B := forall x : bool, bool_rec' A B x
 *)
 
 (** ** 1.9 The natural numbers *)
@@ -1161,7 +1162,7 @@ Lemma qinv_transport :
   forall (A : U) (P : A -> U) (x y : A) (p : x = y),
     qinv (@transport A P x y p).
 Proof.
-  intros. esplit. Unshelve. all: cycle 1.
+  intros. unshelve esplit.
     exact (transport P (inv p)).
     split.
       destruct p. compute. refl.
@@ -1196,7 +1197,7 @@ Lemma isequiv_qinv :
 Proof.
   destruct 1 as [[g α] [h β]].
   unfold qinv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     exact (comp g (comp f h)).
     cbn. split; compute in *; intros.
       rewrite β, α. refl.
@@ -1248,10 +1249,9 @@ Proof.
   unfold equiv. destruct 1 as [f Hf], 1 as [g Hg].
   apply isequiv_qinv in Hf; apply isequiv_qinv in Hg.
   destruct Hf as [f' [Hf1 Hf2]], Hg as [g' [Hg1 Hg2]].
-  eapply (| comp f g, _ |).
-Unshelve.
-  cbn. apply qinv_isequiv. eapply (| comp g' f', _ |).
-Unshelve.
+  unshelve eapply (| comp f g, _ |).
+  cbn. apply qinv_isequiv.
+  unshelve eapply (| comp g' f', _ |).
   compute in *. hsplit; intros.
     rewrite Hf1, Hg1. refl.
     rewrite Hg2, Hf2. refl.
@@ -1511,7 +1511,7 @@ Theorem unit_eq_equiv :
 Proof.
   intros.
   apply qinv_isequiv. unfold qinv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     exact (@unit_eq_elim x y).
     split; compute.
       destruct x0, x. refl.
@@ -1781,7 +1781,7 @@ Theorem ap_isequiv :
 Proof.
   intros. apply qinv_isequiv. apply isequiv_qinv in X.
   unfold qinv in *. destruct X as [g [α β]].
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intro q. compute in *. exact (cat (inv (β x)) (cat (ap g q) (β y))).
     unfold homotopy, comp, id in *. split.
       2: { destruct x0. rewrite ap_refl, cat_refl_l, cat_inv_l. reflexivity. }
@@ -1896,15 +1896,15 @@ Lemma code_char :
   forall (A B : U) (a : A) (x : A + B),
     equiv (inl a = x) (code a x).
 Proof.
-  intros. red. esplit. Unshelve. all: cycle 1.
+  intros. red. unshelve esplit.
     destruct 1. unfold code. refl.
     red. split.
-      esplit. Unshelve. all: cycle 2.
+      unshelve esplit.
         unfold code. destruct x, 1. refl.
         compute. destruct x.
           destruct x. refl.
           destruct x.
-      esplit. Unshelve. all: cycle 1.
+      unshelve esplit.
         unfold code. destruct x, 1. refl.
         compute. destruct x0. refl.
 Defined.
@@ -2170,7 +2170,7 @@ Proof.
   intros.
   apply SemigroupEq'_path.
     assumption.
-    destruct X. esplit. Unshelve. all: cycle 1.
+    destruct X. unshelve esplit.
       apply ua. exists SE_e0. assumption.
       intros. rewrite !transport_ua. cbn. apply SE_m0.
 Defined.
@@ -2607,8 +2607,8 @@ Proof.
   intros. apply ua. unfold equiv.
   exists (fun f => (fun a => f (inl a), fun b => f (inr b))).
   apply qinv_isequiv. unfold qinv.
-  esplit. Unshelve.
-    2: { destruct 1 as [f g]. destruct x as [a | b]; [apply f | apply g]. }
+  unshelve esplit.
+    destruct 1 as [f g]. destruct x as [a | b]; [apply f | apply g].
     split; compute.
       destruct x; refl.
       intro. apply funext. destruct x0; refl.
@@ -2634,21 +2634,17 @@ Lemma sigma_assoc :
     {x : A & {y : P x & C (| x, y |)}} =
     {p : {x : A & P x} & C p}.
 Proof.
-  intros. apply ua. unfold equiv. esplit.
-Unshelve.
-  2: {
-    destruct 1 as (x & y & c).
+  intros. apply ua. unfold equiv.
+  unshelve esplit.
+  - destruct 1 as (x & y & c).
     exists (| x, y |). assumption.
-  }
-  apply qinv_isequiv. unfold qinv. esplit.
-Unshelve.
-  2: {
-    destruct 1 as [[x y] c].
-    exists x. exists y. assumption.
-  }
-  split.
-    compute. destruct x as [[x y] c]. refl.
-    compute. destruct x as [x [y c]]. refl.
+  - apply qinv_isequiv. unfold qinv.
+    unshelve esplit.
+    + destruct 1 as [[x y] c].
+      exists x. exists y. assumption.
+    + split.
+      * compute. destruct x as [[x y] c]. refl.
+      * compute. destruct x as [x [y c]]. refl.
 Defined.
 
 Lemma sigma_prod_assoc :
@@ -2656,15 +2652,15 @@ Lemma sigma_prod_assoc :
     {x : A & B x * C x} =
     {p : {x : A & B x} & C (pr1' p)}.
 Proof.
-  intros. apply ua. unfold equiv. esplit.
-Unshelve.
-  2: { destruct 1 as [x [b c]]. exists (| x, b |). cbn. assumption. }
-  apply qinv_isequiv. unfold qinv. esplit.
-Unshelve.
-  2: { destruct 1 as [[x b] c]. exists x. split; assumption. }
-  split; compute.
-    destruct x as [[x b] c]. refl.
-    destruct x as [x [b c]]. refl.
+  intros. apply ua. unfold equiv.
+  unshelve esplit.
+  - destruct 1 as [x [b c]]. exists (| x, b |). cbn. assumption.
+  - apply qinv_isequiv. unfold qinv.
+    unshelve esplit.
+    + destruct 1 as [[x b] c]. exists x. split; assumption.
+    + split; compute.
+      * destruct x as [[x b] c]. refl.
+      * destruct x as [x [b c]]. refl.
 Defined.
 
 (** **** Ex. 2.11 *)
@@ -2673,15 +2669,15 @@ Module ex_2_11.
 
 Record commutative_square : U :=
 {
-    P : U;
-    A : U;
-    B : U;
-    C : U;
-    f : A -> C;
-    g : B -> C;
-    h : P -> A;
-    k : P -> B;
-    commutative : comp h f = comp k g;
+  P : U;
+  A : U;
+  B : U;
+  C : U;
+  f : A -> C;
+  g : B -> C;
+  h : P -> A;
+  k : P -> B;
+  commutative : comp h f = comp k g;
 }.
 
 Definition induced_map
@@ -2712,18 +2708,17 @@ Definition pullback_pr2
 Definition pullback_to_square
   {A B C : U} (f : A -> C) (g : B -> C) : commutative_square.
 Proof.
-eapply
-{|
-    P := pullback f g;
-    A := A;
-    B := B;
-    C := C;
-    f := f;
-    g := g;
-    h := pullback_pr1 f g;
-    k := pullback_pr2 f g;
-|}.
-Unshelve.
+  refine
+  {|
+      P := pullback f g;
+      A := A;
+      B := B;
+      C := C;
+      f := f;
+      g := g;
+      h := pullback_pr1 f g;
+      k := pullback_pr2 f g;
+  |}.
   compute. apply funext. destruct x as [a [b p]]. assumption.
 Defined.
 
@@ -2733,21 +2728,21 @@ Theorem ex_2_11 :
 Proof.
   unfold homotopy_pullback_square.
   intros A B C f g X.
-  apply qinv_isequiv. unfold qinv. cbn. esplit. Unshelve. all: cycle 1.
+  apply qinv_isequiv. unfold qinv. cbn. unshelve esplit.
     cbn. unfold pullback. intros p x.
       exists (pr1' p x). exists (pr1' (pr2' p) x).
       exact (happly (pr2' (pr2' p)) x).
     unfold homotopy, comp, id. split.
       intros [h [k H]]. unfold induced_map. apply sigma_eq_intro; cbn.
-        esplit. Unshelve. all: cycle 2.
+        unshelve esplit.
           compute. refl.
-          apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 2.
+          apply sigma_eq_intro. cbn. unshelve esplit.
             compute. refl.
             cbn. unfold id. rewrite funext_happly. apply ap.
               apply funext. intro. rewrite happly_funext. refl.
-      intro u. apply funext. intro. apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 1.
+      intro u. apply funext. intro. apply sigma_eq_intro. cbn. unshelve esplit.
         refl.
-        rewrite 2!happly_funext. apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 1.
+        rewrite 2!happly_funext. apply sigma_eq_intro. cbn. unshelve esplit.
           refl.
           destruct (u x) as [a [b H]]. cbn. refl.
 Defined.
@@ -2776,10 +2771,10 @@ Lemma ex_2_12 :
 Proof.
   intros * H.
   unfold is_commutative_square, comp in *.
-  apply ua. esplit. Unshelve. all: cycle 1.
+  apply ua. unshelve esplit.
     intro H'. apply funext. intro.
       exact (cat (ap (fun f => f (ac0 x)) H) (ap (fun f => df (f x)) H')).
-    apply qinv_isequiv. red. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. red. unshelve esplit.
       intro H'.
 Abort.
 
@@ -2830,10 +2825,10 @@ Lemma ex_2_13_aux :
 Proof.
   intro. rewrite (ua_idtoeqv p).
   assert (idtoeqv p = idtoeqv (refl unit)).
-    apply sigma_eq_intro. esplit. Unshelve. all: cycle 2.
+    apply sigma_eq_intro. unshelve esplit.
       destruct (idtoeqv p). compute. apply funext.
         destruct x0. destruct (x tt). refl.
-      apply prod_eq_intro. split; apply sigma_eq_intro; cbn; esplit. Unshelve. all: cycle 3.
+      apply prod_eq_intro. split; apply sigma_eq_intro; cbn; unshelve esplit.
         destruct (transport isequiv _). cbn.
           destruct s. cbn. apply funext. destruct x0, (x tt). refl.
         destruct (transport isequiv _). cbn. destruct s0. cbn.
@@ -2973,7 +2968,7 @@ Lemma isProp_isequiv_bool :
 Proof.
   intros. destruct e1 as [[g1 Hg1] [h1 Hh1]], e2 as [[g2 Hg2] [h2 Hh2]].
   unfold homotopy, comp, id in *.
-  apply prod_eq_intro. cbn. split; apply sigma_eq_intro; cbn; esplit. Unshelve. all: cycle 2.
+  apply prod_eq_intro. cbn. split; apply sigma_eq_intro; cbn; unshelve esplit.
     apply funext. intro.
       rewrite <- (Hh1 (g1 x)), <- (Hh1 (g2 x)). rewrite Hg1, Hg2. refl.
     apply funext. intro.
@@ -3016,7 +3011,7 @@ Defined.
 
 Lemma ex_2_13 : (bool = bool) = bool.
 Proof.
-  apply ua. unfold equiv. esplit. Unshelve. all: cycle 1.
+  apply ua. unfold equiv. unshelve esplit.
     intro p. exact (transport id p true).
     apply qinv_isequiv. unfold qinv.
       exists (fun b : bool => if b then refl bool else ua negb_equiv). split.
@@ -3105,23 +3100,12 @@ Lemma aux :
     (forall x : A * B, (pr1 x, pr2 x) = x) =
     (forall x : A * B, x = x).
 Proof.
-  intros. apply ua. unfold equiv. esplit. Unshelve. all: cycle 1.
+  intros. apply ua. unfold equiv. unshelve esplit.
     intros. destruct x. exact (X (a, b)).
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       intros. destruct x. cbn. apply X.
     split; compute; intro; apply funext; destruct x0; refl.
 Defined.
-
-(*
-Lemma transport_funext :
-  forall {A : U} {B : A -> U} (f g : forall x : A, B x) (H : forall x : A, f x = g x)
-    (P : (forall x : A, B x) -> U) (x : P f) (y : P g),
-      transport P (funext H) x = y.
-Proof.
-  intros.
-  rewrite transportconst.
-Abort.
-*)
 
 Lemma ex_2_17_2 :
   forall (A A' B B' : U) (ea : A ~ A') (eb : B ~ B'),
@@ -3133,7 +3117,7 @@ Proof.
   rewrite <- !ua_idtoeqv.
   destruct (ua ea), (ua eb).
   apply sigma_eq_intro.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     cbn. apply funext. intro. apply prod_eq_intro. cbn. split; refl.
 Abort.
 
@@ -3170,9 +3154,9 @@ Lemma sigma_form_eq :
       {x : A & B x} = {x : A' & B' x}.
 Proof.
   destruct p; cbn; intro q.
-  apply ua. esplit. Unshelve. all: cycle 1.
+  apply ua. unshelve esplit.
     intros [x y]. exact (| x, transport id (q x) y |).
-    apply qinv_isequiv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unshelve esplit.
       intros [x y]. exact (| x, transport id (inv (q x)) y |).
       split; unfold homotopy, id, comp.
         destruct x as [x y]. apply sigma_eq_intro. cbn. exists (refl x).
@@ -3188,7 +3172,7 @@ Lemma sigma_pres_equiv :
 Proof.
   intros.
   apply idtoeqv.
-  eapply sigma_form_eq. Unshelve. all: cycle 1.
+  unshelve eapply sigma_form_eq.
     apply ua. assumption.
     intro. apply ua. apply eb.
 Defined.
@@ -3526,7 +3510,7 @@ Lemma subtype_eq_intro_steroids :
 Proof.
   intros A P PP u v. apply ua. unfold equiv.
   exists (ap pr1').
-  apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+  apply qinv_isequiv. unfold qinv. unshelve esplit.
     destruct u as [x px], v as [y py]. cbn.
       intro p. apply sigma_eq_intro. exists p. cbn. apply PP.
     unfold homotopy, comp, id; split.
@@ -3653,8 +3637,8 @@ Defined.
 (* Lemma 3.8.2 *)
 Lemma AC_PNE : AC = PNE.
 Proof.
-  apply ua. unfold equiv. esplit. apply qinv_isequiv. unfold qinv.
-  esplit. Unshelve. all: cycle 1.
+  apply ua. unfold equiv.
+  unshelve esplit; [| apply qinv_isequiv; unfold qinv; unshelve esplit].
   {
     unfold AC, PNE. intros AC X Y HX HY f.
     specialize (AC X Y (fun _ _ => unit) HX HY (fun _ _ => isProp_unit)).
@@ -3679,7 +3663,7 @@ Proof.
         destruct (X1 x). cbn. assumption.
   }
   unfold homotopy, comp, id; split; intros;
-  repeat (apply funext; intro); apply path.
+    repeat (apply funext; intro); apply path.
 Defined.
 
 Definition PNE' : U :=
@@ -3692,7 +3676,7 @@ Proof.
   intro f. unfold PNE'. intros X Y SX SY. unfold equiv.
   rewrite AC_PNE in f. unfold PNE in f. exists (f X Y SX SY).
   apply qinv_isequiv. unfold qinv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intros. revert X0. apply trunc_rec.
       apply isProp_trunc.
       intro. apply trunc'. apply X0.
@@ -3719,7 +3703,7 @@ Proof.
   rewrite AC_PNE in AC. unfold PNE in AC.
   exists (AC X Y SX SY).
   apply qinv_isequiv. unfold qinv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intros f x. revert f. apply trunc_rec.
       apply isProp_trunc.
       intro f. apply trunc'. apply f.
@@ -3811,7 +3795,7 @@ Proof.
   apply ua. unfold equiv.
   exists trunc'.
   apply qinv_isequiv. unfold qinv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     apply trunc_rec.
       assumption.
       intro. assumption.
@@ -3848,11 +3832,11 @@ Lemma isContr_isProp_inhabited :
     isContr A = A * isProp A.
 Proof.
   intro. apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     destruct 1 as [c H]. split.
       exact c.
       intros x y. rewrite <- (H x). apply H.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       intros [c H]. exists c. apply (H c).
       split; compute.
         intros [c H]. apply prod_eq_intro. split; cbn.
@@ -3986,7 +3970,7 @@ Lemma lemma_3_11_10 :
     isProp A = forall x y : A, isContr (x = y).
 Proof.
   intro. apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     {
       intro p.
       assert (S : isSet A).
@@ -3995,7 +3979,7 @@ Proof.
       intros x y. exists (p x y).
       intro. apply S.
     }
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       unfold isContr, isProp. intros. exact (pr1' (X x y)).
       split; compute; intros.
         apply isContr_isProp.
@@ -4053,10 +4037,10 @@ Lemma ex_3_4 :
   forall A : U, isProp A = isContr (A -> A).
 Proof.
   intro. apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     unfold isProp, isContr. intro p. exists id. intro. apply funext.
       intro. apply p.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       unfold isContr, isProp. intros [g p] x y.
         pose (p1 := p (fun _ => x)). apply happly with x in p1.
         pose (p2 := p (fun _ => y)). apply happly with x in p2.
@@ -4074,9 +4058,9 @@ Proof.
   intro. assert (isProp (A -> isContr A)).
     apply isProp_fun. apply isProp_isContr.
   unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     unfold isProp, isContr. intros p x. exists x. apply p.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       unfold isContr, isProp. intros H x y. destruct (H x).
         rewrite <- (e x), <- (e y). refl.
       split; compute; intro.
@@ -4122,7 +4106,7 @@ Proof.
   intros * H1 H2 H3. unfold equiv.
   exists (fun e => trunc' (H2 e)).
   apply qinv_isequiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     apply trunc_rec.
       intros e1 e2. apply H3.
       exact H1.
@@ -4150,9 +4134,9 @@ Lemma ex_3_9 :
   LEM -> {P : U & isProp P} ~ bool.
 Proof.
   unfold LEM. intro LEM. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     destruct 1 as [P H]. exact (if LEM P H then true else false).
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       destruct 1.
         exists unit. apply isProp_unit.
         exists empty. apply isProp_empty.
@@ -4167,7 +4151,7 @@ Proof.
             destruct e.
             refl.
         compute. destruct x, (LEM x e).
-          apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 2.
+          apply sigma_eq_intro. cbn. unshelve esplit.
             symmetry. apply ua. apply inhabited_isProp_unit.
               unfold isProp. apply e.
               exact x0.
@@ -4241,7 +4225,7 @@ Lemma ex_3_14 :
               R A B H f (fun g => g x) = f x}.
 Proof.
   unfold LEM, DN_rec. intro LEM.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intros A B PB f H. destruct (LEM B).
       assumption.
       exact b.
@@ -4258,14 +4242,14 @@ Lemma ex_3_14' :
 Proof.
   unfold LEM. intros LEM A.
   apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intro. destruct (LEM (trunc A)).
       apply isProp_trunc.
       assumption.
       cut empty.
         destruct 1.
         apply X. intro. apply n, trunc', X0.
-    cbn. apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    cbn. apply qinv_isequiv. unfold qinv. unshelve esplit.
       do 2 intro. revert X. apply trunc_rec.
         apply isProp_empty.
         intro. apply X0. assumption.
@@ -4322,11 +4306,11 @@ Lemma ex_3_16 :
 Proof.
   unfold LEM. intros LEM X Y SX PY.
   apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intros f H. apply H. intro. apply (LEM_DNE LEM).
       apply PY.
       apply f.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       intros H x HY. apply HY. apply (LEM_DNE LEM) in H.
         apply H.
         apply isProp_pi. assumption.
@@ -4426,13 +4410,13 @@ Proof.
   destruct y as [y [[y1 Hy1] [y2 Hy2]]].
   destruct X.
   apply sigma_eq_intro. cbn.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     apply funext. intro. apply PP.
     compute. destruct _. apply prod_eq_intro. cbn. split.
-      destruct s as [s1 Hs1]. apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 2.
+      destruct s as [s1 Hs1]. apply sigma_eq_intro. cbn. unshelve esplit.
         apply funext. intro. apply PP.
         apply funext. intro. apply (isProp_eq _ PP).
-      destruct s0 as [s1 Hs1]. apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 1.
+      destruct s0 as [s1 Hs1]. apply sigma_eq_intro. cbn. unshelve esplit.
         apply funext. intro. apply PP.
         apply funext. intro. apply (isProp_eq _ PP).
 Defined.
@@ -4472,25 +4456,23 @@ Lemma ex_3_22 : AC_Fin'.
 Proof.
   unfold AC_Fin'.
   induction n as [| n']; cbn; intros A P SA PP f.
-    apply trunc'. esplit. Unshelve. 1,3: destruct x.
-    {
-      rewrite sum_pi_universal in *.
-      destruct SA as [SA1 SA2], PP as [PP1 PP2], f as [f1 f2].
-      pose (B := fun x => A (inr x)).
-      pose (P' := fun x => P (inr x)).
-      specialize (IHn' B P' SA2 PP2 f2). revert IHn'.
-      apply trunc_rec.
-        apply isProp_trunc.
-        destruct 1 as [g H]. specialize (f1 tt). revert f1. apply trunc_rec.
-          apply isProp_trunc.
-          destruct 1 as [a1 a2]. apply trunc'. esplit. Unshelve. all: cycle 1.
-            destruct x as [[] | x].
-              exact a1.
-              apply g.
-            destruct x as [[] | x].
-              exact a2.
-              apply H.
-    }
+  - apply trunc'. unshelve esplit; [destruct x..].
+  - rewrite sum_pi_universal in *.
+    destruct SA as [SA1 SA2], PP as [PP1 PP2], f as [f1 f2].
+    pose (B := fun x => A (inr x)).
+    pose (P' := fun x => P (inr x)).
+    specialize (IHn' B P' SA2 PP2 f2). revert IHn'.
+    apply trunc_rec.
+    + apply isProp_trunc.
+    + destruct 1 as [g H]. specialize (f1 tt). revert f1. apply trunc_rec.
+      * apply isProp_trunc.
+      * destruct 1 as [a1 a2]. apply trunc'. unshelve esplit.
+        -- destruct x as [[] | x].
+           ++ exact a1.
+           ++ apply g.
+        -- destruct x as [[] | x].
+           ++ exact a2.
+           ++ apply H.
 Defined.
 
 (** **** Ex. 3.23 *)
@@ -4591,13 +4573,13 @@ Lemma le_not_lt :
     n <= m = ~ S m <= n.
 Proof.
   intros. apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     induction 1; intro.
       apply encode_le in H. cbn in H. assumption.
       apply encode_le in H0. cbn in H0. destruct n; cbn in H0.
         assumption.
         apply IHle. apply le_S_S. apply decode_le. assumption.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       revert m. induction n as [| n']; intros.
         apply le_0.
         destruct m as [| m'].
@@ -4956,7 +4938,7 @@ Definition encode_sum_eq'
 Definition decode_sum_eq'
   {A B : U} {x y : A + B} {p q : x = y} (c : code_sum_eq' p q) : p = q.
 Proof.
-  destruct p, x; cbn in c. Search decode_sum encode_sum.
+  destruct p, x; cbn in c.
     rewrite <- decode_encode_sum, <- c. cbn. reflexivity.
     rewrite <- decode_encode_sum, <- c. cbn. reflexivity.
 Defined.
@@ -5178,13 +5160,13 @@ Proof.
   generalize (idtoeqv p), (idtoeqv q). clear p q.
   intros [f [[f1 Hf1] [f2 Hf2]]] [g [[g1 Hg1] [g2 Hg2]]].
   apply sigma_eq_intro. cbn.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     apply funext. destruct x.
     apply prod_eq_intro. cbn; split.
-      apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 2.
+      apply sigma_eq_intro. cbn. unshelve esplit.
         apply funext. destruct x.
         apply funext. destruct x.
-      apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 1.
+      apply sigma_eq_intro. cbn. unshelve esplit.
         apply funext. destruct x.
         apply funext. destruct x.
 Defined.
@@ -5201,7 +5183,7 @@ Lemma not_A_is_path_to_empty :
     (~ A) = (A = empty).
 Proof.
   intro. apply ua.
-  unfold equiv. esplit. Unshelve. all: cycle 1.
+  unfold equiv. unshelve esplit.
     {
       intro f. apply ua. unfold equiv.
       exists f.
@@ -5227,9 +5209,9 @@ Lemma sigma_prod :
     {x : A & B} = A * B.
 Proof.
   intros. apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     destruct 1 as [a b]. split; assumption.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       destruct 1 as [a b]. exists a. assumption.
       split; compute; destruct x; refl.
 Defined.
@@ -5241,11 +5223,11 @@ Lemma qinv_qinv' : @qinv = @qinv'.
 Proof.
   apply funext. intro A. apply funext. intro B. apply funext. intro f.
   apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     destruct 1 as [g [H1 H2]]. unfold qinv'. exists g. split.
       apply funext. assumption.
       apply funext. assumption.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       destruct 1 as [g [p q]]. exists g. split; intro.
         apply happly with x in p. assumption.
         apply happly with x in q. assumption.
@@ -5282,9 +5264,9 @@ Lemma aux'' :
     (forall x : A, x = x) = (@id A = @id A).
 Proof.
   intro. apply ua. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     intro H. apply funext. exact H.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       intro H. apply happly. exact H.
       unfold homotopy, comp, id; split; intros.
         apply inv, funext_happly.
@@ -5320,7 +5302,7 @@ Lemma lemma_4_1_1_no_ua :
     qinv f ~ forall x : A, x = x.
 Proof.
   intros. unfold equiv.
-  esplit. Unshelve. all: cycle 1.
+  unshelve esplit.
     destruct 1 as [g [H1 H2]]. intro.
       unfold homotopy, comp, id in *.
       pose (p1 := H2 x).
@@ -5329,7 +5311,7 @@ Proof.
       pose (p4 := ap g p3).
       pose (p5 := cat (inv (H2 x)) (cat p4 (H2 x))).
       exact p5.
-    apply qinv_isequiv. unfold qinv. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. unshelve esplit.
       intro H. destruct X as [g [p q]]. exists g.
         unfold homotopy, comp, id in *. split; intro.
           apply p.
@@ -5356,7 +5338,7 @@ Proof.
     intro. assert (isProp {r : x = x & forall s : a = x, r = cat (inv s) (cat q s)}).
       specialize (g x). revert g. apply trunc_rec.
         apply isProp_isProp.
-        intros [] [u Hu] [v Hv]. apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 3.
+        intros [] [u Hu] [v Hv]. apply sigma_eq_intro. cbn. unshelve esplit.
           rewrite (Hu q), (Hv q). refl.
           apply funext. intro r. apply SA.
       specialize (g x). revert g. apply trunc_rec.
@@ -5389,7 +5371,7 @@ Proof.
   assert (isContr {p : X = X & forall x : X, idtoeqv p x <> x}).
     revert H. apply trunc_rec.
       apply isProp_isContr.
-      destruct 1. unfold isContr. esplit. Unshelve. all: cycle 2.
+      destruct 1. unfold isContr. unshelve esplit.
         exists (ua negb_equiv). cbn. intro. rewrite transport_ua. destruct x; cbn.
           apply neq_false_true.
           intro. apply neq_false_true. rewrite X. reflexivity.
@@ -5466,11 +5448,11 @@ Goal
                (forall a : A, isContr {b : B & R a b}) *
                (forall b : B, isContr {a : A & R a b})}.
 Proof.
-  intros. unfold equiv. esplit. Unshelve. all: cycle 1.
+  intros. unfold equiv. unshelve esplit.
     intros [e H]. esplit with (fun a b => e a = b). split.
       intro. apply isContr_single_ended_path.
       intro. admit.
-    apply qinv_isequiv. unfold qinv. cbn. esplit. Unshelve. all: cycle 1.
+    apply qinv_isequiv. unfold qinv. cbn. unshelve esplit.
       intros (R & H1 & H2).
         esplit with (fun a => pr1' (pr1' (H1 a))).
         apply qinv_isequiv. unfold qinv.
@@ -5487,7 +5469,7 @@ Proof.
             specialize (p' (| a, r |)). apply (ap pr1') in p'.
             cbn in p'. assumption.
       unfold homotopy, comp, id. split.
-        intros [R [H1 H2]]. apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 2.
+        intros [R [H1 H2]]. apply sigma_eq_intro. cbn. unshelve esplit.
           apply funext. intro a. apply funext. intro b.
             destruct (H1 a) as [[b' p] H1']. cbn.
 Abort.

@@ -95,16 +95,18 @@ Lemma cw_wc :
   forall c : Circle,
     wc (cw c) = c.
 Proof.
-  eapply Circle_ind. Unshelve.
-  all: cycle 1; cbn.
-    exact loop.
+  unshelve eapply Circle_ind; cbn.
+  - exact loop.
+  -
 Abort.
 
 Lemma wc_cw :
   forall c : WeirdCircle,
     cw (wc c) = c.
 Proof.
-  eapply WeirdCircle_ind. Unshelve. all: cycle 2; cbn.
-    compute. reflexivity.
-    compute. exact NS.
+  unshelve eapply WeirdCircle_ind; compute.
+  - refl.
+  - exact NS.
+  - destruct NS. refl.
+  - 
 Abort.

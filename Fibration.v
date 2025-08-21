@@ -50,10 +50,10 @@ Proof.
   unfold f, g in *.
   apply funext.
   intro a.
-  apply ua. esplit. apply qinv_isequiv. Unshelve. all: cycle 1.
+  apply ua. unshelve esplit.
     destruct 1. destruct aa0. exact (transport _ f_aa0 p).
-    esplit. Unshelve. all: cycle 1.
-      intro. esplit. Unshelve. all: cycle 2.
+    apply qinv_isequiv. unshelve esplit.
+      intro. unshelve esplit.
         split with a. assumption.
         cbn. reflexivity.
       split.
@@ -77,12 +77,11 @@ Lemma gf :
     f (g x) = x.
 Proof.
   intros.
-  eapply ua_Codomain.
-  Unshelve. all: cycle 1.
-    cbn. destruct x. cbn. apply ua. esplit. apply qinv_isequiv. Unshelve. all: cycle 2.
+  unshelve eapply ua_Codomain.
+    cbn. destruct x. cbn. apply ua. unshelve esplit.
       destruct 1 as [b []]. exact aa0.
-      esplit. Unshelve. all: cycle 2.
-        intro x. split with (Cf0 x). esplit. Unshelve. all: cycle 3.
+      apply qinv_isequiv. unshelve esplit.
+        intro x. split with (Cf0 x). unshelve esplit.
           exact x.
           reflexivity.
         split.

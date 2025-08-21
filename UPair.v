@@ -11,12 +11,12 @@ Definition upair {A : U} (x y : A) : UPair A.
 Proof.
   split with {a : A & (a = x) + (a = y)}.
   split.
-  - apply trunc'. esplit. Unshelve. all: cycle 1.
+  - apply trunc'. unshelve esplit.
     + intros [a [H | H]].
       * exact true.
       * exact false.
     + apply qinv_isequiv.
-      cbn; red. esplit. Unshelve. all: cycle 1.
+      cbn; red. unshelve esplit.
       * intros [].
         -- exists x. left. reflexivity.
         -- exists y. right. reflexivity.
@@ -32,12 +32,12 @@ Lemma uswap :
 Proof.
   intros A x y.
   unfold upair.
-  apply sigma_eq_intro. cbn. esplit. Unshelve. all: cycle 1.
-  - apply ua. esplit. Unshelve. all: cycle 1.
+  apply sigma_eq_intro. cbn. unshelve esplit.
+  - apply ua. unshelve esplit.
     + intros [a []]; exists a.
       * right; assumption.
       * left; assumption.
-    + cbn. apply qinv_isequiv. red. esplit. Unshelve. all: cycle 1.
+    + cbn. apply qinv_isequiv. red. unshelve esplit.
       * intros [a []]; exists a.
         -- right; assumption.
         -- left; assumption.
