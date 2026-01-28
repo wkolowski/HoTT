@@ -20,3 +20,6 @@ tex/*.tex
 
 .vscode
 .lia.cache
+
+result
+
