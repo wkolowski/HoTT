@@ -1,32 +1,40 @@
 { pkgs ? import <nixpkgs> {} }:
 
 let
-  coq = pkgs.coq_8_20;
-  coqPackages = pkgs.coqPackages_8_20;
+  build =
+  {
+    coq = import ./src/default.nix { inherit pkgs; };
+    tex = import ./notes/default.nix { inherit pkgs; };
+  };
 in
 
-pkgs.mkShell
 {
-  buildInputs = with pkgs;
-  [
-    coq
-    coqPackages.coqide
-  ];
+  coq = import ./src/shell.nix { inherit pkgs; };
+  tex = import ./notes/shell.nix { inherit pkgs; };
 
-  shellHook =
-  ''
-    GREEN="\033[1;32m"
-    RESET="\033[0m"
+  default = pkgs.mkShell
+  {
+    inputsFrom =
+    [
+      build.coq
+      build.tex
+    ];
 
-    export PROJECT_ROOT=$(pwd)
-    export PS1="\n\[''${GREEN}\]HoTT\''${PWD#\''$PROJECT_ROOT}>\[''${RESET}\] "
+    shellHook =
+    ''
+      GREEN="\033[1;32m"
+      RESET="\033[0m"
 
-    echo ""
-    echo -e "Homotopy Type Theory in Coq"
-    echo ""
-    echo -e "''${GREEN}./src/build.sh''${RESET} — Regenerate the makefile, then build"
-    echo -e "''${GREEN}make''${RESET}           — Build"
-    echo -e "''${GREEN}make clean''${RESET}     — Clean build artifacts"
-    echo -e "''${GREEN}coqide''${RESET}         — Start CoqIDE"
-  '';
+      export PROJECT_ROOT=$(pwd)
+      export PS1="\n\[''${GREEN}\]HoTT\''${PWD#\''$PROJECT_ROOT}>\[''${RESET}\] "
+
+      echo ""
+      echo -e "Homotopy Type Theory in Coq"
+      echo ""
+      echo -e "''${GREEN}./build.sh''${RESET}       — Build the project"
+      echo -e "''${GREEN}./src/build.sh''${RESET}   — Build the Coq development"
+      echo -e "''${GREEN}./notes/build.sh''${RESET} — Build the notes to PDF"
+      echo -e "''${GREEN}coqide''${RESET}           — Start CoqIDE"
+    '';
+  };
 }
