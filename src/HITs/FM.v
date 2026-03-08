@@ -1,11 +1,7 @@
-Require Import List.
+From Coq Require Import List.
 Import ListNotations.
 
 From HoTT Require Export HoTT.
-
-Local Set Default Proof Mode "Classic".
-
-Set Universe Polymorphism.
 
 Module FreeMon.
 
@@ -185,7 +181,9 @@ Proof.
     rewrite op_assoc. apply ap. apply IHt1.
 Defined.
 
-Definition ap2 {A B C : Type} (f : A -> B -> C) {a a' : A} {b b' : B} (p : a = a') (q : b = b') : f a b = f a' b' :=
+Definition ap2
+  {A B C : Type} (f : A -> B -> C) {a a' : A} {b b' : B} (p : a = a') (q : b = b')
+  : f a b = f a' b' :=
 match p, q with
 | refl _, refl _ => refl _
 end.

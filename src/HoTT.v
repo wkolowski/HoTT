@@ -1,17 +1,20 @@
-(* We run CoqIDe with the -noinit option, so we need to enable [Ltac] manually. *)
+(*
+  We run CoqIDe with the -noinit option, so we need to enable [Ltac] manually.
+  However, for some reason, this generates a warning that the module was not
+  found, which makes no sense.
+*)
 Declare ML Module "ltac_plugin".
-Set Default Proof Mode "Classic".
 
-Set Universe Polymorphism.
+(* We need to say this, otherwise we can't use tactics at all. *)
+#[global] Set Default Proof Mode "Classic".
+
+#[global] Set Universe Polymorphism.
 
 (** * Chapter 1 *)
 
 (** ** 1.3 Universes and families *)
 
 Polymorphic Definition U := Type.
-
-(*Notation "'U'" := Type.
-*)
 
 (** ** 1.4 Dependent function types (Π-types) *)
 
@@ -1001,8 +1004,6 @@ Definition transport {A : U} (P : A -> U) {x y : A}
 match p with
 | refl _ => id
 end.
-
-Notation "p *" := (transport p) (at level 50, only parsing).
 
 (* Lemma 2.3.2 *)
 Lemma lift :
@@ -2142,7 +2143,8 @@ Record SemigroupEq (A B : Semigroup) : Type :=
 Record SemigroupEq' (A B : Semigroup) : Type :=
 {
     SE_p : @carrier A = @carrier B;
-    SE_m' : forall x y : A, transport id SE_p (@op _ A x y) = @op _ B (transport _ SE_p x) (transport _ SE_p y);
+    SE_m' : forall x y : A,
+      transport id SE_p (@op _ A x y) = @op _ B (transport _ SE_p x) (transport _ SE_p y);
 }.
 
 Lemma SemigroupEq'_path :

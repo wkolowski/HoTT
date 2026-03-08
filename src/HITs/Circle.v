@@ -1,9 +1,5 @@
 From HoTT Require Export HoTT.
 
-Local Set Default Proof Mode "Classic".
-
-Set Universe Polymorphism.
-
 Module Circle.
 
 Private Inductive Circle : Type :=

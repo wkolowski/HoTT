@@ -1,9 +1,5 @@
 From HoTT Require Export HoTT.
 
-Local Set Default Proof Mode "Classic".
-
-Set Universe Polymorphism.
-
 Definition UPair (A : U) : U :=
   {X : U & trunc (equiv X bool) * (X -> A)}.
 

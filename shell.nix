@@ -1,16 +1,32 @@
 { pkgs ? import <nixpkgs> {} }:
 
+let
+  coq = pkgs.coq_8_20;
+  coqPackages = pkgs.coqPackages_8_20;
+in
+
 pkgs.mkShell
 {
   buildInputs = with pkgs;
   [
-    coq_8_20
-    coqPackages_8_20.coqide
+    coq
+    coqPackages.coqide
   ];
 
   shellHook =
   ''
-    echo "Coq 8.20.1 development environment."
-    echo "Run './build.sh' to build or 'coqide' to start the IDE."
+    GREEN="\033[1;32m"
+    RESET="\033[0m"
+
+    export PROJECT_ROOT=$(pwd)
+    export PS1="\n\[''${GREEN}\]HoTT\''${PWD#\''$PROJECT_ROOT}>\[''${RESET}\] "
+
+    echo ""
+    echo -e "Homotopy Type Theory in Coq"
+    echo ""
+    echo -e "''${GREEN}./src/build.sh''${RESET} — Regenerate the makefile, then build"
+    echo -e "''${GREEN}make''${RESET}           — Build"
+    echo -e "''${GREEN}make clean''${RESET}     — Clean build artifacts"
+    echo -e "''${GREEN}coqide''${RESET}         — Start CoqIDE"
   '';
 }

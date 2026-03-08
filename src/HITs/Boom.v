@@ -1,10 +1,6 @@
-Require Import StrictProp.
+From Coq Require Import StrictProp.
 
 From HoTT Require Export HoTT.
-
-Local Set Default Proof Mode "Classic".
-
-Set Universe Polymorphism.
 
 Inductive Law : Type :=
 | Id

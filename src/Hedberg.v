@@ -1,9 +1,5 @@
 From HoTT Require Export HoTT.
 
-Local Set Default Proof Mode "Classic".
-
-Set Universe Polymorphism.
-
 (**
   This file is based on the paper "Generalizations of Hedberg's Theorem"
   by Kraus, Escardó, Coquand and Altenkirch.

@@ -1,51 +1,31 @@
 From HoTT Require Export HoTT.
 
-Local Set Default Proof Mode "Classic".
-
-Set Universe Polymorphism.
-
-(* Record fiber {A B : U} (f : A -> B) (b : B) : U :=
+Record fiber {A B : U} (f : A -> B) (b : B) : U :=
 {
-  domp : A;
-  domp_spec : f domp = b;
+  aa : A;
+  f_aa : f aa = b;
 }.
 
-Arguments domp {A B f b} _.
- *)
-
-Definition fiber {A B : U} (f : A -> B) (b : B) : U :=
-  {a : A & f a = b}.
-
-(*
-Class Codomain (B : U) (P : U -> U) : U :=
+Class Codomain (B : U) : U :=
 {
-  E : U;
-  pr : E -> B;
-  spec : forall b : B, fiber (comp pr b);
+  CE : U;
+  Cf : CE -> B;
 }.
 
-#[refine]
-Instance wut {B : Type} (P : Type -> Type) (f : B -> {A : Type & P A}) : Codomain B P :=
+#[refine, export]
+Instance f {B : U} (P : B -> U) : Codomain B :=
 {|
-  E := {x : {A : Type  & P A} & fiber f x};
+  CE := {b : B & P b};
 |}.
 Proof.
-  intro x. exact (pr1' (pr2' x)).
-  intro. unfold fiber. Check (pr1' (pr2' (f b))). compute. cbn.
-  pose (f b).
-  cbn in s.
+  destruct 1 as [b _]. exact b.
+Defined.
 
- compute in *. Check (pr2' (f b)).
-  intro. assert ( exact (pr2' (f b)). cbn.
-  intro b.
-  destruct (f b).
-  compute. apply p.
-
-Definition tuw {B : U} (P : U -> U) (x : Codomain B P) : B -> {A : U & P A}.
+Definition g {B : U} (x : Codomain B) : B -> U.
 Proof.
   destruct x.
   intro b.
-  exists (fiber pr0 b). apply spec0.
+  exact (fiber Cf0 b).
 Defined.
 
 Record Iso (A B : U) : U :=
@@ -112,4 +92,3 @@ Proof.
       cbn. reflexivity.
     }
 Defined.
-*)
