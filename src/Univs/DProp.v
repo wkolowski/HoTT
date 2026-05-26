@@ -1,7 +1,64 @@
 From HoTT Require Export HoTT.
 
+Definition iff (A B : U) : U :=
+  (A -> B) * (B -> A).
+
+Notation "A <-> B" := (iff A B) (at level 95, no associativity).
+
+Lemma isProp_iff :
+  forall A B : U,
+    isProp A -> isProp B -> isProp (A <-> B).
+Proof.
+  intros A B hA hB.
+  apply isProp_prod; apply isProp_fun; assumption.
+Defined.
+
 Definition Dec (A : U) : U :=
   A + ~ A.
+
+Definition Dec_empty : Dec empty :=
+  inr id.
+
+Definition Dec_unit : Dec unit :=
+  inl tt.
+
+Definition Dec_inhabited (A : U) (x : A) : Dec A :=
+  inl x.
+
+Definition Dec_prod (A B : U) (da : Dec A) (db : Dec B) : Dec (A * B) :=
+match da, db with
+| inl a , inl b  => inl (a, b)
+| inr na, _      => inr (fun '(a, _) => na a)
+| _     , inr nb => inr (fun '(_, b) => nb b)
+end.
+
+Definition Dec_sum (A B : U) (da : Dec A) (db : Dec B) : Dec (A + B) :=
+match da with
+| inl a  => inl (inl a)
+| inr na =>
+  match db with
+  | inl b  => inl (inr b)
+  | inr nb => inr (fun ab =>
+    match ab with
+    | inl a => na a
+    | inr b => nb b
+    end)
+  end
+end.
+
+Lemma Dec_fun :
+  forall A B : U,
+    Dec A -> Dec B -> Dec (A -> B).
+Proof.
+  intros A B dA dB.
+  destruct dB as [b | nb].
+  - exact (inl (fun _ => b)).
+  - destruct dA as [a | na].
+    + right; intros f. apply nb, f, a.
+    + left.
+      intros a.
+      contradiction.
+Defined.
 
 Lemma isProp_Dec :
   forall A : U,
@@ -20,20 +77,34 @@ Proof.
   apply h.
 Defined.
 
-Record isDProp (P : U) : U :=
-{
-  isProp_DProp : isProp P;
-  decide : P + ~ P;
-}.
+Definition isDProp (P : U) : U := isProp P * Dec P.
 
-Arguments isProp_DProp {_} _.
-Arguments decide {_} _.
+Definition decide {A : U} (h : isDProp A) : A + ~ A := pr2 h.
+
+Lemma isProp_prod' :
+  forall A B : U,
+    (A -> isProp B) -> (B -> isProp A) -> isProp (A * B).
+Proof.
+  intros A B hB hA.
+  intros ab.
+  assert (a : A) by (apply pr1 in ab; assumption).
+  assert (b : B) by (apply pr2 in ab; assumption).
+  revert ab.
+  apply isProp_prod.
+  - apply hA, b.
+  - apply hB, a.
+Defined.
 
 Lemma isProp_isDProp :
   forall A : U,
     isProp (isDProp A).
 Proof.
-Admitted.
+  intros A.
+  apply isProp_prod'.
+  - apply isProp_Dec.
+  - intros _.
+    apply isProp_isProp.
+Defined.
 
 Lemma isDProp_isContrDec :
   forall (A : U),
@@ -53,19 +124,6 @@ Proof.
     apply isProp_Dec_inv, h.
 Defined.
 
-Definition iff (A B : U) : U :=
-  (A -> B) * (B -> A).
-
-Notation "A <-> B" := (iff A B) (at level 95, no associativity).
-
-Lemma isProp_iff :
-  forall A B : U,
-    isProp A -> isProp B -> isProp (A <-> B).
-Proof.
-  intros A B hA hB.
-  apply isProp_prod; apply isProp_fun; assumption.
-Defined.
-
 Lemma uninhabited_equiv_empty :
   forall A : U,
     ~ A -> A ~ empty.
@@ -77,7 +135,7 @@ Proof.
   split; red.
   - destruct x.
   - intros a. contradiction.
-Qed.
+Defined.
 
 Lemma isDProp_boolean_decider :
   forall (A : U),
@@ -137,7 +195,7 @@ Lemma isDProp_empty :
 Proof.
   split.
   - apply isProp_empty.
-  - right; exact empty_rec'.
+  - apply Dec_empty.
 Defined.
 
 Lemma isDProp_unit :
@@ -145,7 +203,7 @@ Lemma isDProp_unit :
 Proof.
   split.
   - apply isProp_unit.
-  - left; exact tt.
+  - apply Dec_unit.
 Defined.
 
 Lemma isDProp_prod :
@@ -155,14 +213,43 @@ Proof.
   intros A B [hA dA] [hB dB].
   split.
   - apply isProp_prod; assumption.
-  - destruct dA as [a | na].
-    + destruct dB as [b | db].
-      * left; exact (a, b).
-      * right; intros [_ b]; contradiction.
-    + right; intros [a _]; contradiction.
+  - apply Dec_prod; assumption.
 Defined.
 
+Lemma isDProp_fun :
+  forall A B : U,
+    isDProp A -> isDProp B -> isDProp (A -> B).
+Proof.
+  intros A B [hA dA] [hB dB]; split.
+  - apply isProp_fun; assumption.
+  - apply Dec_fun; assumption.
+Defined.
 
+Lemma isDProp_not:
+  forall A : U,
+    isDProp A -> isDProp (~ A).
+Proof.
+  intros A h.
+  apply isDProp_fun; [assumption |].
+  apply isDProp_empty.
+Defined.
+
+Lemma isDProp_semixor :
+  forall A B : U,
+    isDProp A -> isDProp B -> isDProp (A + (~ A) * B).
+Proof.
+  intros A B [hA dA] [hB dB]; split.
+  - apply ex_3_7.
+    + assumption.
+    + apply isProp_prod; [| assumption].
+      apply isProp_fun, isProp_empty.
+    + intros [a [na b]]; contradiction.
+  - destruct dA as [a | na].
+    + exact (inl (inl a)).
+    + destruct dB as [b | nb].
+      * exact (inl (inr (na, b))).
+      * apply inr; intros [a | [_ b]]; contradiction.
+Defined.
 
 Lemma equiv_DProp_bool :
   DProp ~ bool.
@@ -170,14 +257,23 @@ Proof.
   exists decideb.
   apply qinv_isequiv; red.
   exists (fun b : bool => if b then (| unit, isDProp_unit |) else (| empty, isDProp_empty |)).
-  split.
-  - intros []; cbn; refl.
-  - intros [A [h [a | na]]]; unfold id; cbn.
-    + apply sigma_eq_intro; cbn.
-      admit.
-    + apply sigma_eq_intro; cbn.
-      admit.
-Admitted.
+  split; [intros []; cbn; refl |].
+  intros [A [h [a | na]]]; unfold id; cbn.
+  - apply sigma_eq_intro; cbn.
+    unshelve esplit.
+    + apply ua, equiv_sym.
+      apply inhabited_isProp_unit; assumption.
+    + apply prod_eq_intro; split.
+      * apply isProp_isProp.
+      * apply ex_3_6; assumption.
+  - apply sigma_eq_intro; cbn.
+    unshelve esplit.
+    + apply ua, equiv_sym.
+      apply uninhabited_equiv_empty; assumption.
+    + apply prod_eq_intro; split.
+      * apply isProp_isProp.
+      * apply ex_3_6; assumption.
+Defined.
 
 Lemma Stable_isDProp :
   forall A : U,
@@ -187,5 +283,3 @@ Proof.
   - exact a.
   - apply empty_rec', nna, na.
 Defined.
-
-
