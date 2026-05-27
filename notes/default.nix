@@ -15,6 +15,11 @@ pkgs.stdenv.mkDerivation
 
         # Build tool.
         latexmk
+        babel-polish
+        lh              # OT4 font encoding for Polish
+        cm-super
+        polski
+
         ;
     })
   ];

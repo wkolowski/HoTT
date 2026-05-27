@@ -1,0 +1,245 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+
+%\usepackage{fontspec}
+%\usepackage[polish]{babel}
+
+\usepackage{amsthm, amssymb}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+
+\newtheorem{exercise}{Zadanie}[section]
+
+% Technical.
+\renewcommand{\phi}{\varphi}
+\newcommand{\txt}[1]{\texttt{#1}}
+\newcommand{\text}[1]{\texttt{#1}}
+\renewcommand{\(}{\left(}
+\renewcommand{\)}{\right)}
+
+% Definitions.
+\newcommand{\defn}{:\equiv}
+\newcommand{\defp}{:=}
+
+% Universes.
+\newcommand{\U}{\mathcal{U}}
+
+\newcommand{\isContr}{\text{isContr}}
+\newcommand{\isProp}{\text{isProp}}
+\newcommand{\isSet}{\text{isSet}}
+\newcommand{\isGrpd}{\text{isGrpd}}
+
+\newcommand{\Contr}{\text{Contr}}
+\newcommand{\Prop}{\text{Prop}}
+\newcommand{\Set}{\text{Set}}
+\newcommand{\Grpd}{\text{Grpd}}
+%\newcommand{\Type}{\text{Type}}
+
+% Functions.
+\newcommand{\lam}[2]{\lambda #1.#2}
+\newcommand{\apl}[2]{#1\ #2}
+
+\newcommand{\id}{\text{id}}
+\newcommand{\comp}{\circ}
+\newcommand{\finv}[1]{#1^{-1}}
+
+% Paths.
+\newcommand{\eq}[2]{#1 = #2}
+%\newcommand{\refl}[1]{\text{refl}_{#1}}
+\newcommand{\refl}{\txt{refl}}
+
+\newcommand{\inv}[1]{#1^{-1}}
+\newcommand{\sq}{\mathbin{\vcenter{\hbox{\rule{.3ex}{.3ex}}}}}
+
+% Equivalence.
+\newcommand{\hequiv}[2]{#1 \simeq #2}
+
+% Path application and transport.
+\newcommand{\ap}[2]{\text{ap}_{#1}(#2)}
+\newcommand{\apd}[2]{\text{apd}_{#1}(#2)}
+\newcommand{\transport}{\text{transport}}
+
+\newcommand{\qinv}{\text{qinv}}
+\newcommand{\isequiv}{\text{isequiv}}
+
+% Basic types.
+\newcommand{\Empty}{\mathbf{0}}
+\newcommand{\Unit}{\mathbf{1}}
+
+\newcommand{\Bool}{\mathbf{2}}
+\newcommand{\true}{\txt{tt}}
+\newcommand{\false}{\txt{ff}}
+
+\newcommand{\Nat}{\mathbb{N}}
+\newcommand{\Conat}{\mathbb{N}_\infty}
+\newcommand{\dprod}[2]{\prod #1.#2}
+\newcommand{\dsum}[2]{\sum #1.#2}
+
+% Products.
+\newcommand{\prodt}[2]{#1 \times #2}
+\newcommand{\pair}[2]{(#1, #2)}
+\newcommand{\outl}{\text{pr}_1}
+\newcommand{\outr}{\text{pr}_2}
+
+% Sums
+\newcommand{\sumt}[2]{#1 + #2}
+\newcommand{\inl}{\txt{inl}}
+\newcommand{\inr}{\txt{inr}}
+
+% Logic.
+\newcommand{\all}[2]{\forall #1.#2}
+\newcommand{\ex}[2]{\exists #1.#2}
+\newcommand{\conj}[2]{#1 \land #2}
+\newcommand{\disj}[2]{#1 \lor #2}
+\newcommand{\True}{\top}
+\newcommand{\False}{\bot}
+\newcommand{\impl}[2]{#1 \implies #2}
+
+% Rest.
+\newcommand{\happly}{\text{happly}}
+\newcommand{\funext}{\text{funext}}
+
+\newcommand{\idtoeqv}{\text{idtoeqv}}
+\newcommand{\ua}{\text{ua}}
+
+\newcommand{\code}{\text{code}}
+\newcommand{\encode}{\text{encode}}
+\newcommand{\decode}{\text{decode}}
+
+\newcommand{\hS}{\mathbb{S}^1}
+\newcommand{\base}{\text{base}}
+\newcommand{\looop}{\text{loop}}
+
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\IZ}{0_\mathbb{I}}
+\newcommand{\II}{1_\mathbb{I}}
+\newcommand{\seg}{\text{seg}}
+
+\newcommand{\trf}[1]{||#1||}
+\newcommand{\tri}[1]{|#1|}
+
+\title{Ścisłe zdania}
+
+\begin{document}
+
+\maketitle
+
+\newcommand{\Stable}{\txt{Stable}}
+\newcommand{\isStrictProp}{\txt{isStrictProp}}
+
+\newcommand{\Decidable}{\txt{Decidable}}
+
+\begin{center}
+$\apl{\Stable}{X} \defn \neg\neg X \to X$ \\
+\end{center}
+
+\begin{exercise}
+  Pokaż, że $\apl{\isProp}{(\apl{\Stable}{A})} \hequiv\ \apl{\isProp}{A}$
+\end{exercise}
+
+\newcommand{\dni}{\txt{dni}}
+
+\begin{center}
+$\dni : \dprod{A : \U}{A \to \neg \neg A}$ \\
+$\apl{\apl{\dni}{a}}{na} \defn \apl{na}{a}$
+\end{center}
+
+\begin{exercise}
+  Pokaż, że poniższe typy są równoważne:
+  \begin{itemize}
+    \item $\apl{\isContr}{(\apl{\Stable}{A})}$
+    \item $\prodt{\apl{\isProp}{A}}{\apl{\Stable}{A}}$
+    \item $\neg\neg A \to \apl{\isContr}{A}$
+    \item $\apl{\isequiv}{\dni}$
+    \item $A \hequiv\ \neg \neg A$
+  \end{itemize}
+\end{exercise}
+
+\newcommand{\isStrictProp}{\txt{isStrictProp}}
+
+\begin{center}
+  $\apl{\isStrictProp}{A} \defn \prodt{\apl{isProp}{A}}{\apl{\Stable}{A}}$
+\end{center}
+
+\begin{exercise}
+Które typy są stabilne, a które są stabilnymi zdaniami? Rozważ
+\begin{itemize}
+  \item $\Empty$
+  \item $\Unit$
+  \item $\U_i$
+  \item Typy zamieszkałe
+  \item $\prodt{A}{B}$
+  \item $\sumt{A}{B}$
+  \item $A \to B$
+  \item $\neg{A}$
+  \item $\dprod{x : A}{\apl{B}{x}}$
+  \item $\dsum{x : A}{\apl{B}{x}}$
+\end{itemize}
+
+\end{exercise}
+
+\newcommand{\StrictProp}{\txt{StrictProp}}
+
+\begin{center}
+  Ścisłe zdania
+
+  \begin{itemize}
+    \item $\StrictProp_i \defn \dsum{A : \U_i}{\apl{\isStrictProp}{A}}$
+    \item $\bot \defn \Empty$
+    \item $\top \defn \Unit$
+    \item $P \land Q \defn \prodt{P}{Q}$
+    \item $P \lor Q \defn \neg \neg (\sumt{P}{Q})$
+    \item $P \Rightarrow Q \defn P \to Q$
+    \item $P \Leftrightarrow Q \defn P = Q$
+    \item $\neg P \defn P \to \Empty$
+    \item $\all{x : A}{\apl{B}{x}} \defn \dprod{x : A}{\apl{B}{x}}$
+    \item $\ex{x : A}{\apl{B}{x}} \defn \neg \neg \dsum{x : A}{\apl{B}{x}}$
+  \end{itemize}
+\end{center}
+
+\begin{exercise}
+  Pokaż, że ścisłe zdania mają klasykę:
+
+  \begin{itemize}
+    \item Umiarkowanie mocny wyłączony środek: $\all{A : \U}{A \lor \neg A}$
+    \item Biedny wybór: $\all{A : \U}{\neg \neg (\neg \neg A \to A)}$
+    \item Unikalny wybór: jeśli $P : X \to \U$ jest rodznią typów stabilnych, to $(\dprod{x : X}{\neg \neg \apl{P}{x}}) \to \dprod{x : X}{\apl{P}{x}}$
+    \item Wybór jak 3.16 z książki: jeśli $X$ jest zbiorem, a $P$ jest rodziną ścisłych zdań, to $(\dprod{x : X}{\neg \neg \apl{P}{x}}) \hequiv\ \neg \neg \dprod{x : X}{\apl{P}{x}}$
+    \item Skończony wybór: jeśli $X$ jest skończony, a $P$ dowolne, to \\ $(\dprod{x : X}{\neg \neg \apl{P}{x}}) \to \neg \neg \dprod{x : X}{\apl{P}{x}}$
+  \end{itemize}
+\end{exercise}
+
+\newcommand{\acs}{\txt{acs}}
+
+\begin{center}
+Możemy przyjąć aksjomat wyboru: jeśli $X$ jest zbiorem, a $Y : X \to \U$ rodziną zbiorów, to mamy \\
+
+$\acs : (\dprod{x : X}{\neg \neg \apl{Y}{x}}) \to \neg \neg \dprod{x : X}{\apl{Y}{x}}$
+
+\end{center}
+
+\begin{exercise}
+  Pokaż, że trzeba uważać, żeby nie przedawkować klasyki:
+
+  \begin{itemize}
+    \item $\neg \dprod{A : \U}{\neg \neg A \to A}$
+    \item Jeśli $X : \U$ dowolne, a $Y : X \to \U$ jest rodziną zbiorów, to \\ $\neg \left($(\dprod{x : X}{\neg \neg \apl{Y}{x}}) \to \neg \neg \dprod{x : X}{\apl{Y}{x}} \right)$
+  \end{itemize}
+\end{exercise}
+
+\begin{exercise}
+  Groźniejsze:
+
+  \begin{itemize}
+    \item Czy $\StrictProp$ ma resizing?
+    \item Czy można udowodnić $\neg \neg \StrictProp \hequiv\ \txt{Bool}$?
+  \end{itemize}
+\end{exercise}
+
+\begin{exercise}
+  $\StrictProp$ jest dobrym kandydatem na uniwersum ścisłych zdań -- można dać jego typom wygodne reguły unikalności. Napisz te reguły.
+\end{exercise}
+
+\end{document}
