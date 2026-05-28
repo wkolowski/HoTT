@@ -1,9 +1,8 @@
 \documentclass[11pt]{article}
 
+\usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-
-%\usepackage{fontspec}
-%\usepackage[polish]{babel}
+\usepackage[polish]{babel}
 
 \usepackage{amsthm, amssymb}
 \theoremstyle{definition}
@@ -127,12 +126,11 @@
 \maketitle
 
 \newcommand{\Stable}{\txt{Stable}}
-\newcommand{\isStrictProp}{\txt{isStrictProp}}
 
 \newcommand{\Decidable}{\txt{Decidable}}
 
 \begin{center}
-$\apl{\Stable}{X} \defn \neg\neg X \to X$ \\
+$\apl{\Stable}{A} \defn \neg\neg A \to A$ \\
 \end{center}
 
 \begin{exercise}
@@ -206,7 +204,7 @@ Które typy są stabilne, a które są stabilnymi zdaniami? Rozważ
     \item Umiarkowanie mocny wyłączony środek: $\all{A : \U}{A \lor \neg A}$
     \item Biedny wybór: $\all{A : \U}{\neg \neg (\neg \neg A \to A)}$
     \item Unikalny wybór: jeśli $P : X \to \U$ jest rodznią typów stabilnych, to $(\dprod{x : X}{\neg \neg \apl{P}{x}}) \to \dprod{x : X}{\apl{P}{x}}$
-    \item Wybór jak 3.16 z książki: jeśli $X$ jest zbiorem, a $P$ jest rodziną ścisłych zdań, to $(\dprod{x : X}{\neg \neg \apl{P}{x}}) \hequiv\ \neg \neg \dprod{x : X}{\apl{P}{x}}$
+    \item Wybór jak 3.16 z książki, ale mocniejszy: jeśli $X$ jest dowolne, a $Y$ jest rodziną typów stabilnych, to $(\dprod{x : X}{\neg \neg \apl{P}{x}}) \hequiv\ \neg \neg \dprod{x : X}{\apl{P}{x}}$
     \item Skończony wybór: jeśli $X$ jest skończony, a $P$ dowolne, to \\ $(\dprod{x : X}{\neg \neg \apl{P}{x}}) \to \neg \neg \dprod{x : X}{\apl{P}{x}}$
   \end{itemize}
 \end{exercise}
@@ -225,7 +223,7 @@ $\acs : (\dprod{x : X}{\neg \neg \apl{Y}{x}}) \to \neg \neg \dprod{x : X}{\apl{Y
 
   \begin{itemize}
     \item $\neg \dprod{A : \U}{\neg \neg A \to A}$
-    \item Jeśli $X : \U$ dowolne, a $Y : X \to \U$ jest rodziną zbiorów, to \\ $\neg \left($(\dprod{x : X}{\neg \neg \apl{Y}{x}}) \to \neg \neg \dprod{x : X}{\apl{Y}{x}} \right)$
+    \item Jeśli $X : \U$ dowolne, a $Y : X \to \U$ jest rodziną zbiorów, to \\ $\neg \((\dprod{x : X}{\neg \neg \apl{Y}{x}}) \to \neg \neg \dprod{x : X}{\apl{Y}{x}} \)$
   \end{itemize}
 \end{exercise}
 
