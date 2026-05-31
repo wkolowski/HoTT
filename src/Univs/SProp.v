@@ -31,6 +31,74 @@ Definition Stable_pi
 Definition Stable_fun (A B : U) (sb : Stable B) : Stable (A -> B) :=
   Stable_pi A (fun _ => B) (fun _ => sb).
 
+Lemma not_Stable_sigma :
+  ~ (forall (A : U) (B : A -> U),
+      Stable A -> (forall a : A, Stable (B a)) -> Stable {a : A & B a}).
+Proof.
+  intros H.
+  assert (DNE : forall A : U, ~ ~ A -> A).
+  {
+    intros A nna.
+    pose (B := fun x : unit + A =>
+      match x with
+      | inl _ => empty
+      | inr _ => unit
+      end).
+    specialize (H (unit + A) B); cbn in H.
+    assert (hs1 : Stable (unit + A)).
+    {
+      intros _; left; exact tt.
+    }
+    assert (hs2 : forall x : unit + A, Stable (B x)).
+    {
+      intros [| a]; cbn.
+      - apply Stable_empty.
+      - apply Stable_unit.
+    }
+    specialize (H hs1 hs2); red in H.
+    assert (nnx : ~ ~ {x : unit + A & B x}).
+    {
+      intros f; apply nna; intros a; apply f.
+      exists (inr a); cbn.
+      exact tt.
+    }
+    apply H in nnx as [[| a] b]; cbn in b.
+    - contradiction.
+    - exact a.
+  }
+  apply not_bad_DNE.
+  exact DNE.
+Defined.
+
+Lemma WEM_Stable_sum :
+  (forall A B : U,
+    Stable A -> Stable B -> Stable (A + B)) ->
+  forall A : U,
+    (~ A) + ~ ~ A.
+Proof.
+  unfold Stable.
+  intros S A.
+  apply S.
+  - apply triple_neg.
+  - apply triple_neg.
+  - apply ex_1_13.
+Defined.
+
+Lemma Stable_sum_WEM :
+  (forall A : U,
+    (~ A) + ~ ~ A) ->
+  (forall A B : U,
+    Stable A -> Stable B -> Stable (A + B)).
+Proof.
+  unfold Stable.
+  intros wem A B sa sb nnab.
+  destruct (wem A) as [na | nna].
+  - destruct (wem B) as [nb | nnb].
+    + apply empty_rec, nnab; intros []; contradiction.
+    + right; apply sb, nnb.
+  - left; apply sa, nna.
+Defined.
+
 Lemma isProp_Stable :
   forall A : U,
     isProp A -> isProp (Stable A).
@@ -127,6 +195,23 @@ Proof.
     apply isProp_fun, isProp_empty.
 Defined.
 
+Lemma isStProp_char4 :
+  forall A : U,
+    isStProp A <-> A ~ (~ ~ A).
+Proof.
+  split.
+  - intros h.
+    exists dni.
+    apply isStProp_char3 in h; assumption.
+  - intros [f [g [h1 h2]]%isequiv_qinv].
+    split; [| assumption].
+    intros x y.
+    compute in h1, h2.
+    rewrite <- (h2 x), <- (h2 y).
+    apply ap.
+    apply isProp_fun, isProp_empty.
+Defined.
+
 Lemma isStProp_empty : isStProp empty.
 Proof.
   split.
@@ -168,7 +253,84 @@ Proof.
   - apply Stable_pi; intros x; apply sb.
 Defined.
 
-Lemma isStProp_fun (A B : U) (sb : isStProp B) : isStProp (A -> B).
+Lemma isStProp_fun :
+  forall A B : U,
+    isStProp B -> isStProp (A -> B).
 Proof.
+  intros A B sb.
   apply isStProp_pi; intros _; assumption.
 Defined.
+
+Lemma isStProp_sigma :
+  forall (A : U) (B : A -> U),
+    isStProp A -> (forall a : A, isStProp (B a)) ->
+      isStProp {a : A & B a}.
+Proof.
+  unfold isStProp, Stable.
+  intros A B [ha sa] stb.
+  split.
+  - apply isProp_sigma; [assumption |].
+    apply stb.
+  - intros nnab.
+    unshelve eexists.
+    + apply sa; intros na.
+      apply nnab; intros [a _].
+      contradiction.
+    + apply stb; intros nb.
+      apply nnab; intros [a b].
+      apply nb.
+      rewrite (ha (sa _) a).
+      assumption.
+Defined.
+
+Lemma slem :
+  forall A : U,
+    ~ ~ (A + ~ A).
+Proof.
+  apply ex_1_13.
+Defined.
+
+Lemma sdne :
+  forall A : U,
+    ~ ~ (~ ~ A -> A).
+Proof.
+  intros A n.
+  apply n.
+  intros nna.
+  apply empty_rec.
+  apply nna; intros a.
+  apply n.
+  intros _.
+  exact a.
+Defined.
+
+Lemma unique_choice :
+  forall (X : U) (Y : X -> U),
+    (forall x : X, Stable (Y x)) ->
+      (forall x : X, ~ ~ Y x) -> forall x : X, Y x.
+Proof.
+  intros X Y sy nny x.
+  apply sy, nny.
+Defined.
+
+Lemma stable_choice :
+  forall (X : U) (Y : X -> U),
+    (forall x : X, Stable (Y x)) ->
+      (forall x : X, ~ ~ Y x) ~ (~ ~ forall x : X, Y x).
+Proof.
+  intros X Y sy.
+  apply isProp_iff_equiv.
+  - apply isProp_pi; intros ?; apply isProp_fun, isProp_empty.
+  - apply isProp_fun, isProp_empty.
+  - intros nny.
+    apply dni, unique_choice; assumption.
+  - intros nny x.
+    apply dni.
+    apply Stable_pi in nny; [| assumption].
+    apply nny.
+Defined.
+
+Axiom acs :
+  forall (X : U) (Y : X -> U),
+    isSet X -> (forall x : X, isSet (Y x)) ->
+      (forall x : X, ~ ~ Y x) -> ~ ~ (forall x : X, Y x).
